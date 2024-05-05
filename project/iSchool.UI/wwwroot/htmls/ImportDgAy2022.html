@@ -1,0 +1,266 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>ImportDgAy2022</title>
+<link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/css/bootstrap.min.css">
+<script src="https://cdn.staticfile.org/jquery/2.1.1/jquery.min.js"></script>
+<script src="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<style>    
+    .div-top {
+        margin: 10px 0 0 0;
+    }
+    .span-space {
+        display: inline-block;
+        margin: 0 0 0 10px;
+    }
+    .span-desc {
+        display:block;
+        color: red;
+    }
+    .a-input-file input.file {
+        position: absolute;
+        /*font-size: 100px;*/
+        left: 0;
+        top: 0;
+        opacity: 0;
+    }
+</style>
+</head>
+<body>
+<div class="form-horizontal" >
+    <div class="form-group row" style="margin-top:10px;margin-left:10px;width:600px;">
+        <div class="col-md-2">文件:</div>
+        <div class="col-md-10">
+            <a href="javascript:;" class="a-input-file" id="sel_file">
+                <input type="button" id="btn" value="选择xlsx文件" />
+                <input type="file" class="file" name="file" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
+            </a>
+            <span class="span-desc">选择xlsx文件</span>
+        </div>
+        <div class="col-md-12 div-top"></div>
+        <!--<div class="col-md-2">邮箱:</div>
+        <div class="col-md-10">
+            <span><input type="text" name="u" style="width:20em;" /></span>
+            <span class="span-desc">填入邮箱-接收导入结果</span>
+        </div>-->
+        <div class="col-md-12 div-top"></div>
+        <!--<div class="col-md-2">id:</div>
+        <div class="col-md-10">
+            <span><input type="text" name="id" style="width:20em;" /></span>
+            <span class="span-desc">同文件第1次及其后报错填入</span>
+        </div>-->
+        <div class="col-md-12 div-top"></div>
+        <div class="col-md-12">
+            <input type="submit" id="btn_last" value="导出上一次" class="btn btn-success" style="" />
+            <span class="span-space"></span>
+            <input type="submit" id="submit" value="上传&导入" class="btn btn-success" />
+            <span class="span-space"></span>
+            <span class="span-space" id="submit_res"></span>
+        </div>
+        <div class="col-md-12 div-top"></div>
+    </div>
+    <div class="form-group row" style="margin-top:10px;margin-left:10px;width:1200px;">
+        <div class="col-md-12 row" id="div_list"></div>
+    </div>
+</div>
+<!-- js -->
+<script>
+    (function ($, JSON) {
+        if (typeof $.postJSON === 'undefined') {
+            if (!JSON || !JSON.stringify) throw "jquery.postJSON need 'JSON.stringify' api to serialize data";
+            $.extend({
+                postJSON: function (url, data, callback, type) {
+                    if ($.isFunction(data)) {
+                        type = type || callback;
+                        callback = data;
+                        data = undefined;
+                    }
+                    if ($.type(data) == 'string') data = data;
+                    else data = JSON.stringify(data);
+                    var o = {
+                        type: 'POST',
+                        url: url,
+                        data: data,
+                        dataType: type, //'json',
+                        contentType: 'application/json'
+                    };
+                    return callback && (o.success = callback), $.ajax(o);
+                }
+            });
+        }
+    })(jQuery, JSON);
+</script>
+<script>
+    var is_busy;
+
+    $(function () {
+        $('#sel_file').on('change', 'input[type=file]', function () {
+            console.log('click to select .xlsx');
+            if (!is_busy) $('#submit_res').text('');
+        });
+        $('#submit').on('click', on_submit);
+        $('#btn_last').on('click', on_getlast);
+    });
+
+    function on_getlast() {
+        $.get(getBaseUrl() + '/api/dgay/getlast').then(function (res) {
+            console.log(res);
+            if (!res.succeed) {
+                ShowAlert(res.msg);
+                return;
+            }
+            on_get_export_res(res.data.id);
+        });
+        function on_get_export_res(id, t) {
+            function on_tick() {
+                $.get(getBaseUrl() + '/api/dgay/GetExportResult?id=' + id, function (res) {
+                    t && clearTimeout(t);
+                    if (!res.succeed || !res.data) {
+                        t = setTimeout(on_tick, 2000);
+                        return;
+                    }                    
+                    if (res.data.errs) {                        
+                        ShowAlert('导出有错');
+                        download_txt(('error-' + id + '.txt'), res.data.errs);
+                        return;
+                    }
+                    t = setTimeout(function () {
+                        t && clearTimeout(t);
+                        on_download_export_res(id);
+                    }, 200);
+                });
+            }
+            t = setTimeout(on_tick, 2000);
+        }
+        function on_download_export_res(id) {
+            window.location.href = (getBaseUrl() + '/home/GetXlsx?id=' + id);
+        }
+    }
+
+    function on_submit() {
+        var o = {};
+        o.file = $('[name=file]')[0].files[0];
+        //
+        if (!o.file) {
+            return ShowAlert('请选择文件');
+        }
+        //
+        if (is_busy) return;
+        is_busy = true;
+        $('#submit_res').text('');
+        on_upload(getBaseUrl() + '/api/dgay/upload', o, function (res) {
+            console.log(res);
+            // clear 
+            $('[name=file]').val('');
+            //
+            $('#submit_res').text('文件已上传, 正在导入中...');
+            on_get_import_res(res.data.id);
+        }, function (res) {
+            is_busy = 0;
+            ShowAlert(res);
+        });
+    }
+
+    function on_upload(url, o, ok, fail) {
+        var pause = false; //暂停
+        var file = o.file;
+        var totalSize = file.size; //文件大小
+        var blockSize = 1024 * 100; //块大小
+        var blockCount = Math.ceil(totalSize / blockSize); //总块数
+
+        //uploadCount++;
+        uploadPost(file, totalSize, blockCount, blockSize, 1, '');
+
+        function uploadPost(file, totalSize, blockCount, blockSize, index, id) {
+            if (pause) return;
+
+            var formData = new FormData();
+            formData.append('fileName', file.name); //文件名
+            formData.append('ext', (file.name.indexOf('.') > -1 ? file.name.substring(file.name.indexOf('.') + 1) : '')); //扩展名
+            formData.append('total', blockCount); //总块数
+            formData.append('totalSize', totalSize); //文件大小
+            formData.append('index', index); //第几个块
+            formData.append('size', blockSize); //块大小
+            formData.append('id', id); //文件id 
+            //----
+            //formData.append('_email', o.email);
+            //formData.append('_id', o.id);
+
+            var start = (index - 1) * blockSize, end = Math.min(totalSize, start + blockSize);
+            var block = file.slice(start, end);
+            formData.append('', block); //块字节数据
+
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.succeed) {
+                        on_upload_progress((index / blockCount * 100).toFixed(2));
+
+                        if (index < blockCount) {
+                            uploadPost(file, totalSize, blockCount, blockSize, ++index, res.data.id);
+                        } else {
+                            ok(res);
+                            //uploadCount--;
+                        }
+                    } else {
+                        fail('上传失败:' + ' ' + res.msg);
+                    }
+                },
+                fail: function () {
+                    fail('上传失败');
+                }
+            });
+        }
+
+        function on_upload_progress(per00) { }
+    }
+
+    function on_get_import_res(id, t) {
+        function on_tick() {
+            $.get(getBaseUrl() + '/api/dgay/GetImportResult?id=' + id, function (res) {
+                t && clearTimeout(t);
+                if (!res.succeed || !res.data) {
+                    t = setTimeout(on_tick, 2000);
+                    return;
+                }                
+                is_busy = 0;
+                if (!res.data.errs) {
+                    $('#submit_res').text('已导入');
+                    ShowAlert('已导入');
+                } else {
+                    $('#submit_res').text('导入有错');
+                    ShowAlert('导入有错');
+                    download_txt(('error-' + id + '.txt'), res.data.errs);
+                }
+            });            
+        }
+        t = setTimeout(on_tick, 2000);
+    }
+
+    function getBaseUrl() {
+        return window.location.origin || '';
+    }
+
+    function ShowAlert(str) {
+        console.log('alert: ' + (str || 'undefined'));
+        window.alert(str);
+    }
+
+    // 保存下载内容
+    function download_txt(filename, str) {
+        var element = document.createElement('a');
+        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(str));
+        element.setAttribute('download', filename);
+        element.style.display = 'none';
+        document.body.appendChild(element);
+        element.click();
+        document.body.removeChild(element);
+    }
+</script>
+</body>
+</html>

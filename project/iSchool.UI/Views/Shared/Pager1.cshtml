@@ -1,0 +1,90 @@
+﻿@using static iSchool.Infrastructure.ObjectHelper;
+
+@{
+    var maxPage = ViewBag.MaxPage?.ToString() is string _maxpage && int.TryParse(_maxpage, out var _int_maxpage) ? _int_maxpage : 7;
+    maxPage = maxPage < 4 ? 4 : maxPage;
+    var pageIndex = Model.CurrentPageIndex;
+    var totalPageCount = Model.TotalPageCount;
+}
+
+<ul class="pagination" data-totalPageCount="@(totalPageCount)">
+    @if (totalPageCount > 0)
+    {
+        <li class="paginate_button page-item previous @((pageIndex <= 1) ? "disabled" : "")">
+            <a style="cursor:pointer;" data-dt-idx="@(pageIndex - 1)" tabindex="0" class="page-link">上一页</a>
+        </li>
+        @if (totalPageCount <= maxPage)
+        {
+            @for (var i = 1; i <= totalPageCount; i++)
+            {
+                <li class="paginate_button page-item @((pageIndex == i) ? "active" : "")">
+                    <a style="cursor:pointer;" data-dt-idx="@i" tabindex="0" class="page-link">@i</a>
+                </li>
+            }
+        }
+        else if (pageIndex < maxPage - 2)
+        {
+            // 后省略
+
+            @for (var i = 1; i <= maxPage - 1; i++)
+            {
+                <li class="paginate_button page-item @((pageIndex == i) ? "active" : "")">
+                    <a style="cursor:pointer;" data-dt-idx="@i" tabindex="0" class="page-link">@i</a>
+                </li>
+            }
+            <li class="paginate_button page-item">
+                <a style="cursor:pointer;" aria-controls="bootstrap-data-table-export" tabindex="0" class="page-link">...</a>
+            </li>
+            <li class="paginate_button page-item">
+                <a style="cursor:pointer;" aria-controls="bootstrap-data-table-export" data-dt-idx="@totalPageCount" tabindex="0" class="page-link">@totalPageCount</a>
+            </li>
+        }
+        else if (pageIndex > totalPageCount - maxPage + 2)
+        {
+            // 前省略
+
+            <li class="paginate_button page-item">
+                <a style="cursor:pointer;" aria-controls="bootstrap-data-table-export" data-dt-idx="1" tabindex="0" class="page-link">1</a>
+            </li>
+            <li class="paginate_button page-item">
+                <a style="cursor:pointer;" aria-controls="bootstrap-data-table-export" tabindex="0" class="page-link">...</a>
+            </li>
+            @for (var i = totalPageCount - maxPage + 2; i <= totalPageCount; i++)
+            {
+                <li class="paginate_button page-item @((pageIndex == i) ? "active" : "")">
+                    <a style="cursor:pointer;" data-dt-idx="@i" tabindex="0" class="page-link">@i</a>
+                </li>
+            }
+        }
+        else
+        {
+            // 前后都省略，中间当前页
+
+            <li class="paginate_button page-item">
+                <a style="cursor:pointer;" aria-controls="bootstrap-data-table-export" data-dt-idx="1" tabindex="0" class="page-link">1</a>
+            </li>
+            <li class="paginate_button page-item">
+                <a style="cursor:pointer;" aria-controls="bootstrap-data-table-export" tabindex="0" class="page-link">...</a>
+            </li>
+            @for (int i = pageIndex - ((int)Math.Floor(maxPage / 2.0) - (maxPage % 2 == 0 ? 2 : 1)), j = i + maxPage - 3; i <= j; i++)
+            {
+                <li class="paginate_button page-item @((pageIndex == i) ? "active" : "")">
+                    <a style="cursor:pointer;" data-dt-idx="@i" tabindex="0" class="page-link">@i</a>
+                </li>
+            }
+            <li class="paginate_button page-item">
+                <a style="cursor:pointer;" aria-controls="bootstrap-data-table-export" tabindex="0" class="page-link">...</a>
+            </li>
+            <li class="paginate_button page-item">
+                <a style="cursor:pointer;" aria-controls="bootstrap-data-table-export" data-dt-idx="@totalPageCount" tabindex="0" class="page-link">@totalPageCount</a>
+            </li>
+        }
+        <li class="paginate_button page-item next @((pageIndex >= totalPageCount) ? "disabled" : "")">
+            <a style="cursor:pointer;" data-dt-idx="@(pageIndex + 1)" tabindex="0" class="page-link">下一页</a>
+        </li>
+        <span class="span-skip" style="margin:0 1em;" data-totalPageCount="@(totalPageCount)">
+            &nbsp;转到第<input type="text" class="form-control" style="width:45px;display:inline-block;" value="@(pageIndex)">页
+            <button type="button" class="btn btn-primary btn-sm btn-skip" style="margin:0 0.5em;">确定</button>
+        </span>
+    }
+</ul>

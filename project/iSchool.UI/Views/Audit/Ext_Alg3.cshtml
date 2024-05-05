@@ -1,0 +1,90 @@
+﻿@using iSchool.Domain.Enum;
+@using iSchool.Infrastructure;
+@using Newtonsoft.Json.Linq;
+@using static iSchool.Infrastructure.ObjectHelper;
+@{ 
+    var _model = Model as iSchool.Application.Service.Audit.SchoolExtQyResult_Alg3;
+    _model.Data = _model.Data ?? new iSchool.Application.Service.Alg3QyRstDto();
+}
+
+<div id="ext_Alg3" class="card">
+    <div class="card-header">
+        <div class="col-6">算法指标-个人</div>
+        <div class="col-4">&nbsp;&nbsp;</div>
+        <div class="col-2"></div>
+    </div>
+    <div class="card-body">
+        <div class="custom-tab">
+            <nav>
+                <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                    <a class="nav-item nav-link active show" id="tab_Achievement" data-toggle="tab" href="#custom-nav-Achievement" role="tab" aria-controls="custom-nav-Achievement" aria-selected="true">升学成绩</a> 
+                </div>
+            </nav>
+            <div class="tab-content pl-3 pt-2" id="nav-tabContent">
+                @* 升学成绩 *@
+                <div class="tab-pane fade active show" id="custom-nav-Achievement" role="tabpanel" aria-labelledby="tab_Achievement">
+                    <div id="div_Achievement">
+                        <div class="form-group">
+                            <label class="form-control-label">
+                                @*@(_model.Data.Ext.Grade == (byte)SchoolGrade.JuniorMiddleSchool ? "中考" : _model.Data.Ext.Grade == (byte)SchoolGrade.SeniorMiddleSchool ? "高考" : "")平均分*@
+                                中考平均分
+                            </label>
+                            <div class="row" id="div_alg3ExtamAvgscore">
+                                <div class="form-inline col-md-4">
+                                    <input type="text" readonly="readonly" class="form-control" value="@(_model.Data.ExtamAvgscore)"  />
+                                    <label class="pr-1 form-control-label">分</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <strong class="form-control-label sext">状元人数</strong>
+                            <div class="row div-row" id="div_alg3No1Count">
+                                <div class="form-inline col-md-3" align="center">
+                                    <label class="pr-1 form-control-label">@(EnumUtil.GetDesc((SchoolGrade)_model.Data.Ext.Grade))状元人数</label>
+                                </div>
+                                <div class="form-inline col-md-6">          
+                                    <input type="text" readonly="readonly" class="form-control" value="@(_model.Data.No1Count)"  />
+                                    <label class="pr-1 form-control-label">人</label>
+                                </div>
+                            </div> 
+                        </div>
+                        <div class="form-group">
+                            <strong class="form-control-label">保送人数</strong>
+                            <div class="row div-row" id="div_alg3CmstuCount">
+                                <div class="form-inline col-md-3" align="center">
+                                    <label class="pr-1  form-control-label">@(EnumUtil.GetDesc((SchoolGrade)_model.Data.Ext.Grade))保送人数</label>
+                                </div>
+                                <div class="form-inline col-md-6">          
+                                    <input type="text" readonly="readonly" class="form-control" value="@(_model.Data.CmstuCount)"  />
+                                    <label class="pr-1  form-control-label">人</label>
+                                </div>
+                            </div> 
+                        </div>
+                        <div class="form-group">
+                            <strong class="form-control-label">自主招生</strong>
+                            <div class="row div-row" id="div_alg3RecruitCount">
+                                <div class="form-inline col-md-3" align="center">
+                                    <label class="pr-1  form-control-label">@(EnumUtil.GetDesc((SchoolGrade)_model.Data.Ext.Grade))自主招生</label>
+                                </div>
+                                <div class="form-inline col-md-6">          
+                                    <input type="text" readonly="readonly" class="form-control" value="@(_model.Data.RecruitCount)" />
+                                    <label class="pr-1  form-control-label">人</label>
+                                </div>
+                            </div>    
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    jQuery(function () {
+        //只读所有输入框
+        ReadOnlyInput();
+        //根据学校类型hide显示项
+        hide_with_dataExt();
+    });
+</script>
+

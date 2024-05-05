@@ -1,0 +1,173 @@
+﻿@using iSchool.Domain.Enum;
+@using iSchool.Infrastructure;
+@using Newtonsoft.Json.Linq;
+@using static iSchool.Infrastructure.ObjectHelper;
+@{ 
+    var _model = Model as iSchool.Application.Service.Audit.SchoolExtQyResult_Alg1;
+    _model.Data = _model.Data ?? new iSchool.Application.Service.Alg1QyRstDto();
+}
+
+<style>
+    .pre-hide {
+        display:none;
+    }
+    .a-href {
+        cursor:pointer;
+    }
+    .j-item {
+		position: relative;
+		margin: 0 0.5em 0.5em 0;
+		display: inline-block;
+    }
+    .badge-light {
+        color: #212529;
+        background-color: #e9ecef;
+    }
+</style>
+
+<div id="ext_Alg1" class="card">
+    <div class="card-header">
+        <div class="col-6">算法指标-社会</div>
+        <div class="col-4">&nbsp;&nbsp;</div>
+        <div class="col-2"></div>
+    </div>
+    <div class="card-body">
+        <div class="custom-tab">
+            <nav>
+                <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                    <a class="nav-item nav-link active show" id="tab_TeacherPower" data-toggle="tab" href="#custom-nav-TeacherPower" role="tab" aria-controls="custom-nav-TeacherPower" aria-selected="true">师资力量</a>
+                    <a class="nav-item nav-link " id="tab_CourseKind" data-toggle="tab" href="#custom-nav-CourseKind" role="tab" aria-controls="custom-nav-CourseKind" aria-selected="false">课程种类</a>   
+                </div>
+            </nav>
+            <div class="tab-content pl-3 pt-2" id="nav-tabContent">
+                @* 师资力量 *@
+                <div class="tab-pane fade active show" id="custom-nav-TeacherPower" role="tabpanel" aria-labelledby="tab_TeacherPower">
+                    <div id="div_TeacherPower">
+                        <div class="form-group">
+                            <label class="form-control-label">教师总数</label>
+                            <div class="row">
+                                <div class="form-inline col-md-4">
+                                    <input type="text" readonly="readonly" class="form-control" value="@(_model.Data.TeacherCount)" />
+                                    <label class="pr-1  form-control-label">人</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-control-label">外教人数</label>
+                            <div class="row" id="div_alg1FgnTeacherCount">
+                                <div class="form-inline col-md-4">
+                                    <input type="text" readonly="readonly" class="form-control" value="@(_model.Data.FgnTeacherCount)"  />
+                                    <label class="pr-1  form-control-label">人</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-control-label">本科及研究生以上</label>
+                            <div class="row" id="div_alg1UndergduateOverCount">
+                                <div class="form-inline col-md-4">
+                                    <input type="text" readonly="readonly" class="form-control" value="@(_model.Data.UndergduateOverCount)"  />
+                                    <label class="pr-1  form-control-label">人</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-control-label">研究生以上</label>
+                            <div class="row" id="div_alg1GduateOverCount">
+                                <div class="form-inline col-md-4">
+                                    <input type="text" readonly="readonly" class="form-control" value="@(_model.Data.GduateOverCount)"  />
+                                    <label class="pr-1  form-control-label">人</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-control-label">教师荣誉</label>
+                            <div id="div_added_TeacherPower" style="margin-top:5px;">
+                                @foreach (var item in _model.Data.TeacherHonor)
+                                {
+                                    <div class="j-item">        
+                                        <span class="badge badge-light">
+                                            <h5 style="display:inline-block;">@(item.Key)</h5>
+                                            <h5 style="display:inline-block;color:blue;">@(item.Value)人</h5>
+                                        </span>
+                                        @*<a class="a-href fa fa-minus-circle deletebutten text-danger"></a>*@
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                 </div>
+                @* 课程种类 *@
+                <div class="tab-pane fade" id="custom-nav-CourseKind" role="tabpanel" aria-labelledby="tab_CourseKind">
+                    <div id="div_CourseKind">
+                        <div lgc="SubjsKvs" class="form-group">
+                            <label class="form-control-label">学科类</label>
+                            <div class="lgc-div">
+                                @foreach (var item in _model.Data.SubjsKvs)
+                                {
+                                    <div class="j-item">        
+                                        <span class="badge badge-light">
+                                            <h5 style="display:inline-block;">@item.Key</h5>
+                                        </span>
+                                        @*<a class="a-href fa fa-minus-circle deletebutten text-danger"></a>*@
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                        <div lgc="ArtsKvs" class="form-group">
+                            <label class="form-control-label">艺术类</label>
+                            <div class="lgc-div">
+                                @foreach (var item in _model.Data.ArtsKvs)
+                                {
+                                    <div class="j-item">        
+                                        <span class="badge badge-light">
+                                            <h5 style="display:inline-block;">@item.Key</h5>
+                                        </span>
+                                        @*<a class="a-href fa fa-minus-circle deletebutten text-danger"></a>*@
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                        <div lgc="SportsKvs" class="form-group">
+                            <label class="form-control-label">体育类</label>
+                            <div class="lgc-div">
+                                @foreach (var item in _model.Data.SportsKvs)
+                                {
+                                    <div class="j-item">        
+                                        <span class="badge badge-light">
+                                            <h5 style="display:inline-block;">@item.Key</h5>
+                                        </span>
+                                        @*<a class="a-href fa fa-minus-circle deletebutten text-danger"></a>*@
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                        <div lgc="ScienceKvs" class="form-group">
+                            <label class="form-control-label">科学类</label>
+                            <div class="lgc-div">
+                                @foreach (var item in _model.Data.ScienceKvs)
+                                {
+                                    <div class="j-item">        
+                                        <span class="badge badge-light">
+                                            <h5 style="display:inline-block;">@item.Key</h5>
+                                        </span>
+                                        @*<a class="a-href fa fa-minus-circle deletebutten text-danger"></a>*@
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    jQuery(function () {
+        //只读所有输入框
+        ReadOnlyInput();
+        //根据学校类型hide显示项
+        hide_with_dataExt();
+    });
+</script>
+

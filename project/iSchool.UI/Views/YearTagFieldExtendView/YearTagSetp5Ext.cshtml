@@ -1,0 +1,272 @@
+﻿
+@{
+    Layout = null;
+}
+<style>
+    .col-md-auto {
+        padding-left: 0px;
+    }
+    .ioc-gray {
+        color: #6c757d !important;
+    }
+</style>
+<script src="@(ViewBag.StaticFile)/jquery/3.2.1/jquery.min.js"></script>
+<script>
+    jQuery(function () { jQuery(".yeartag").yearTagSelect(); });
+    var listfieldyeartags = [];
+    ////添加其他年份下拉框
+    function listyearhtml(parentid, template) {
+        var yeartemplate = jQuery('#' + parentid + '_year').text();
+        template = template.replace("%%year%%", yeartemplate);
+        return template;
+    }
+</script>
+<!--申请费用start-->
+<script type="text/html" id="applicaction-fee-template">
+    <div class="div-addyear app_fee_container notnull" style="margin-bottom:20px;margin-left:5px">
+        <div class="form-inline" style="margin:10px;margin-left:-5px">
+            <div class="col-md-11">%%year%%</div>
+            <div class="col-md-1">
+                <a href="javascript:void(0);" onclick="DelApplicationFee(this)" class="fa fa-minus-circle text-danger" style="display: block;"></a>
+            </div>
+        </div>
+        <div class="form-inline" style="margin:10px;">
+            <input type="number" class="form-control" checkednull="" name="Year_Applicationfee_New" onkeyup="(this.v=function(){this.value=this.value.replace(/[^0-9-]+/,'');}).call(this)" onblur="this.v();" />
+            <label class="pr-1  form-control-label">元</label>
+            <div class="col-md-8"></div>
+        </div>
+    </div>
+</script>
+<script>
+    var ApplicactionFeecount = 1;
+    function AddApplicactionFee(parentid) {
+        if (ApplicactionFeecount < 4) {
+            ++ApplicactionFeecount;
+            var template = jQuery('#applicaction-fee-template').text();
+            template = listyearhtml(parentid, template);
+            jQuery("#" + parentid).before(template);
+            jQuery(".yeartag").yearTagSelect();
+        }
+        else {
+            confirm("单次添加年份的上限是3");
+            return;
+        }
+    }
+    function DelApplicationFee(target) {
+        var r = confirm("你确定要删除该项吗?")
+        if (r) {
+            --ApplicactionFeecount;
+            var container = jQuery(target).parent().parent().parent();
+            var fee = container.data("primarykey");
+            if (fee) {//旧数据删除
+                listfieldyeartags.push({ id: fee, isvalid: false });
+
+            }
+            container.remove();
+        }
+    }
+    function onApplicationFeeSave() {
+        jQuery(".app_fee_container").each(function myfunction() {
+            var target = jQuery(this);
+            var year = target.find("select").val();
+            var uc = target.find("[name=Year_Applicationfee_New]");
+            if (uc.length < 1) return;
+            var fee = uc.val();
+            //var needadd = target.data("needadd");
+            //if (needadd != undefined) {//旧数据
+            //    if (0 == needadd) {
+            //        fee = target.find("input[name=Applicationfee]").val();
+            //    }
+            //    else {
+            //        return;
+            //    }
+            //}
+            //if ("" == fee || 0 == fee) return false;
+            var primaryKey = target.data("primarykey");
+            if (primaryKey) //修改操作
+            {
+                listfieldyeartags.push({ id: primaryKey, year: year, field: "Applicationfee", content: fee });
+            }
+            else {
+                listfieldyeartags.push({ year: year, field: "Applicationfee", content: fee });
+            }
+        });
+    }
+</script>
+<!--申请费用end-->
+<!--学费start-->
+<script type="text/html" id="school-tuition-template">
+    <div class="div-addyear school_tuistion_container notnull" style="margin-bottom:20px;margin-left:5px">
+        <div class="form-inline" style="margin:10px;margin-left:-5px">
+            <div class="col-md-11">%%year%%</div>
+            <div class="col-md-1">
+                <a href="javascript:void(0);" onclick="DelTuition(this)" class="fa fa-minus-circle text-danger"></a>
+            </div>
+        </div>
+        <div class="form-inline" style="margin:10px;">
+            <input type="number" class="form-control" checkednull="" name="Year_Tuition_New" onkeyup="(this.v=function(){this.value=this.value.replace(/[^0-9-]+/,'');}).call(this)" onblur="this.v();" />
+            <label class="pr-1  form-control-label">元</label>
+            <div class="col-md-8"></div>
+        </div>
+    </div>
+</script>
+<script>
+    var SchoolTuitioncount = 1;
+    function AddSchoolTuition(parentid) {
+        if (SchoolTuitioncount < 4) {
+            ++SchoolTuitioncount;
+            var template = jQuery('#school-tuition-template').text();
+            template = listyearhtml(parentid, template);
+            jQuery("#" + parentid).before(template);
+            jQuery(".yeartag").yearTagSelect();
+        }
+        else {
+            confirm("单次添加年份的上限是3");
+            return;
+        }
+    }
+    function DelTuition(target) {
+        var r = confirm("你确定要删除该项吗?")
+        if (r) {
+            --SchoolTuitioncount;
+            var container = jQuery(target).parent().parent().parent();
+            var fee = container.data("primarykey");
+            if (fee) {//旧数据删除
+                listfieldyeartags.push({ id: fee, isvalid: false });
+
+            }
+            container.remove();
+        }
+    }
+    function onSchoolTuitionSave() {
+        jQuery(".school_tuistion_container").each(function myfunction() {
+            var target = jQuery(this);
+            var year = target.find("select").val();
+            var uc = target.find("[name=Year_Tuition_New]");
+            if (uc.length < 1) return;
+            var tuition = uc.val();
+            var needadd = uc.data("needadd");
+            //if (needadd != undefined) {//旧数据
+            //    if (0 == needadd) {
+            //        tuition = target.find("input[name=Tuition]").val();
+            //    }
+            //    else {
+            //        return;
+            //    }
+            //}
+            //if ("" == tuition || 0 == tuition) return false;
+
+            var primaryKey = target.data("primarykey");
+            if (primaryKey) //修改操作
+            {
+                listfieldyeartags.push({ id: primaryKey, year: year, field: "Tuition", content: tuition });
+            }
+            else {
+                listfieldyeartags.push({ year: year, field: "Tuition", content: tuition });
+            }
+        });
+    }
+</script>
+<!--学费end-->
+<!--其它费用--多输入项--start-->
+<script type="text/html" id="otherfee-template">
+    <div class="otherfee_year_tag div-addyear notnull" style="margin-bottom:20px;margin-left:5px">
+        <div class="form-inline" style="margin:10px;margin-left:-5px">
+            <div class="col-md-2">%%year%%</div>
+            <div class="col-md-9"></div>
+            <div class="col-md-1"><a href="javascript:void(0)" onclick="DelOtherfee(this)"><i class="fa fa-times-circle text-danger  ioc-gray"></i></a></div>
+        </div>
+        <div class="form-inline keyandvlue" style="margin:10px;">
+            <input class="form-control c_ignore" placeholder="请输入其它费用项" name="Year_Otherfee_Key_New" checkednull="" required="" data-placement="bottom" value="">
+            <input style="margin-left:10px;" type="number" value="" min="0" placeholder="请输入金额" name="Year_Otherfee_Value_New" checkednull="" required="" data-placement="bottom" class="form-control c_ignore ">
+            <a href="javascript:void(0)" style="margin-left:30px;" onclick="DelAddInputItem(this)"><i class="fa fa-times-circle text-danger"></i></a>
+        </div>
+        <div class="form-inline addhtml">
+            <div class="col-md-3"><button type="button" onclick="AddInputItem(this)" style="margin-left:-5px;margin-bottom:10px;border:1px solid #ced4da;border-radius:0.25rem;" class="btn btn-outline-secondary btn-lg btn-block"><i class="fa fa-plus"></i></button></div>
+            <div class="col-md-9"></div>
+        </div>
+
+    </div>
+</script>
+<script type="text/html" id="otherfee-inputitem-template">
+    <div class="form-inline keyandvlue" style="margin:10px;">
+        <input class="form-control c_ignore" placeholder="请输入其它费用项" name="Year_Otherfee_Key_New" checkednull="" required="" data-placement="bottom" value="">
+        <input style="margin-left:10px;" type="number" value="" min="0" placeholder="请输入金额" name="Year_Otherfee_Value_New" checkednull="" required="" data-placement="bottom" class="form-control c_ignore ">
+        <a href="javascript:void(0)" style="margin-left:30px;" onclick="DelAddInputItem(this)"><i class="fa fa-times-circle text-danger"></i></a>
+    </div>
+</script>
+<script>
+    var otherfeecount = 1
+    function AddOtherfee(parentid) {
+
+        if (otherfeecount < 4) {
+            ++otherfeecount;
+            var template = jQuery('#otherfee-template').text();
+            template = listyearhtml(parentid, template);
+            jQuery("#" + parentid).before(template);
+        }
+        else {
+            confirm("单次添加年份上限是3个");
+            return;
+        }
+    }
+
+    function AddInputItem(obj) {
+        var template = jQuery('#otherfee-inputitem-template').text();
+        jQuery(obj).parents('.addhtml').before(template);
+    }
+
+    function DelOtherfee(target) {
+        var r = confirm("你确定要删除该项吗?")
+        if (r) {
+            --otherfeecount;
+            jQuery(target).parent().parent().parent().remove();
+        }
+    }
+
+    function DelAddInputItem(obj) {
+        var r = confirm("你确定要删除该项吗?")
+        if (r) {
+            jQuery(obj).parents(".keyandvlue").remove();
+        }
+    }
+
+    function onOtherfeeSave() {
+        jQuery(".otherfee_year_tag").each(function myfunction() {
+            var target = jQuery(this);
+
+            var year = target.find("select").val();
+
+            //等待原型，再优化
+            var connent = [];
+            //方案一：每次添加其他年，只有一个输入项并允许同年份多次添加的方案
+            var ismoresameYear = false;
+            var listIndex = null;
+            jQuery.each(listfieldyeartags, function (index, item) {
+                if (item.year == year && item.field == "Otherfee") {
+                    connent = item.connent;
+                    ismoresameYear = true;
+                    listIndex = index;
+                }
+            });
+
+            //方案二： 添加输入项的方案
+            var arrchild = target.children(".keyandvlue");
+            jQuery.each(jQuery(arrchild), function (index, item) {
+                var key = jQuery(item).find("[name=Year_Otherfee_Key_New]").val();
+                var value = jQuery(item).find("[name=Year_Otherfee_Value_New]").val();
+                if (key.length > 0 && value.length > 0) {
+                    connent.push({ Key: key, Value: value });
+                }
+            });
+            if (ismoresameYear) {
+                listfieldyeartags[listIndex].connent = connent;
+            }
+            else {
+                listfieldyeartags.push({ year: year, field: "Otherfee", content: connent });
+            }
+        });
+
+    }
+</script>
+<!--其它费用end-->

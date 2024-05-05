@@ -1,0 +1,49 @@
+﻿<div class="modal-header" style="text-align:center">
+    <h6 class="modal-title" id="scrollmodalLabel" style="margin-left:42%;">库存销量查看</h6>
+    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+
+<!-- 模态框主体 -->
+<div class="modal-body" id="TagPanel-Modal">
+    @if (ViewBag.Ths > 0)
+    {
+    <table class="table table-bordered table-hover table-condensed">
+        <thead style="text-align:center;">
+            <tr>
+                @for (int i = 0; i < ViewBag.Ths; i++)
+                {
+                    <th>属性@(i+1)</th>
+                }                
+                <th>当前库存</th>
+                <th>销量</th>
+                <th>总量</th>
+            </tr>
+        </thead>
+        <tbody style="text-align:center;">
+            @foreach (var tr in ViewBag.Trs)
+            {
+            <tr>
+                @foreach (var item in tr.Items)
+                {
+            <td>@(item.ItemName)</td>
+                }
+                <td>@(tr.Goods.Stock)</td>
+                <td>@(tr.Goods.Sellcount)</td>
+                <td>@(tr.Goods.Count)</td>
+
+
+            </tr>
+        }            
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <label>暂无相关数据！</label>
+    }
+
+
+</div>
+

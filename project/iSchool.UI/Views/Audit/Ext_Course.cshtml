@@ -1,0 +1,50 @@
+﻿@using iSchool.Domain.Enum;
+@using iSchool.Infrastructure;
+@using Newtonsoft.Json.Linq;
+@using static iSchool.Infrastructure.ObjectHelper;
+@{ 
+    var _model = Model as iSchool.Application.Service.Audit.SchoolExtQyResult_Course;
+}
+
+<div id="ext_Course" class="card">
+    <div class="card-header">
+        <div class="col-6">课程体系</div>
+        <div class="col-4">&nbsp;&nbsp;</div>
+        <div class="col-2">@(Math.Round((_model.Data?.Completion ?? 0f) * 100, 2, MidpointRounding.AwayFromZero))%</div>
+    </div>
+    <div class="card-body">
+        <div class="form-group" >
+            <label class="form-control-label">课程设置</label>
+            <div id="div_Courses">
+                <input tags="1" type="text" readonly="readonly" class="form-control" value="@string.Join(",", _model.CoursesTags.Select(_ => _.Name))" style="display:none;" />
+            </div>
+        </div>
+        <div class="form-group" >
+            <label class="form-control-label">课程特色</label>
+            <div id="div_Characteristic" class="readonly" readonly="true">@Html.Raw(_model.Data?.Characteristic)</div>
+        </div>
+        <div class="form-group" >
+            <label class="form-control-label">课程认证</label>
+            <div id="div_kcAuth">
+                <input tags="1" type="text" class="form-control" readonly="readonly" value="@string.Join(",", _model.AuthTags.Select(_ => _.Name))" style="display:none;" />
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    jQuery(function () {
+        //只读所有输入框
+        ReadOnlyInput();
+        //根据学校类型hide显示项
+        hide_with_dataExt();
+
+        jQuery('#ext_Course [tags]').each(function () {
+           
+            var p = jQuery(this);
+            p.tagsinput();
+            p.prev().removeClass('bootstrap-tagsinput').find("input").remove();
+        });
+    });
+</script>
+

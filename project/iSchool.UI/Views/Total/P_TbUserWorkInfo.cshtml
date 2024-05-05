@@ -1,0 +1,99 @@
+﻿@using iSchool;
+@using iSchool.Application.Service.Totals;
+@using iSchool.Domain.Enum;
+@using iSchool.Infrastructure;
+@using iSchool.Infrastructure.Dapper;
+@model PagedList<UserWorkInfoQueryResult>
+@{
+    string get_auditStatus(UserWorkInfoQueryResult item)
+    {
+        if (item.SchoolStatus.In((byte)SchoolStatus.Initial, (byte)SchoolStatus.Edit)) return "未提交";
+        if (item.AuditStatus == null) return "未提交";
+        return EnumUtil.GetDesc((SchoolAuditStatus)item.AuditStatus.Value);
+    }
+}
+
+<div class="row">
+    <div class="col-sm-12">
+        <table class="table table-striped table-bordered dataTable no-footer" role="grid" aria-describedby="bootstrap-data-table-export_info">
+            <thead>
+                <tr role="row">
+                    <th class="" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Name: activate to sort column descending" style="width: 100px;">
+                        学校ID
+                    </th>
+                    <th class="" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Position: activate to sort column ascending" style="width: 100px;">
+                        学校名称
+                    </th>
+                    <th class="" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Office: activate to sort column ascending" style="width: 100px;">
+                        编辑呢称
+                    </th>
+                    <th class="" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" style="width: 100px;">
+                        编辑账号
+                    </th>
+                    <th class="" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" style="width: 100px;">
+                        审核账号
+                    </th>
+                    <th class="" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" style="width: 100px;">
+                        审核昵称
+                    </th>
+                    <th class="" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" style="width: 100px;">
+                        完成度
+                    </th>
+                    <th class="" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" style="width: 100px;">
+                        审核状态
+                    </th>
+                    <th class="" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" style="width: 100px;">
+                        提交时间
+                    </th>
+                    <th class="" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" style="width: 100px;">
+                        操作
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.CurrentPageItems)
+                {
+                    <tr role="row" class="odd">
+                        <td>@(item.Sid)</td>
+                        <td>@(item.Name)</td>
+                        <td>@(item.Editor?.Displayname)</td>
+                        <td>@(item.Editor?.Name)</td>
+                        <td>@(item.Auditor?.Name)</td>
+                        <td>@(item.Auditor?.Displayname)</td>
+                        <td>@(Math.Round(item.Completion * 100, 2, MidpointRounding.AwayFromZero) + "%")</td>
+                        <td>@(get_auditStatus(item))</td>
+                        <td>@(item.CreateTime)</td>
+                        <td style="width: 110px;">
+                            <a class="text-info" target="_blank" href="/school/preview?sid=@(item.Sid)">查看 </a>
+                            @if (get_auditStatus(item) != "未提交" && Context.HasCurrQyx(".modify-auditstatus"))
+                            {
+                                <text>
+                                <br/>|
+                                <span class="dropdown modify-auditstatus" aid="@(item.Aid)">
+                                    <a class="text-info a-href" id="dropdownMenuLink" data-toggle="dropdown">修改状态</a>
+                                    <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+                                        <a class="dropdown-item a-href @(get_auditStatus(item) == EnumUtil.GetDesc(SchoolAuditStatus.Success) ? "disabled" : "")" s="@(SchoolAuditStatus.Success.ToInt())">已发布</a>
+                                        <a class="dropdown-item a-href @(get_auditStatus(item) == EnumUtil.GetDesc(SchoolAuditStatus.Failed) ? "disabled" : "")" s="@(SchoolAuditStatus.Failed.ToInt())">需修改</a>
+                                    </div>
+                                </span>
+                                </text>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+<div class="row">
+    <div class="col-sm-12 col-md-3">
+        <div class="dataTables_info" id="bootstrap-data-table-export_info" role="status" aria-live="polite">
+            总共 @(Model.TotalItemCount) 条
+        </div>
+    </div>
+    <div class="col-sm-12 col-md-9">
+        <div class="dataTables_paginate paging_simple_numbers" id="bootstrap-data-table-export_paginate">
+            @{ await Html.RenderPartialAsync("Pager1", Model); }
+        </div>
+    </div>
+</div>

@@ -1,0 +1,667 @@
+﻿@using iSchool.Domain.Modles;
+@using iSchool.Infrastructure;
+
+<!DOCTYPE html>
+<!--[if lt IE 7]><html class="no-js lt-ie9 lt-ie8 lt-ie7" lang=""> <![endif]-->
+<!--[if IE 7]>  <html class="no-js lt-ie9 lt-ie8" lang=""> <![endif]-->
+<!--[if IE 8]> <html class="no-js lt-ie9" lang=""> <![endif]-->
+<!--[if gt IE 8]><!-->
+<html>
+<!--<![endif]-->
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>@ViewData["Title"]-数据中心管理平台</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    @*<link rel="apple-touch-icon" href="apple-icon.png">*@
+    <link rel="shortcut icon" href="favicon.ico">
+    <link href="@(ViewBag.StaticFile)/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <link href="@(ViewBag.StaticFile)/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="~/lib/themify-icons/css/themify-icons.css" />
+    @*国家flag*@
+    @*<link rel="stylesheet" href="vendors/flag-icon-css/css/flag-icon.min.css">*@
+    <link rel="stylesheet" href="~/lib/selectFX/css/cs-skin-elastic.css">
+    <link rel="stylesheet" href="~/assets/css/style.css" asp-append-version="true">
+    <link href='https://fonts.geekzu.org/css?family=Open+Sans:400,600,700,800' rel='stylesheet' type='text/css'>
+    @RenderSection("css", false)
+
+</head>
+<body>
+    <!-- Left Panel（左边菜单栏） -->
+    <aside id="left-panel" class="left-panel">
+        <nav class="navbar navbar-expand-sm navbar-default">
+
+            <div class="navbar-header">
+                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#main-menu" aria-controls="main-menu" aria-expanded="false" aria-label="Toggle navigation">
+                    <i class="fa fa-bars"></i>
+                </button>
+                <a class="navbar-brand" href="https://auth.sxkid.com">返回平台主页</a>
+                <a class="navbar-brand hidden" href="https://auth.sxkid.com">
+                    <i class="ti-layout-grid3"></i>
+                </a>
+            </div>
+
+            <div id="main-menu" class="main-menu collapse navbar-collapse">
+                <ul class="nav navbar-nav">
+                    <h3 class="menu-title">机构后台管理</h3>
+                    @if (Context.HasCtrlActQyx("Evaluation", "Index"))
+                    {
+                        <li>
+                            <a href="@Url.Action("Index", "Evaluation")">
+                                <i class="menu-icon fa fa-th"></i>
+                                评测内容管理
+                            </a>
+                        </li>
+                    }
+                    @if (Context.HasCtrlActQyx("Organization", "Index"))
+                    {
+                        <li>
+                            <a href="@Url.Action("Index", "Organization")">
+                                <i class="menu-icon fa fa-desktop"></i>
+                                品牌管理
+                            </a>
+                        </li>
+                    }
+                    @if (Context.HasCtrlActQyx("EvaluationCrawler", "Index"))
+                    {
+                        <li>
+                            <a href="@Url.Action("Index", "EvaluationCrawler")">
+                                <i class="menu-icon fa fa-table"></i>
+                                抓取评测管理
+                            </a>
+                        </li>
+                    }
+                    @if (Context.HasCtrlActQyx("Activity", "Index"))
+                    {
+                        <li>
+                            <a href="@Url.Action("Index", "Activity")">
+                                <i class="menu-icon fa fa-list"></i>
+                                活动管理
+                            </a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("Audit", "Activity")">
+                                <i class="menu-icon fa fa-gear"></i>
+                                活动审核
+                            </a>
+                        </li>
+
+                    }
+                    @if (Context.HasCtrlActQyx("Organization", "ClaimOrgList"))
+                    {
+                        <li>
+                            <a href="@Url.Action("ClaimOrgList", "Organization")">
+                                <i class="menu-icon fa fa-heart"></i>
+                                认领机构
+                            </a>
+                        </li>
+                    }
+                    @if (Context.HasCtrlActQyx("Special", "Index"))
+                    {
+                        <li>
+                            <a href="@Url.Action("Index", "Special")">
+                                <i class="menu-icon fa fa-list-alt"></i>
+                                专题管理
+                            </a>
+                        </li>
+                    }
+                    @if (Context.HasCtrlActQyx("Courses", "Index"))
+                    {
+                        <li>
+                            <a href="@Url.Action("Index", "Courses")">
+                                <i class="menu-icon fa fa-book"></i>
+                                商品管理
+                            </a>
+                        </li>
+                    }
+                    @*@if (Context.HasCtrlActQyx("Courses", "CoursePurchase"))
+        {
+            <li>
+                <a href=" @Url.Action("CoursePurchase", "Courses")">
+                    <i class="menu-icon fa fa fa-cny"></i>
+                    课程购买
+                </a>
+            </li>
+        }*@
+                    @if (Context.HasCtrlActQyx("Courses", "CoursePurchase"))
+                    {
+                        <li>
+                            <a href="@ViewBag.BgDataUrl/#/order/list">
+                                <i class="menu-icon fa fa fa-th-list"></i>
+                                商品订单
+                            </a>
+                        </li>
+                    }
+                    @if (Context.HasCtrlActQyx("Coupon", "GetCouponInfos"))
+                    {
+                        <li>
+                            <a href="@(ViewBag.BgDataUrl)/#/coupon/list">
+                                <i class="menu-icon fa fa fa-th-list"></i>
+                                优惠券管理
+                            </a>
+                        </li>
+                    }
+                    @if (Context.HasCtrlActQyx("Aftersales", "GetAftersales"))
+                    {
+                        <li>
+                            <a href="@(ViewBag.BgDataUrl)/#/afterSales/list">
+                                <i class="menu-icon fa fa fa-th-list"></i>
+                                售后管理
+                            </a>
+                        </li>
+                    }
+                    @if (Context.HasCtrlActQyx("Supplier", "Index"))
+                    {
+                        <li>
+                            <a href="@(ViewBag.BgDataUrl)/#/supplier/list">
+                                <i class="menu-icon fa fa fa-th-list"></i>
+                                供应商管理
+                            </a>
+                        </li>
+                    }
+
+                    @if (Context.HasCtrlActQyx("MaterialLibrarys", "Index"))
+                    {
+                        <li>
+                            <a href="@Url.Action("Index", "MaterialLibrarys")">
+                                <i class="menu-icon fa fa-search"></i>
+                                素材管理
+                            </a>
+                        </li>
+                    }
+                    @if (Context.HasCtrlActQyx("Courses", "Total"))
+                    {
+                        <li>
+                            <a href="@Url.Action("Total", "Courses")">
+                                <i class="menu-icon fa fa-search"></i>
+                                统计
+                            </a>
+                        </li>
+                    }
+                    @if (Context.HasCtrlActQyx("Helper", "SensitiveWords"))
+                    {
+                        <li>
+                            <a href="@Url.Action("SensitiveWords", "Helper")">
+                                <i class="menu-icon fa fa-search"></i>
+                                敏感词助手
+                            </a>
+                        </li>
+                    }
+
+                    @if (Context.HasCtrlActQyx("Coupon", "Coupons"))
+                    {
+                        <li>
+                            <a href="@Url.Action("Coupons", "Coupon")">
+                                <i class="menu-icon fa fa-search"></i>
+                                优惠券管理
+                            </a>
+                        </li>
+                    }
+
+                    @if (Context.HasCtrlActQyx("MallFenleis", "GetNomals"))
+                    {
+                        <li>
+                            <a href="@(ViewBag.BgDataUrl)/#/classify/list">
+                                <i class="menu-icon fa fa-search"></i>
+                                商城分类管理
+                            </a>
+                        </li>
+                    }
+
+
+                    <h3 class="menu-title">管理</h3>
+                    <!-- /.menu-title -->
+                    @if (Context.HasCtrlActQyx("Total", "Index"))
+                    {
+                        <li>
+                            <a href="@Url.Action("Index", "Total")">
+                                <i class="menu-icon fa fa-user"></i>
+                                人员管理
+                            </a>
+                        </li>
+                    }
+                    @if (Context.HasCtrlActQyx("Home", "Data"))
+                    {
+                        <li>
+                            <a href="@Url.Action("Data", "Home")">
+                                <i class="menu-icon fa fa-desktop"></i>
+                                数据管理
+                            </a>
+                        </li>
+                    }
+                    <h3 class="menu-title">审核</h3><!-- /.menu-title -->
+                    @if (Context.HasCtrlActQyx("Audit", "Index"))
+                    {
+                        <li>
+                            <a href="@Url.Action("Index", "Audit")">
+                                <i class="menu-icon fa fa-coffee"></i>
+                                数据审核
+                            </a>
+                        </li>
+
+                    }
+                    @if (Context.HasCtrlActQyx("Audit", "DpwdRecorrelate"))
+                    {
+                        <li>
+                            <a href="@Url.Action("DpwdRecorrelate", "Audit")">
+                                <i class="menu-icon fa fa-coffee"></i>
+                                删除学部点评重关联
+                            </a>
+                        </li>
+                    }
+                    <h3 class="menu-title">录入</h3><!-- /.menu-title -->
+                    @if (Context.HasCtrlActQyx("School", "Index"))
+                    {
+                        <li>
+                            <a href="@Url.Action("Index", "School")">
+                                <i class="menu-icon fa fa-pencil"></i>
+                                数据录入
+                            </a>
+                        </li>
+                    }
+                    @*<h3 class="menu-title">算法</h3>*@<!-- /.menu-title -->
+
+                </ul>
+            </div><!-- /.navbar-collapse -->
+        </nav>
+    </aside>
+    <!-- /#left-panel -->
+    <!-- Left Panel -->
+    <!-- Right Panel -->
+    <div id="right-panel" class="right-panel">
+
+        <!-- Header-->
+        <header id="header" class="header">
+
+            <div class="header-menu">
+
+                <div class="col-sm-7">
+                    <a id="menuToggle" class="menutoggle pull-left"><i class="fa fa fa-tasks"></i></a>
+                    @*<div class="header-left">
+                            <button class="search-trigger"><i class="fa fa-search"></i></button>
+                            <div class="form-inline">
+                                <form class="search-form">
+                                    <input class="form-control mr-sm-2" type="text" placeholder="Search ..." aria-label="Search">
+                                    <button class="search-close" type="submit"><i class="fa fa-close"></i></button>
+                                </form>
+                            </div>
+
+                            <div class="dropdown for-notification">
+                                <button class="btn btn-secondary dropdown-toggle" type="button" id="notification" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <i class="fa fa-bell"></i>
+                                    <span class="count bg-danger">5</span>
+                                </button>
+                                <div class="dropdown-menu" aria-labelledby="notification">
+                                    <p class="red">You have 3 Notification</p>
+                                    <a class="dropdown-item media bg-flat-color-1" href="#">
+                                        <i class="fa fa-check"></i>
+                                        <p>Server #1 overloaded.</p>
+                                    </a>
+                                    <a class="dropdown-item media bg-flat-color-4" href="#">
+                                        <i class="fa fa-info"></i>
+                                        <p>Server #2 overloaded.</p>
+                                    </a>
+                                    <a class="dropdown-item media bg-flat-color-5" href="#">
+                                        <i class="fa fa-warning"></i>
+                                        <p>Server #3 overloaded.</p>
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div class="dropdown for-message">
+                                <button class="btn btn-secondary dropdown-toggle" type="button"
+                                        id="message"
+                                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <i class="ti-email"></i>
+                                    <span class="count bg-primary">9</span>
+                                </button>
+                                <div class="dropdown-menu" aria-labelledby="message">
+                                    <p class="red">You have 4 Mails</p>
+                                    <a class="dropdown-item media bg-flat-color-1" href="#">
+                                        <span class="photo media-left"><img alt="avatar" src="images/avatar/1.jpg"></span>
+                                        <span class="message media-body">
+                                            <span class="name float-left">Jonathan Smith</span>
+                                            <span class="time float-right">Just now</span>
+                                            <p>Hello, this is an example msg</p>
+                                        </span>
+                                    </a>
+                                    <a class="dropdown-item media bg-flat-color-4" href="#">
+                                        <span class="photo media-left"><img alt="avatar" src="images/avatar/2.jpg"></span>
+                                        <span class="message media-body">
+                                            <span class="name float-left">Jack Sanders</span>
+                                            <span class="time float-right">5 minutes ago</span>
+                                            <p>Lorem ipsum dolor sit amet, consectetur</p>
+                                        </span>
+                                    </a>
+                                    <a class="dropdown-item media bg-flat-color-5" href="#">
+                                        <span class="photo media-left"><img alt="avatar" src="images/avatar/3.jpg"></span>
+                                        <span class="message media-body">
+                                            <span class="name float-left">Cheryl Wheeler</span>
+                                            <span class="time float-right">10 minutes ago</span>
+                                            <p>Hello, this is an example msg</p>
+                                        </span>
+                                    </a>
+                                    <a class="dropdown-item media bg-flat-color-3" href="#">
+                                        <span class="photo media-left"><img alt="avatar" src="images/avatar/4.jpg"></span>
+                                        <span class="message media-body">
+                                            <span class="name float-left">Rachel Santos</span>
+                                            <span class="time float-right">15 minutes ago</span>
+                                            <p>Lorem ipsum dolor sit amet, consectetur</p>
+                                        </span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>*@
+                </div>
+
+                <div class="col-sm-5">
+                    <div class="user-area dropdown float-right">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            @*<img class="user-avatar rounded-circle" src="~/images/admin.jpg" alt="User Avatar">*@
+                            @Context.GetUserInfo()?.Displayname
+                        </a>
+
+                        <div class="user-menu dropdown-menu">
+                            @*<a class="nav-link" href="#"><i class="fa fa-user"></i> My Profile</a>
+
+                                <a class="nav-link" href="#"><i class="fa fa-user"></i> Notifications <span class="count">13</span></a>
+
+                                <a class="nav-link" href="#"><i class="fa fa-cog"></i> Settings</a>
+
+                                <a class="nav-link" href="#"><i class="fa fa-power-off"></i> Logout</a>*@
+                        </div>
+                    </div>
+
+                    <div class="language-select dropdown" id="language-select">
+                        @*<a class="dropdown-toggle" href="#" data-toggle="dropdown" id="language" aria-haspopup="true" aria-expanded="true">*@
+                        <a class="dropdown-toggle" href="#" id="language" aria-haspopup="true" aria-expanded="true">
+                            <i class="flag-icon flag-icon-us"></i>
+                        </a>
+                        @*<div class="dropdown-menu" aria-labelledby="language">
+                                <div class="dropdown-item">
+                                    <span class="flag-icon flag-icon-fr"></span>
+                                </div>
+                                <div class="dropdown-item">
+                                    <i class="flag-icon flag-icon-es"></i>
+                                </div>
+                                <div class="dropdown-item">
+                                    <i class="flag-icon flag-icon-us"></i>
+                                </div>
+                                <div class="dropdown-item">
+                                    <i class="flag-icon flag-icon-it"></i>
+                                </div>
+                            </div>*@
+                    </div>
+
+                </div>
+            </div>
+
+        </header><!-- /header -->
+        <!-- Header-->
+
+        <div class="breadcrumbs">
+            <div class="col-sm-4">
+                <div class="page-header float-left">
+                    <div class="page-title">
+                        <h1>@ViewData["Title"]</h1>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-8">
+                <div class="page-header float-right">
+                    <div class="page-title">
+                        <ol class="breadcrumb text-right">
+                            @*@(ViewData["RightBtn"] == null ? "" : ViewData["RightBtn"])*@
+                            @Html.Raw(ViewBag.RightBtn)
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @*内容*@
+        <div id="body-content" class="content mt-3">
+
+            @RenderBody()
+        </div> <!-- .content -->
+    </div><!-- /#right-panel -->
+    <!-- Right Panel -->
+    @*拟态框*@
+    <div id='gameModal' class="modal fade" role="dialog" aria-labelledby="scrollmodalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content" id='gameContainer'>
+            </div>
+        </div>
+    </div>
+
+    <div id="loadingDiv" style="display: none; ">
+        <div id="over" style=" position: fixed;top: 0;left: 0;right:0;bottom:0;  background-color: black;opacity:0.5;z-index: 1000;">
+        </div>
+        <div id="layout" style="position: fixed;top: 40%; left: 40%;width: 20%; height: 20%;  z-index: 1001;text-align:center;">
+            <img src="~/images/loading.gif" width="50" height="50" />
+            <span class="text-white" id="loadingtext" style="display: block; margin-top: 10px;"></span>
+        </div>
+    </div>
+
+    <!-- /.modal -->
+    <!-- system modal start -->
+    <div id="com-alert" class="modal" style="z-index:9999;display: none;">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fa fa-exclamation-circle"></i>[Title]
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body small">
+                    <p>[Message]</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-info ok" data-dismiss="modal">[BtnOk]</button>
+                    <button type="button" class="btn btn-default cancel" data-dismiss="modal">[BtnCancel]</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="@(ViewBag.StaticFile)/jquery/3.2.1/jquery.min.js"></script>
+    @*<script src="vendors/popper.js/dist/umd/popper.min.js"></script>*@
+    <script src="@(ViewBag.StaticFile)/popper.js/1.12.5/umd/popper.min.js"></script>
+    <script src="@(ViewBag.StaticFile)/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+
+    @*添加版本号*@
+    <script src="~/assets/js/main.js" asp-append-version="true"></script>
+    <script type="text/javascript">
+        var __alertObj__ = {};
+
+        function ShowAlert(msg, t, cb) {
+            //var $alert = [' <div style="height:30px;" class="sufee-alert alert with-close alert-danger alert-dismissible fade show">', '<button type="button" class="close" data-dismiss="alert">&times;</button>', msg, '</div>'].join('');
+            var id = 'alert_' + (+new Date());
+            var $alert =
+                '<div style="position:fixed;top:0;left:0;width:100%;z-index:9000;" id=' + id + '>' +
+                '   <div style="clear:both;" class="alert alert-info fade show" role="dialog">' +
+                '       <a href="#" class="close" data-dismiss="alert">&times;</a>' +
+                '       <div style="text-align: center;">' + msg + '</div>' +
+                '   </div>' +
+                '</div>';
+
+            var div = jQuery($alert).appendTo("body");
+            div.find('a.close[data-dismiss=alert]').on('click', function () {
+                CloseAlert(id);
+            });
+
+            if (t === undefined) t = 1500;
+            __alertObj__['#' + id] = { div, cb };
+
+            t < 0 || setTimeout(function () {
+                CloseAlert(id);
+            }, t);
+
+            return id;
+        }
+
+        function CloseAlert(id) {
+            var o = __alertObj__['#' + id];
+            if (!o) return false;
+            o.div.fadeOut('slow', function () {
+                o.cb && o.cb();
+                o.div.remove();
+                delete __alertObj__['#' + id];
+            });
+            return true;
+        }
+
+        //function ShowMessage(msg) {
+        //    var $message = ['<div class="sufee-alert alert with-close alert-primary alert-dismissible fade show">', msg, '<button type="button" class="close" data-dismiss="alert">&times;</button>', '</div>'].join('');
+        //    jQuery("#body-content").after($message);
+        //}
+
+        //模态对话框
+        function showConfirm(msg, callback) {
+            //var res = false;
+            Modal.confirm(
+                {
+                    title: '提示',
+                    msg: msg,
+                }).on(function (e) {
+                    callback();
+                    //res=true;
+                });
+            //return res;
+        }
+
+        //显示提示消息（自动关闭）
+        function showTip(msg, sec, callback) {
+            if (!sec) {
+                sec = 1000;
+            }
+            Modal.tip({
+                title: '提示',
+                msg: msg
+            }, sec);
+            setTimeout(callback, sec);
+        }
+
+        //显示消息
+        function showMsg(msg, callback) {
+            Modal.alert({
+                title: '提示',
+                msg: msg,
+                btnok: '确定'
+            }).on(function (e) {
+                if (callback) {
+                    callback();
+                }
+            });
+        }
+
+        function CloseLoading() {
+            document.getElementById("loadingDiv").style.display = "none";
+        }
+
+        function Loading(text = "") {
+
+            jQuery("#loadingDiv #loadingtext").html(text);
+            //var width = document.body.scrollWidth;
+            //var height = document.body.scrollHeight;
+            //document.getElementById("loadingDiv").style.width = width;
+            //document.getElementById("loadingDiv").style.height = height;
+            document.getElementById("loadingDiv").style.display = "block";
+        }
+
+
+        jQuery(function () {
+            var $ = jQuery;
+            window.Modal = function () {
+                var reg = new RegExp("\\[([^\\[\\]]*?)\\]", 'igm');
+                var alr = $("#com-alert");
+                var ahtml = alr.html();
+
+                var _tip = function (options, sec) {
+                    alr.html(ahtml);    // 复原
+                    alr.find('.ok').hide();
+                    alr.find('.cancel').hide();
+                    alr.find('.modal-content').width(500);
+                    _dialog(options, sec);
+
+                    return {
+                        on: function (callback) {
+                        }
+                    };
+                };
+
+                var _alert = function (options) {
+                    alr.html(ahtml);  // 复原
+                    alr.find('.ok').removeClass('btn-success').addClass('btn-primary');
+                    alr.find('.cancel').hide();
+                    _dialog(options);
+
+                    return {
+                        on: function (callback) {
+                            if (callback && callback instanceof Function) {
+                                alr.find('.ok').click(function () { callback(true) });
+                            }
+                        }
+                    };
+                };
+
+                var _confirm = function (options) {
+                    alr.html(ahtml); // 复原
+                    alr.find('.ok').removeClass('btn-primary').addClass('btn-success');
+                    alr.find('.cancel').show();
+                    _dialog(options);
+
+                    return {
+                        on: function (callback) {
+                            if (callback && callback instanceof Function) {
+                                alr.find('.ok').click(function () { callback(true) });
+                                alr.find('.cancel').click(function () { return; });
+                            }
+                        }
+                    };
+                };
+
+                var _dialog = function (options) {
+                    var ops = {
+                        msg: "提示内容",
+                        title: "操作提示",
+                        btnok: "确定",
+                        btncl: "取消"
+                    };
+
+                    $.extend(ops, options);
+
+                    var html = alr.html().replace(reg, function (node, key) {
+                        return {
+                            Title: ops.title,
+                            Message: ops.msg,
+                            BtnOk: ops.btnok,
+                            BtnCancel: ops.btncl
+                        }[key];
+                    });
+
+                    alr.html(html);
+                    alr.modal({
+                        width: 250,
+                        backdrop: 'static'
+                    });
+                }
+
+                return {
+                    tip: _tip,
+                    alert: _alert,
+                    confirm: _confirm
+                }
+
+            }();
+        })
+    </script>
+    <script src="~/js/site.js?@(DateTime.Now.Ticks)"></script>
+    <script src="~/js/Liejia.js?@(DateTime.Now.Ticks)"></script>
+    @RenderSection("Scripts", required: false)
+</body>
+
+</html>
+

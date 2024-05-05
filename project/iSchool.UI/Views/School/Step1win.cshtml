@@ -1,0 +1,400 @@
+﻿@using iSchool;
+@using iSchool.Infrastructure;
+@using iSchool.Domain.Enum;
+@model iSchool.Application.ViewModels.SchoolExtensionDto
+@{
+    Layout = "_Layout_win";
+    ViewData["Title"] = "数据录入";
+}
+
+@section css
+{
+    <link href="@(ViewBag.StaticFile)/chosen/1.8.8.rc6/chosen.min.css" rel="stylesheet">
+    <link href="@(ViewBag.StaticFile)/bootstrap-tagsinput/0.8.0/bootstrap-tagsinput.css" rel="stylesheet">
+    <style type="text/css">
+        /*tags样式*/
+        .label-info {
+            display: inline-block;
+            padding: 2px 4px;
+            font-size: 11.844px;
+            font-weight: bold;
+            line-height: 14px;
+            text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+            white-space: nowrap;
+            vertical-align: baseline;
+            background-color: #3a87ad;
+            margin-right: 2px;
+            color: white;
+        }
+
+        .bootstrap-tagsinput {
+            background-color: #fff;
+            border: 1px solid #ccc;
+            box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+            /*display: inline-block;*/
+            /*padding: 4px 6px;*/
+            padding: .375rem .75rem;
+            color: #555;
+            vertical-align: middle;
+            border-radius: 4px;
+            max-width: 100%;
+            line-height: 22px;
+            cursor: text;
+            width: 100%;
+        }
+
+        label.form-check-label {
+            margin: 0px 1.5em 0 0
+        }
+    </style>
+}
+<form id="step1-form" action="@(Url.Action("Step1"))" method="post">
+    <div class="card">
+        <div class="card-header">基本信息</div>
+        <div class="card-body">
+            <div class="form-group">
+                <label class="control-label mb-1">学部ID</label>
+                <div>@(Model.ExtId)</div>
+            </div>
+            <div class="form-group">
+                <label class="control-label mb-1">学部/分部名称</label>
+                <input asp-for="Name" type="text" name="name" class="form-control">
+            </div>
+            <div class="form-group">
+                <label class="control-label mb-1">学部/分部名称</label>
+                <input asp-for="NickName" type="text" name="nickname" class="form-control">
+            </div>
+            @if (Model.ExtId != null)
+            {
+                <div class="form-group">
+                    <label class="control-label mb-1">学部总类型</label>
+                    <div>@(new SchFType0(Model.SchFtype).GetDesc() ?? "无效的总类型")</div>
+                </div>
+            }
+            <div class="form-group">
+                <label class="control-label mb-1">学部/分校招生年级</label>
+                <select asp-for="Grade" asp-items="ViewBag.GradeSelect" class="form-control" disabled></select>
+            </div>
+            <div class="form-group">
+                <label class="control-label mb-1">学部/分校办学类型</label>
+                <select asp-for="Type" asp-items="ViewBag.SchoolTypeSelect" class="form-control standardSelect" disabled></select>
+                <br />
+                <div class="radio-div" id="discount-div" style="display:none;">
+                    <div class="col-3">
+                        <small>是否普惠学校</small>
+                    </div>
+                    <div class="form-check-inline form-check">
+                        <label class="form-check-label ">
+                            <input type="radio" asp-for="Discount" value="true" class="form-check-input">是
+                        </label>
+                        <label class="form-check-label ">
+                            <input type="radio" asp-for="Discount" value="false" class="form-check-input">否
+                        </label>
+                    </div>
+                </div>
+                <div class="radio-div" id="diglossia-div" style="display:none;">
+                    <div class="col-3">
+                        <small>是否双语学校</small>
+                    </div>
+                    <div class="form-check-inline form-check">
+                        <label class="form-check-label ">
+                            <input type="radio" asp-for="Diglossia" name="Diglossia" value="true" class="form-check-input">是
+                        </label>
+                        <label class="form-check-label ">
+                            <input type="radio" asp-for="Diglossia" name="Diglossia" value="false" class="form-check-input">否
+                        </label>
+                    </div>
+                </div>
+                <div class="radio-div" id="chinese-div" style="display: none;">
+                    <div class="col-3">
+                        <small>是否中国国籍学校</small>
+                    </div>
+                    <div class="form-check-inline form-check">
+                        <label class="form-check-label ">
+                            <input type="radio" value="true" asp-for="Chinese" class="form-check-input">是
+                        </label>
+                        <label class="form-check-label ">
+                            <input type="radio" asp-for="Chinese" value="false" class="form-check-input">否
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label mb-1">学部标签</label>
+                <input type="text" class="form-control c_contain" asp-for="Tags">
+            </div>
+            <div class="form-group">
+                <label class="control-label mb-1">高德ID</label>
+                <input type="text" class="form-control" asp-for="ClaimedAmapEid">
+            </div>
+            <div class="form-group">
+                <label class="control-label mb-1">数据来源</label>
+                <div>
+                    <div id="source-div">
+                        @if (Model != null && Model.Source != null)
+                        {
+                            foreach (var item in Model.Source)
+                            {
+                                <input type="text" name="source" class="form-control  mb-1" value="@item" placeholder="(输入链接)" />
+                            }
+                        }
+                        <input type="text" name="source" class="form-control  mb-1" value="" placeholder="(输入链接)" />
+                    </div>
+                    <div class="text-center">
+                        <button type="button" id="addScource" class=" btn btn-outline-secondary btn-lg btn-block">+</button>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label mb-1">微信公众号</label>
+                <div>
+                    <input type="text" name="weixin" class="form-control  mb-1" placeholder="(多个微信公众号用英文逗号隔开)" asp-for="Weixin" />
+                </div>
+            </div>
+            @*学部简介*@
+            <div class="form-group">
+                <label class="control-label mb-1">学部简介</label>
+                <div>
+                    <textarea name="extintro" id="textarea-input" rows="4" placeholder="" class="form-control">@(Model.ExtIntro==null?string.Empty: Model.ExtIntro)</textarea>
+                </div>
+            </div>
+            <input type="hidden" asp-for="Sid" />
+            <input type="hidden" asp-for="ExtId" />
+            <input type="hidden" asp-for="Completion">
+            <input type="hidden" asp-for="SchFtype" />
+            <input type="hidden" id="operation" name="operation" />
+            <input type="hidden" id="SchoolTypeJson" value="@ViewBag.SchoolTypeJson" />
+        </div>
+        <div class="card-footer text-center">
+            <button type="button" class="save btn btn-outline-secondary" disabled>保存</button>
+            &nbsp;&nbsp;&nbsp;&nbsp;
+            @*<button type="button" class="close btn btn-outline-secondary">关闭</button>*@
+        </div>
+        <input type="submit" id="save" style="display:none" />
+    </div>
+</form>
+@*<pre id="debugModel" style="display:none;">@(Model.ToJsonString())</pre>
+<pre id="debugGradeSelect" style="display:none;">@(((object)ViewBag.GradeSelect).ToJsonString())</pre>
+<pre id="debugSchoolTypeSelect" style="display:none;">@(((object)ViewBag.SchoolTypeSelect).ToJsonString())</pre>*@
+
+@section Scripts{
+    @*<script src="@(ViewBag.StaticFile)/chosen/1.8.8.rc6/chosen.jquery.min.js"></script>*@
+    @*数据补全*@
+    <script src="@(ViewBag.StaticFile)/bootstrap-3-typeahead/4.0.2/bootstrap3-typeahead.min.js"></script>
+    @*taginput*@
+    <script src="@(ViewBag.StaticFile)/bootstrap-tagsinput/0.8.0/bootstrap-tagsinput.min.js"></script>
+    @*linq js*@
+    <script src="@(ViewBag.StaticFile)/linq.js/2.2.0.2/linq.min.js"></script>
+    @*Completion*@
+    <script src="~/assets/js/Completion.js"></script>
+    <script type="text/javascript">
+        if (typeof String.prototype.trim === 'undefined') {
+            String.prototype.trim = function () {
+                return this.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, '');
+            };
+        }
+    </script>
+    <script type="text/javascript">
+
+        jQuery(function () {
+            var selectData = [
+                { "grade": 1, "type": 1, "other": [false, false, false] },
+                { "grade": 1, "type": 2, "other": [true, false, false] },
+                { "grade": 1, "type": 3, "other": [false, false, false] },
+                { "grade": 1, "type": 80, "other": [false, false, false] },
+                { "grade": 1, "type": 99, "other": [false, false, false] },
+                { "grade": 2, "type": 1, "other": [false, false, false] },
+                { "grade": 2, "type": 2, "other": [false, true, false] },
+                { "grade": 2, "type": 4, "other": [false, false, false] },
+                { "grade": 2, "type": 80, "other": [false, false, false] },
+                { "grade": 3, "type": 1, "other": [false, false, false] },
+                { "grade": 3, "type": 2, "other": [false, true, false] },
+                { "grade": 3, "type": 4, "other": [false, false, false] },
+                { "grade": 3, "type": 80, "other": [false, false, false] },
+                { "grade": 4, "type": 1, "other": [false, false, false] },
+                { "grade": 4, "type": 2, "other": [false, true, false] },
+                { "grade": 4, "type": 3, "other": [false, false, true] },
+                { "grade": 4, "type": 4, "other": [false, false, true] },
+                { "grade": 4, "type": 80, "other": [false, false, false] },
+            ];
+
+            @if (Model.AllowEdit != false)
+            {
+                <Text>
+            jQuery('#Grade').enable();
+            jQuery('#Type').enable();
+                </Text>
+            }
+            jQuery('.save').enable();
+
+            jQuery("#Tags").tagsinput({
+                tagClass: "label-info", //设置样式
+                trimValue: true,//去空格
+                confirmKeys: [13, 32, 44, 59],
+                typeahead: {
+                    afterSelect: function (val) { this.$element.val(""); },
+                    source: function (query) {
+                        var json = jQuery.getJSON("@Url.Action("Autocomplete","Tag")" + "?top=10&&term=" + query);
+                        console.log(json);
+                        return json;
+                    }
+                }
+            });
+            //添加来源
+            jQuery("#addScource").on("click", function () {
+                var html = '<input type="text" name="source" class="form-control  mb-1" placeholder="(输入链接)" />';
+                jQuery("#source-div").append(html);
+            });
+
+            //下拉框联动 @* 类型调整v2 at 2020.03.25 *@
+            //学校年级
+            jQuery("#Grade").on("change", function () {
+                var schoolTypeJson = JSON.parse(jQuery("#SchoolTypeJson").val());
+                var grade = jQuery(this).val();
+                var queryResult = Enumerable.From(selectData)
+                    .Where(function (x) { return x.grade == grade; })
+                    .Select(function (x) { return x.type })
+                    .ToArray();
+                var types = Enumerable.From(schoolTypeJson)
+                    .Where(function (x) {
+                        var value = x.Value;
+                        var result = queryResult.indexOf(parseInt(value)) != -1;
+                        return result;
+                    }).ToArray();
+                ChangeSelectOption(jQuery("#Type"), types);
+                jQuery("#Type").trigger('change');
+            });
+            //学校类型
+            jQuery("#Type").on("change", function () {
+                var radioDivs = jQuery(".radio-div");
+                var grade = jQuery("#Grade").val();
+                var type = jQuery("#Type").val();
+                var queryResult = Enumerable.From(selectData)
+                    .Where(function (x) { return x.grade == grade && x.type == type })
+                    .Select(function (x) { return x.other })
+                    .ToArray();
+                jQuery.each(queryResult[0], function (index, item) {
+                    var $div = jQuery(radioDivs[index]);
+                    if (item) {
+                        //true
+                        $div.css("display", "block");
+                        $div.find("input").css("display", "inline-block");
+                    } else {
+                        //false
+                        $div.css("display", "none");
+                        $div.find("input").css("display", "none");
+                    }
+                });
+                afterTypeChanged(grade, type);
+            }).trigger('change');
+            // 高中 '国际'和'外籍'对应固定的'是否中国国籍'
+            function afterTypeChanged(grade, type) {
+                if (grade == '@SchoolGrade.SeniorMiddleSchool.ToInt()' && type == '@SchoolType.International.ToInt()') {
+                    jQuery('#chinese-div input[name=Chinese][value=true]').enable().trigger('click');
+                    jQuery('#chinese-div input[name=Chinese]').disable();
+
+                } else if (grade == '@SchoolGrade.SeniorMiddleSchool.ToInt()' && type == '@SchoolType.ForeignNationality.ToInt()') {
+                    jQuery('#chinese-div input[name=Chinese][value=false]').enable().trigger('click');
+                    jQuery('#chinese-div input[name=Chinese]').disable();
+
+                }
+            }
+            //更改下拉款选项
+            function ChangeSelectOption($select, data) {
+                var html = "";
+                jQuery.each(data, function (index, item) {
+                    html += "<option value='" + item.Value + "'>" + item.Text + "</option>";
+                });
+                $select.html(html);
+            }
+
+            //保存数据
+            jQuery(".save").on("click", function () {
+
+                var name = jQuery("input[name='name']").val();
+                if (!name.trim()) {
+                    ShowAlert("学部名字不能为空！");
+                    return;
+                }
+
+                var claimedAmapEid = jQuery('[name=ClaimedAmapEid]').val().trim();
+                if (claimedAmapEid != '' && !/^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$/gi.test(claimedAmapEid)) {
+                    return ShowAlert('无效的高德ID');
+                }
+                jQuery('[name=ClaimedAmapEid]').val(claimedAmapEid);
+
+                //var completion = Completion("step1-form");
+                jQuery("#Completion").val(0);
+                //去除disabled
+                jQuery("#Grade").removeAttr("disabled");
+                jQuery("#Type").removeAttr("disabled");
+                jQuery("#step1-form").find('input[type=radio]').removeAttr("disabled");
+
+                if (!jQuery('#Grade').val() || jQuery('#Grade').val() == '') {
+                    return ShowAlert('请选择年级', -1);
+                }
+                if (!jQuery('#Type').val() || jQuery('#Type').val() == '') {
+                    return ShowAlert('请选择办学类型', -1);
+                }
+                //调整因为多次选择而导致出现无效类型
+                do {
+                    if (jQuery('#discount-div').css('display') == 'none')
+                        jQuery('#discount-div').find('[name=Discount][value=false]').trigger('click');
+                    if (jQuery('#diglossia-div').css('display') == 'none')
+                        jQuery('#diglossia-div').find('[name=Diglossia][value=false]').trigger('click');
+                    if (jQuery('#chinese-div').css('display') == 'none')
+                        jQuery('#chinese-div').find('[name=Chinese][value=false]').trigger('click');
+                } while (0);
+                var operation = jQuery(this).attr("data-page");
+                jQuery("#operation").val(operation);
+
+                
+                var json = jQuery("#step1-form").serialize();
+                Loading("正在保存！");
+                jQuery.post("@Url.Action("Step1")", json, function (data) {
+                    
+                    if (data.state != 200) {
+                        CloseLoading();
+                        jQuery("#Grade").attr("disabled", "disabled");
+                        jQuery("#Type").attr("disabled", "disabled");
+                        jQuery("#step1-form").find('input[type=radio]').attr("disabled", "disabled");
+                        onsaved(data.message);
+                    } else {
+                        onsaved();
+                    }
+                },"json");
+            });
+
+
+            //初始化
+            var schoolType = '@(Model!= null&&Model.ExtId!=null?Model.Type.ToString():"1")';
+            var schoolGrade = '@(Model!=null &&Model.ExtId != null ? Model.Grade.ToString():"1")';
+            jQuery("#Grade").val(schoolGrade);
+            jQuery("#Grade").change();
+            jQuery("#Type").val(schoolType);
+            jQuery("#Type").change();
+            @if ((Model != null && Model.ExtId != null)) {
+                if (Model.AllowEdit != true) {
+                @:jQuery("#Grade").attr("disabled", "disabled");
+                @:jQuery("#Type").attr("disabled", "disabled");
+                @:jQuery("#step1-form").find('input[type=radio]').attr("disabled", "disabled");
+                }
+            }
+            @if (Model == null || Model.ExtId == null || Model.AllowEdit == true)
+            {
+                @:jQuery('[name=SchFtype]').val('');
+            }
+        });
+
+        function onsaved(error) {
+            if (error) {
+                parent.ShowAlert(error, -1);
+            } else {
+                window.onbeforeunload = undefined;
+                parent.ShowAlert('基本信息保存成功', 1000);
+                parent.LiejiaJS.win['step1win'].close();
+            }
+        }
+
+    </script>
+}

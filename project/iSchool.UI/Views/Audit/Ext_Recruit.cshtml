@@ -1,0 +1,598 @@
+﻿@using iSchool.Domain.Enum;
+@using iSchool.Infrastructure;
+@using Newtonsoft.Json.Linq;
+@using static iSchool.Infrastructure.ObjectHelper;
+@{
+    var sExid = ViewBag.Eid;
+    var _model = Model as iSchool.Application.Service.Audit.SchoolExtQyResult_Recruit;
+    _model.Data = _model.Data ?? new iSchool.Domain.SchoolExtRecruit();
+    var listAge = _model.YearTagList?.FirstOrDefault(x => x.Field == SchoolExtFiledYearTag.Age.GetName());/*.ToList();*/
+    var listMaxAge = _model.YearTagList?.FirstOrDefault(x => x.Field == SchoolExtFiledYearTag.MaxAge.GetName());/*.ToList();*/
+    var listCount = _model.YearTagList?.FirstOrDefault(x => x.Field == SchoolExtFiledYearTag.Count.GetName());/*.ToList();*/
+    var listData = _model.YearTagList?.FirstOrDefault(x => x.Field == SchoolExtFiledYearTag.Data.GetName());/*.ToList();*/
+    var listContact = _model.YearTagList?.FirstOrDefault(x => x.Field == SchoolExtFiledYearTag.Contact.GetName());/*.ToList();*/
+    var listSholorship = _model.YearTagList?.FirstOrDefault(x => x.Field == SchoolExtFiledYearTag.Scholarship.GetName());/*.ToList();*/
+    var listTarget = _model.YearTagList?.FirstOrDefault(x => x.Field == SchoolExtFiledYearTag.Target.GetName());/*.ToList();*/
+    var listExam = _model.YearTagList?.FirstOrDefault(x => x.Field == SchoolExtFiledYearTag.Subjects.GetName());/*.ToList();*/
+    var listExamPaper = _model.YearTagList?.FirstOrDefault(x => x.Field == SchoolExtFiledYearTag.Pastexam.GetName());/*.ToList();*/
+    var listDate = _model.YearTagList?.FirstOrDefault(x => x.Field == SchoolExtFiledYearTag.Date.GetName());
+    var listPoint = _model.YearTagList?.FirstOrDefault(x => x.Field == SchoolExtFiledYearTag.Point.GetName());
+}
+@*自定义控件需要引入addTagHelper*@
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, iSchool.UI
+<style>
+    #div_sgArticle {
+        margin: 10px 0;
+    }
+    /*年份标签按钮默认样式*/
+    .btnCommon {
+        color: #000;
+        /*background-color: #FFF0F5;*/
+        border-color: #F5F5F5;
+        border-width: 2px;
+        margin: 5px;
+    }
+    /*选中样式*/
+    .btn-red {
+        color: #000;
+        background-color: #FFF0F5;
+        border-color: #F5F5F5;
+        border-width: 2px;
+        margin: 5px;
+    }
+    /*删除样式*/
+    .btn-grey {
+        color: #000;
+        background-color: #DCDCDC;
+        border-color: #F5F5F5;
+        border-width: 2px;
+        margin: 5px;
+    }
+
+    .div-addyear {
+        border: 2px solid #F5F5F5;
+    }
+</style>
+<div id="ext_Recruit" class="card">
+    <div class="card-header">
+        <div class="col-6">招生简章</div>
+        <div class="col-4">&nbsp;&nbsp;</div>
+        <div class="col-2">@(Math.Round((_model.Data?.Completion ?? 0f) * 100, 2, MidpointRounding.AwayFromZero))%</div>
+    </div>
+    <div class="card-body">
+        <label class="form-control-label">招生计划</label>
+        @*招生年龄*@
+        <div class="form-group">
+            <span class="badge">招生年龄</span>
+            <div id="div_zsAge">
+                @if (listAge != null)
+                {
+                    <div>
+                        @*年份展示标签*@
+                        <PreviewCustomYearsBtnShow field=@listAge.Field latest-year=@listAge.Year.ToString() years=@listAge.Years step-name=@("step3") ></PreviewCustomYearsBtnShow>
+                    </div>
+                    var maxAge = listMaxAge.Year == listAge.Year;
+                    if (!maxAge) { return; }
+                    <div class="row" id="show_input_item_@listAge.Field" hidden="hidden">
+                        <div class="form-inline col-md-0">
+                            <CustomYears name=@listAge.Field set-value=@listAge.Year Fields=@(listAge.Field + "|" + listMaxAge.Field) data=@listAge.Years></CustomYears>
+                        </div>
+                        <div class="form-inline col-md-12" style="margin-left:-10px;">
+                            <div class="form-inline col-md-3">
+                                <input type="number" name="Year_Age" min="0" readonly="readonly" class="form-control" value="@listAge.Content" />
+                                <label class="pr-1  form-control-label">岁</label>
+                            </div>
+                            <div class="col-md-1"> 至 </div>
+                            <div class="form-inline col-md-3">
+                                <input type="number" name="Year_MaxAge" min="0" readonly="readonly" class="form-control" value="@listMaxAge.Content" />
+                                <label class="pr-1  form-control-label">岁</label>
+                            </div>
+                        </div>
+                    </div>
+
+                }
+            </div>
+        </div>
+        @*招生人数*@
+        <div class="form-group">
+            <span class="badge">招生人数</span>
+            @if (listCount != null)
+            {
+                <div>
+                    @*年份展示标签*@
+                    <PreviewCustomYearsBtnShow field=@listCount.Field latest-year=@listCount.Year.ToString() years=@listCount.Years step-name=@("step3")></PreviewCustomYearsBtnShow>
+                </div>
+                <div class="row" id="show_input_item_@listCount.Field" hidden="hidden">
+                    <div class="form-inline col-md-0">
+                        <CustomYears name=@listCount.Field set-value=@listCount.Year Fields=@(listCount.Field) data=@listCount.Years></CustomYears>
+                    </div>
+                    <div class="form-inline col-md-12" style="margin-left:5px;">
+                        <input type="number" name="Year_Count" readonly="readonly" class="form-control" value="@listCount.Content" />
+                        <label class="pr-1  form-control-label">人</label>
+                    </div>
+                    <div class="col-md-9"></div>
+                </div>
+            }
+        </div>
+        @*招生对象*@
+        <div class="form-group">
+            <span class="badge">招生对象</span>
+            @if (listTarget != null && listTarget.Target.Count > 0)
+            {
+                <div id="div_btnlist_@listTarget.Field">
+                    @*年份展示标签*@
+                    <PreviewCustomYearsBtnShow field=@listTarget.Field latest-year=@listTarget.Year.ToString() years=@listTarget.Years step-name=@("step3")></PreviewCustomYearsBtnShow>
+                </div>
+                <div class="row">
+                    <div class="form-inline col-md-0">
+                        <CustomYears name=@listTarget.Field set-value=@listTarget.Year Fields=@(listTarget.Field) data=@listTarget.Years tage-show-id-postfix=@("Target") tag-type=@((byte)TagType.Recruit)></CustomYears>
+                    </div>
+                    <div class="col-md-auto " id="tag-list-@((byte)TagType.Recruit)" style="margin-left:5px;"></div>
+                </div>
+            }
+        </div>
+        @*招录比例*@
+        <div class="form-group">
+            <span class="badge">招录比例</span>
+            <div class="row" id="div_zsProportion">
+                <div class="form-inline col-md-6">
+                    <label class="pr-1  form-control-label">1: </label>
+                    <input type="number" name="proportion" readonly="readonly" class="form-control" value="@_model.Data.Proportion" />
+                </div>
+                <div class="col-md-6"></div>
+            </div>
+        </div>
+        @*录取分数线*@
+    <div class="form-group">
+        <span class="badge">录取分数线</span>
+        <div id="div_zsPoint">
+            @if (listPoint != null)
+            {
+                <div class="row">
+                    <div style="margin-left:15px;">
+                        @*年份展示标签*@
+                        <PreviewCustomYearsBtnShow field=@listPoint.Field latest-year=@listPoint.Year.ToString() years=@listPoint.Years page-cache-input-id=@("dbdataofyearfield") step-name=@("step3")></PreviewCustomYearsBtnShow>
+                    </div>
+                </div>
+                <div class="row notnull" id="show_input_item_@listPoint.Field" hidden="hidden">
+                    <div class="form-inline">
+                        <CustomYears name=@listPoint.Field set-value=@listPoint.Year Fields=@(listPoint.Field) data=@listPoint.Years></CustomYears>
+                    </div>
+                    @*style="margin-top:50px; margin-left:-200px; "*@
+                    <div id="@(listPoint.Field + "_Content")">
+                        @*动态加载输入项*@
+                    </div>
+                </div>
+            }
+        </div>
+        
+    </div>
+
+        @*招生日期*@
+        <div class="form-group RecData">
+            <span class="badge">招生日期</span>
+
+            @*@{
+                    var rjt = tryv(() => _model.data.date.toobject<keyvaluepair<string, object>[]>(true), new keyvaluepair<string, object>[0]) ?? new keyvaluepair<string, object>[0];
+                }*@
+            <div id="div_zsrecdata">
+                @if (listDate != null)
+                {
+                    <div class="row"  style="margin-left:1px;">
+                        @*年份展示标签*@
+                        <PreviewCustomYearsBtnShow field=@listDate.Field latest-year=@listDate.Year.ToString() years=@listDate.Years step-name=@("step3")></PreviewCustomYearsBtnShow>
+                    </div>
+                    <div class="row notnull" id="show_input_item_@listDate.Field" hidden="hidden">
+                        <div class="form-inline">
+                            <CustomYears name=@listDate.Field set-value=@listDate.Year Fields=@(listDate.Field) data=@listDate.Years></CustomYears>
+                        </div>
+                        <div id="@(listDate.Field + "_Content")">
+                            @*动态加载输入项*@
+                        </div>
+                    </div>
+                    <hr />
+                }
+                @*@foreach (var a in rjt)
+                    {
+                        <div class="col-md-6">@a.key</div>
+                        <div class="col-md-6">@a.value</div>
+                    }*@
+                @*<div class="col-md-6">2019年初中校区开放日</div>
+                    <div class="col-md-6">2019-10-11</div>
+                    <div class="col-md-6">2019年初中校区开放日</div>
+                    <div class="col-md-6">2019-10-11</div>*@
+            </div>
+        </div>
+
+        <label class="form-control-label">入学流程</label>
+        @*报名所需资料*@
+        <div class="form-group">
+            <span class="badge">报名所需资料</span>
+            <div id="div_dAuditcontent">
+                @if (listData != null)
+                {
+                    <div class="year_dAuditcontent">
+                        <div>
+                            <div>
+                                @*年份展示标签*@
+                                <PreviewCustomYearsBtnShow field=@listData.Field latest-year=@listData.Year.ToString() years=@listData.Years step-name=@("step3")></PreviewCustomYearsBtnShow>
+                            </div>
+                            <div id="show_input_item_@listData.Field" hidden="hidden">
+                                <div class="form-inline">
+                                    @*<select class="form-control yeartag" disabled="disabled" data-selval="@listData.Year"></select>*@
+                                    <CustomYears name=@listData.Field data=@listData.Years fields=@listData.Field set-value=@listData.Year></CustomYears>
+                                </div>
+                                <textarea name="Year_Data" rows="3" class="form-control" style="width:40%" readonly="readonly">@listData.Content</textarea>
+                            </div>
+                        </div>
+                    </div>
+                }
+                @*else
+                        {
+                        <span class="badge">报名所需资料</span>
+                        <textarea id="div_dAuditcontent" name="Year_Data" rows="3" class="form-control" style="width:40%" readonly="readonly">@_model.Data.Data</textarea>
+                    }*@
+            </div>
+        </div>
+        @*报名方式*@
+        <div class="form-group">
+            <span class="badge">报名方式</span>
+            <div id="div_zsContact">
+                @if (listContact != null)
+                {
+                    <div class="year_zsContact">
+                        <div>
+                            <div>
+                                @*年份展示标签*@
+                                <PreviewCustomYearsBtnShow field=@listContact.Field latest-year=@listContact.Year.ToString() years=@listContact.Years step-name=@("step3")></PreviewCustomYearsBtnShow>
+                            </div>
+                            <div id="show_input_item_@listContact.Field" hidden="hidden">
+                                <div class="form-inline">
+                                    @*<select class="form-control yeartag" disabled="disabled" data-selval="@listContact.Year"></select>*@
+                                    <CustomYears name=@listContact.Field data=@listContact.Years fields=@listContact.Field set-value=@listContact.Year></CustomYears>
+                                </div>
+                                <textarea rows="3" name="Year_Contact" class="form-control" style="width:40%" readonly="readonly">@listContact.Content</textarea>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+        @*考试科目*@
+        <div class="form-group">
+            <span class="badge">考试科目</span>
+            <div id="div_zsSubjects">
+                @if (listExam != null && listExam.Target.Count > 0)
+                {
+                    <div id="div_btnlist_@listExam.Field">
+                        @*年份展示标签*@
+                        <PreviewCustomYearsBtnShow field=@listExam.Field latest-year=@listExam.Year.ToString() years=@listExam.Years step-name=@("step3")></PreviewCustomYearsBtnShow>
+                    </div>
+                    <div class="select_zsSubjects" id="show_input_item_@listExam.Field" hidden="hidden">
+                        <div class="form-inline " style="padding-top:10px;padding-left:0px">
+                            <CustomYears name=@listExam.Field set-value=@listExam.Year Fields=@(listExam.Field) data=@listExam.Years tage-show-id-postfix=@("Subjects") tag-type=@((byte)TagType.Subject)></CustomYears>
+                        </div>
+                        <div id="@("tag-list-"+((byte)TagType.Subject))">
+                            @foreach (var item in listExam.Target)
+                            {
+                                <span class="tag label label-info">@item.Key<span data-role="remove"></span></span>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+        @*往期入学考试内容*@
+        <div class="form-group">
+            <span class="badge">往期入学考试内容</span>
+            <div id="div_Pastexam">
+                @if (listExamPaper != null)
+                {
+                    <div>
+                        @*年份展示标签*@
+                        <PreviewCustomYearsBtnShow field=@listExamPaper.Field latest-year=@listExamPaper.Year.ToString() years=@listExamPaper.Years step-name=@("step3")></PreviewCustomYearsBtnShow>
+                    </div>
+                    //foreach (var item in listExamPaper)
+                    //{
+                    <div class="select_Pastexam" id="show_input_item_@listExamPaper.Field" hidden="hidden" style="margin-left:5px;">
+                        <div class="form-inline">
+                            <CustomYears name=@listExamPaper.Field data=@listExamPaper.Years fields=@listExamPaper.Field set-value=@listExamPaper.Year ue-id=@("editor") pre-id=@("tmp_Pastexam")></CustomYears>
+                            @*<select class="form-control yeartag" disabled="disabled" data-selval="@listExamPaper.Year"></select>*@
+                        </div>
+                        <div id="div_Show_Pastexam" style="margin-bottom:10px" class="readonly" readonly="true">@Html.Raw(listExamPaper.Content)</div>
+                    </div>
+
+                    //}
+
+                }
+                @*else
+                        {
+                        <div id="div_Show_Pastexam" class="readonly" readonly="true">@Html.Raw(_model.Data.Pastexam)</div>
+                    }*@
+            </div>
+        </div>
+        @*奖学金计划*@
+        <div class="form-group">
+            <span class="badge">奖学金计划</span>
+            <div id="div_Scholarship">
+                @if (listSholorship != null)
+                {
+                    <div>
+                        @*年份展示标签*@
+                        <PreviewCustomYearsBtnShow field=@listSholorship.Field latest-year=@listSholorship.Year.ToString() years=@listSholorship.Years step-name=@("step3")></PreviewCustomYearsBtnShow>
+                    </div>
+                    //foreach (var item in listSholorship)
+                    //{
+                    <div class="select_Scholarship" id="show_input_item_@listSholorship.Field" hidden="hidden">
+                        <div class="form-inline" style="margin-left:15px;">
+                            <CustomYears name=@listSholorship.Field data=@listSholorship.Years fields=@listSholorship.Field set-value=@listSholorship.Year></CustomYears>
+                            @*<select class="form-control yeartag" disabled="disabled" data-selval="@listSholorship.Year"></select>*@
+                        </div>
+                        <textarea id="div_Scholarship" name="Year_Scholarship" rows="3" class="form-control" style="width:40%;margin-bottom:10px;margin-left:5px;" readonly="readonly"></textarea>
+                    </div>
+                    //}
+                }
+                @*else
+                    {
+                        <textarea id="div_Scholarship" name="Year_Scholarship" rows="3" class="form-control" style="width:40%" readonly="readonly">@_model.Data.Scholarship</textarea>
+
+                    }*@
+            </div>
+        </div>
+    </div>
+</div>
+
+@*yearfield--cache db data*@
+<input hidden="hidden" id="dbdataofyearfield" value="[]" />
+
+<script src="~/js/yeartagselect.js"></script>
+<script src="~/yearfield/yearfieldCommon.js"></script>
+<script type="text/javascript">
+    jQuery(function () {
+        //jQuery(".yeartag").yearTagSelect();
+        //只读所有输入框
+        ReadOnlyInput();
+        //根据学校类型hide显示项
+        hide_with_dataExt();
+        //tag ids to tag names
+        jQuery('#ext_Recruit [tags]').each(function () {
+
+            var p = jQuery(this);
+            p.tagsinput();
+            p.prev().removeClass('bootstrap-tagsinput').find("input").remove();
+        });
+    });
+
+      //---------以下都是年份标签字段改版使用的----------------
+    var pagecacheinputId = "dbdataofyearfield";
+     //【展示内容】  点击年份标签按钮时，
+    jQuery(".step3btnyearclick").on("click", function () {        
+            var yearBtn = jQuery(this);
+            var feild = yearBtn.attr("id").split("_")[0];
+
+            //首先设置样式
+            //1、统一处理非选中年份按钮样式
+            var btns = getFieldButtons(yearBtn);
+            jQuery.each(btns, function (index, item) {
+                var dinput = jQuery(item).attr('data-input');
+                if (dinput != "0") {
+                    jQuery(item).attr('class', 'btnyearclick btn btnCommon');
+                    jQuery(item).removeAttr('disabled');
+                }
+            });
+            //2、设置选中年份按钮样式
+            //不允许点击，防止多次重复请求
+            yearBtn.attr('class', 'btnyearclick btn btn-red');
+            yearBtn.attr('disabled', 'disabled');
+            //隐藏已编辑标签
+            jQuery("#span_" + feild + "").attr("hidden", "hidden");
+
+            //最后加载数据：data-input=2_,动态去请求数据库；data-input=1_，直接读取页面隐藏的json
+            var act = yearBtn.attr('data-input');
+            var field_year = yearBtn.attr('data-extid');
+
+            if (act == "2") {
+                step3LoadDBData(field_year);
+            }
+            //显示输入项
+            jQuery("#show_input_item_" + feild).removeAttr("hidden");
+        });
+
+    //更新点选标签已选标签展示
+    function step3UpdateTagShow(jsonData, tageShowIdPostfix, tagType) {
+        var html = "";
+        jQuery.each(jsonData, function (index) {
+            html += '<span class="tag label label-info">' + jsonData[index].Key + '<span data-role="remove"></span></span>';
+        });
+        var input = tageShowIdPostfix;// 展示标签div的后缀并且是隐藏input的id  Target_1000,Target,Subjects,Subjects_1000
+        var tagType = tagType;//标签类型
+        //如果是招生对象
+        var temp = input.split("_");
+        if (temp[1]) {
+            jQuery("#tag-list-" + tagType + "-" + temp[1]).html(html);
+        }
+        else
+            jQuery("#tag-list-" + tagType).html(html);
+
+        jQuery("#" + input).val(JSON.stringify(jsonData));
+    }
+
+    //加载数据库对应年份数据
+    function step3LoadDBData(field_year) {
+
+        var strArr = field_year.split('_');
+        var currentSelect = jQuery("select[name='" + strArr[0] + "']");
+        currentSelect.val(strArr[1]);
+        var fieldNames = currentSelect.attr("data-input");
+        var list = fieldNames.split('|');
+        var tageShowIdPostfix = currentSelect.attr("tage_show_id_postfix");
+        var tagType = currentSelect.attr("data-tag");
+        var isDataTag = (tagType == undefined || tagType == "") ? false : true;//是否是点选标签
+        var eid = "@sExid";
+        var year = strArr[1];
+        var preid = currentSelect.attr("preid");//ue编辑器相关变量pre-id
+
+        //get pagecache
+        var cachedata = QueryPageCacheByBtnId(field_year, pagecacheinputId);
+        //get api-data
+        if (cachedata == null) {
+            var json = { "fieldName": fieldNames, "eid": eid, "year": year };
+            jQuery.get("@Url.Action("GetSchoolYearFieldContentByCondition", "School")", json, function (data) {
+                //show
+                var arrValue = step3ShowContent(field_year, null, data);
+                //dbdata to page-cache
+                DbDataToPageCache(pagecacheinputId, list[0], year, arrValue);
+            });
+        }
+        else {
+            //show
+            step3ShowContent(field_year, cachedata, null);
+        }
+
+            @*var json = { "fieldName": fieldNames, "eid": eid, "year": year };
+            jQuery.get("@Url.Action("GetSchoolYearFieldContentByCondition", "School")", json, function (data) {
+
+                //展示值 文本框类
+                var list = fieldNames.split('|');
+                for (var i = 0; i < list.length; i++) {
+                    var dataValue = data.result[list[i]];
+
+                    //点选标签
+                    if (isDataTag)
+                    {
+
+                        if (dataValue == undefined) {
+                            step3UpdateTagShow(null, tageShowIdPostfix, tagType);
+                        }
+                        else {
+                            var json = JSON.parse(dataValue);
+                            step3UpdateTagShow(json, tageShowIdPostfix, tagType);
+                        }
+                    }
+                    //ue编辑器
+                    else if (preid)
+                    {
+
+
+                        //方案一：只是替换值方案
+                        jQuery("#div_Show_Pastexam").html(dataValue);
+                        //var ueValue = jQuery("#" + preid).innerHTML = dataValue;
+                        //ue.setContent(ueValue == undefined ? "" : ueValue);
+
+                    }
+                    //其他
+                    else
+                    {
+                        var _name = list[i];
+                        //数据库只要一个字段，界面展示两个字段
+                        Step3OneFieldShowMore(field_year, _name, dataValue, true);
+                        jQuery("[name='Year_" + list[i] + "']").val(dataValue);
+                    }
+
+                }
+                });*@
+    }
+
+    function step3ShowContent(field_year, cachedata, dbdata) {
+
+        isDBData = false;
+        var strArr = field_year.split('_');
+        var currentSelect = jQuery("select[name='" + strArr[0] + "']");
+        currentSelect.val(strArr[1]);
+        var fieldNames = currentSelect.attr("data-input");        
+        var tageShowIdPostfix = currentSelect.attr("tage_show_id_postfix");
+        var tagType = currentSelect.attr("data-tag");
+        var isDataTag = (tagType == undefined || tagType == "") ? false : true;//是否是点选标签
+        var preid = currentSelect.attr("preid");//ue编辑器相关变量pre-id
+
+        var arrValue = ["", "", null];
+
+        //展示值 文本框类
+        var list = fieldNames.split('|');
+        for (var i = 0; i < list.length; i++) {
+            var dataValue = cachedata == null ? dbdata.result[list[i]] : cachedata[i].content;
+            try { arrValue[2] = JSON.parse(dataValue); }
+            catch{ arrValue[2] = dataValue; }
+
+            //点选标签
+            if (isDataTag) {
+
+                if (dataValue == undefined) {
+                    step3UpdateTagShow(null, tageShowIdPostfix, tagType);
+                }
+                else {
+                    var json = JSON.parse(dataValue);
+                    step3UpdateTagShow(json, tageShowIdPostfix, tagType);
+                }
+            }
+            //ue编辑器
+            else if (preid) {
+
+
+                //方案一：只是替换值方案
+                jQuery("#div_Show_Pastexam").html(dataValue);
+                //var ueValue = jQuery("#" + preid).innerHTML = dataValue;
+                //ue.setContent(ueValue == undefined ? "" : ueValue);
+
+            }
+            //其他
+            else {
+                var _name = list[i];
+                if (_name == "Age") arrValue[0] = dataValue;
+                if (_name == "MaxAge") arrValue[1] = dataValue;
+                //数据库只要一个字段，界面展示两个字段
+                Step3OneFieldShowMore(field_year, _name, dataValue, true);
+                jQuery("[name='Year_" + list[i] + "']").val(dataValue);
+            }
+
+        }    
+        return arrValue;
+    }
+
+    //数据库只要一个字段，界面展示多个控件
+    function Step3OneFieldShowMore(currentBtnId, field, dataValue, isDB) {
+        
+        if (field == "Point" || field == "Date") {
+            jQuery("#" + field + "_Content").html('');
+            jQuery(".updateaddinputitem").remove();
+            var content = null;
+            if (isDB) { try { content = JSON.parse(dataValue); } catch{ content = dataValue; } }
+            else content = dataValue;
+            var inputItemCount = 0;
+            var html = '';
+            jQuery.each(content, function (index, item) {
+                ++inputItemCount;
+                html += step3GetInputItemHtmlByField(index, field, item);
+            });
+
+            //动态渲染输入项
+            jQuery("#" + field + "_Content").append(html);
+            //当前年份按钮记录输入项的项数
+            jQuery("#" + currentBtnId).attr('inputitemcount', inputItemCount);
+        }
+    }
+
+    //根据Field获取动态加载的html
+    function step3GetInputItemHtmlByField(index, field, item) {
+        var html = '';
+        switch (field) {
+            case "Point":
+                {
+                    html = '<div class="form-group" style="margin:5px; margin-bottom:50px;" id="show_input_item_' + field + '_' + index + '"><div class="col-md-5"  style="margin-top:7px;"><input readonly="readonly"  class="form-control c_ignore"  name="Year_' + field + '_Key_' + index + '" data-update="Y" required data-placement="bottom" value="' + item.Key + '" /></div><div class="col-md-4"  style="margin-top:7px;"><input readonly="readonly" type="number"   name="Year_' + field + '_Value_' + index + '" data-update="Y" required data-placement="bottom" min="0" class="form-control c_ignore" value="' + item.Value + '"></div><div class="col-md-3"  style="margin-top:7px;"></div></div>';
+                }
+                break;
+            case "Date":
+                {
+                    html = '<div class="form-group" style="margin:5px; margin-bottom:50px;" id="show_input_item_' + field + '_' + index + '"><div class="col-md-5"  style="margin-top:7px;"><input readonly="readonly" class="form-control c_ignore"  name="Year_' + field + '_Key_' + index + '" data-update="Y" required data-placement="bottom" value="' + item.Key + '" /></div><div class="col-md-4"  style="margin-top:7px;"><input readonly="readonly"  type="text"  name="Year_' + field + '_Value_' + index + '" data-update="Y" required data-placement="bottom"  class="form-control c_ignore datetimepicker4" value="' + item.Value + '"  ></div><div class="col-md-3"  style="margin-top:7px;"></div></div>';
+                }
+                break;
+            default:
+                break;
+        }
+        return html;
+    }
+    //---------以上都是年份标签字段改版使用的----------------
+
+</script>
+

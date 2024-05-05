@@ -1,0 +1,160 @@
+﻿@using iSchool;
+@using iSchool.Infrastructure;
+@using iSchool.Domain.Enum;
+@using Newtonsoft.Json.Linq;
+@using System.Collections;
+@using static iSchool.Infrastructure.ObjectHelper;
+@model iSchool.Application.Service.Audit.SchoolAchievementInfoQueryResult;
+
+@{
+    dynamic _model = Model;  //iSchool.Application.Service.Audit.SchoolAchievementInfoQueryResult
+    var schftype = new SchFType0(Model.SchFtype);
+
+    string fmtWebSite(string str)
+    {
+        if (string.IsNullOrEmpty(str)) return str;
+        if (str.StartsWith("http://", StringComparison.OrdinalIgnoreCase)) return str;
+        if (str.StartsWith("https://", StringComparison.OrdinalIgnoreCase)) return str;
+        return "http://" + str;
+    }
+}
+
+@*// 高中 *@
+@if (_model.SchoolGrade == SchoolGrade.SeniorMiddleSchool)
+{
+    @if (SchUtils.Canshow2("hsa.keyundergraduate", schftype))
+    { 
+        <text>
+    <div class="form-group">
+        <span class="badge">重本率</span>
+        <div class="row">
+            <div class="form-inline col-md-3">
+                <input type="number" class="form-control" readonly="readonly" value="@(_model.Data?.Keyundergraduate)" />
+                <label class="pr-1  form-control-label">%</label>
+            </div>
+            <div class="col-md-9"></div>
+        </div>
+    </div>
+    <div class="form-group">
+        <span class="badge">本科率</span>
+        <div class="row">
+            <div class="form-inline col-md-3">
+                <input type="number" class="form-control" readonly="readonly" value="@(_model.Data?.Undergraduate)" />
+                <label class="pr-1  form-control-label">%</label>
+            </div>
+            <div class="col-md-9"></div>
+        </div>
+    </div>
+    <div class="form-group">
+        <span class="badge">高优线录取人数</span>
+        @if (SchUtils.Canshow2("hsa.count", schftype))
+        {
+            <div class="row">
+                <div class="form-inline col-md-3">
+                    <input type="number" class="form-control" readonly="readonly" value="@(_model.Data?.Count)" />
+                    <label class="pr-1  form-control-label">人</label>
+                </div>
+                <div class="col-md-9"></div>
+            </div>
+        }
+        else
+        {
+            <span style="color:red;display:block;">该字段与所选学校类型无关</span>
+        }
+    </div>
+    @*<div class="form-group" style="display:none;">
+        //删除!!!
+        <span class="badge">录取分数线</span>
+        <div class="row">
+            @foreach (var jfx in Tryv(() => ((string)_model.Data?.Fractionaline ?? "[]").ToObject<JArray>(), new JArray()))
+            {
+                <div class="col-md-6">@(jfx["Key"] ?? jfx["Name"])</div>
+                <div class="col-md-6">@(jfx["Value"] ?? jfx["Point"])</div>
+            }
+        </div>
+    </div>*@
+        </text>
+    }
+    <script>load_page_year_Achievement("@Model.Eid", "@Model.Year");</script>
+}
+@*// 初中 *@
+else if (_model.SchoolGrade == SchoolGrade.JuniorMiddleSchool)
+{
+    <div class="form-group">
+        <span class="badge">重点率</span>
+        <div class="row div_achieInfo">
+            <div class="form-inline col-md-3">
+                <input type="number" class="form-control" readonly="readonly" value="@(_model.Data?.Keyrate)" />
+                <label class="pr-1  form-control-label">%</label>
+            </div>
+            <div class="col-md-9"></div>
+        </div>
+    </div>
+    <div class="form-group">
+        <span class="badge">中考平均分</span>
+        <div class="row div_achieInfo">
+            <div class="form-inline col-md-3">
+                <input type="number" class="form-control" readonly="readonly" value="@(_model.Data?.Average)" />
+                <label class="pr-1  form-control-label">分</label>
+            </div>
+            <div class="col-md-9"></div>
+        </div>
+    </div>
+    <div class="form-group">
+        <span class="badge">当年最高分</span>
+        <div class="row div_achieInfo">
+            <div class="form-inline col-md-3">
+                <input type="number" class="form-control" readonly="readonly" value="@(_model.Data?.Highest)" />
+                <label class="pr-1  form-control-label">分</label>
+            </div>
+            <div class="col-md-9"></div>
+        </div>
+    </div>
+    <div class="form-group">
+        <span class="badge">高优线录取比例</span>
+        @if (SchUtils.Canshow2("msa.ratio", schftype))
+        {
+            <div class="row div_achieInfo">
+                <div class="form-inline col-md-3">
+                    <input type="number" class="form-control" readonly="readonly" value="@(_model.Data?.Ratio)" />
+                    <label class="pr-1  form-control-label">%</label>
+                </div>
+                <div class="col-md-9"></div>
+            </div>
+        }
+        else
+        {
+            <span style="color:red;display:block;">该字段与所选学校类型无关</span>
+        }
+    </div>
+    <script>load_page_year_Achievement("@Model.Eid", "@Model.Year");</script>
+}
+@*// 小学 | 幼儿园 *@
+else
+{
+    @if (SchUtils.Canshow2("sa.link", schftype))
+    {
+        <div class="form-group">
+            <span class="badge">升学情况</span>
+            <div class="row">
+                @foreach (dynamic jxk in (((IEnumerable)_model.Data) ?? new object[0]))
+                {
+                    <a class="col-md-8" href="@fmtWebSite(Tryv(() => jxk.Link.ToString(), ""))" target="_blank">@Tryv(() => jxk.Link.ToString(), "")</a>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="form-group">
+            <span style="color:red;display:block;">该字段与所选学校类型无关</span>
+        </div>
+    }
+}
+<script>
+    jQuery(function () {
+      
+        //根据学校类型hide显示项
+        hide_with_dataExt();
+    });
+</script>

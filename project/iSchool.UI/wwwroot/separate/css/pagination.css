@@ -1,0 +1,135 @@
+.clearfix {
+    clear: both;
+}
+
+    .clearfix:after {
+        clear: both;
+        content: "";
+        display: block;
+        height: 0;
+        visibility: hidden;
+    }
+
+.fl {
+    float: left;
+}
+
+.fr {
+    float: right;
+}
+
+.pager {
+    text-align: center;
+    margin: 20px 0;
+    display: inline-block;
+}
+
+    .pager a {
+        cursor: pointer;
+    }
+
+    .pager a,
+    .pager span {
+        position: relative;
+        float: left;
+        padding: 6px 12px;
+        margin-left: -1px;
+        line-height: 1.42857143;
+        color: #337ab7;
+        text-decoration: none;
+        background-color: #fff;
+        border: 1px solid #ddd;
+    }
+
+        .pager a:first-child,
+        .pager span:first-child {
+            border-top-left-radius: 4px;
+            border-bottom-left-radius: 4px;
+        }
+
+        .pager a:last-child,
+        .pager span:last-child {
+            border-top-right-radius: 4px;
+            border-bottom-right-radius: 4px;
+        }
+
+        .pager span.current {
+            z-index: 3;
+            color: #fff;
+            cursor: default;
+            background-color: #337ab7;
+            border-color: #337ab7;
+        }
+
+    .pager .pg-first:before {
+        content: "<<";
+    }
+
+    .pager .pg-prev:before {
+        content: "<";
+    }
+
+    .pager .pg-next:before {
+        content: ">";
+    }
+
+    .pager .pg-last:before {
+        content: ">>";
+    }
+
+    .pager .pg-prev[disabled="true"],
+    .pager .pg-prev[disabled="true"]:hover {
+        cursor: default;
+    }
+
+    .pager .pg-next[disabled="true"],
+    .pager .pg-next[disabled="true"]:hover {
+        cursor: default;
+    }
+
+    .pager .pg-prev[disabled="true"],
+    .pager .pg-next[disabled="true"] {
+        border-color: #eee;
+    }
+
+    .pager span.els {
+        border-color: transparent;
+    }
+
+.pagerHtmlWrap {
+    width: 800px;
+    margin: 30px auto;
+}
+
+    .pagerHtmlWrap .cc_cells {
+        width: 100%;
+        height: 35px;
+        padding: 5px 0;
+        border-bottom: 1px #ccc solid;
+    }
+
+        .pagerHtmlWrap .cc_cells a {
+            color: #454545;
+            font-size: 14px;
+            line-height: 35px;
+            text-decoration: none;
+        }
+
+            .pagerHtmlWrap .cc_cells a span {
+                display: inline-block;
+                width: 25%;
+                text-align: left;
+                margin: 0;
+            }
+
+.hide {
+    display: none !important;
+}
+
+.modal-header {
+    display: block;
+}
+
+    .modal-header .modal-title {
+        font-size: 20px;
+    }

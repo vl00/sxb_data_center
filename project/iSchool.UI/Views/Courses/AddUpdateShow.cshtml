@@ -1,0 +1,3713 @@
+﻿@using iSchool.Organization.Appliaction.ViewModels
+@using iSchool.Infrastructure;
+@using iSchool.Organization.Domain.Enum;
+@model AddCoursesShowDto
+@{
+    ViewData["Title"] = "商品内容管理";
+
+    var isadd = (bool)ViewBag.isadd;
+    var listOrgTypes = Model.ListSubjects.Union(Model.ListGoods).ToList(); //品牌分类
+    var listGoodsTypes = EnumUtil.GetSelectItems<CourseTypeEnum>();//商品分类
+    var freightIsCustom = (Model.Freights?.Length ?? 0) < 1 ? false : (Model.Freights[0].Type == (byte)FreightAreaTypeEnum.Custom);
+    var freightBlackList = ViewBag.FreightBlackList as FreightBlackListDto[]; // 不发货地区
+
+}
+
+@section css
+{
+    <link href="@(ViewBag.StaticFile)/bootstrap-tagsinput/0.8.0/bootstrap-tagsinput.css" rel="stylesheet">
+    <link href="@(ViewBag.StaticFile)/cropper/4.0.0-beta/cropper.min.css" rel="stylesheet">
+
+    <link href="~/lib/cropper/main.css" rel="stylesheet">
+    <link href="https://cdn.bootcss.com/bootstrap-datetimepicker/4.17.47/css/bootstrap-datetimepicker.min.css" rel="stylesheet">
+
+    <link href="https://cdn.bootcss.com/bootstrap-tagsinput/0.8.0/bootstrap-tagsinput.css" rel="stylesheet">
+
+    <link href="~/css/jsselect/select.css" rel="stylesheet" />
+
+    <style type="text/css">
+        /*tags样式*/
+        .label-info {
+            display: inline-block;
+            padding: 2px 4px;
+            font-size: 11.844px;
+            font-weight: bold;
+            line-height: 14px;
+            text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+            white-space: nowrap;
+            vertical-align: baseline;
+            background-color: #3a87ad;
+            margin-right: 2px;
+            color: white;
+        }
+
+        .bootstrap-tagsinput {
+            background-color: #fff;
+            border: 1px solid #ccc;
+            box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+            /*display: inline-block;*/
+            /*padding: 4px 6px;*/
+            padding: .375rem .75rem;
+            color: #555;
+            vertical-align: middle;
+            border-radius: 4px;
+            max-width: 100%;
+            line-height: 22px;
+            cursor: text;
+            width: 100%;
+        }
+
+        .str {
+            width: 150px;
+            height: 200px;
+            border: solid 1px #e3e3e3;
+            padding: 5px;
+            margin-top: 10px
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            border-radius: 40px;
+            -moz-border-radius: 40px; /* 老的 Firefox */
+        }
+
+        .typeahead {
+            z-index: 1051;
+        }
+
+        .a-href {
+            cursor: pointer;
+        }
+
+        .c_contain {
+        }
+
+        .c_value {
+        }
+
+        .select2-dropdown, .select2 {
+            width: 200px !important;
+        }
+
+        .counterpart-content select, .ach-panel-content select {
+            width: 200px !important;
+        }
+
+        .deletebutten {
+            position: absolute;
+            display: block;
+            width: 5px;
+            height: -6px;
+            top: 0px;
+            right: 88px;
+        }
+
+        .side-bar {
+            position: fixed;
+            bottom: 100px;
+            right: 25px;
+            font-size: 0;
+            line-height: 0;
+            z-index: 100;
+        }
+
+        .side-bar a {
+            width: 66px;
+            height: 66px;
+            display: inline-block;
+            margin-bottom: 2px;
+        }
+
+
+        .side-bar .icon-right {
+            background-position: 0 -62px;
+        }
+
+        #auditcard {
+            width: 500px;
+        }
+
+        @if (!Context.HasCtrlActQyx("school", "ExtFieldsSync", ".sync"))
+        {
+            <text >
+        .sync {
+            display: none;
+        }
+
+            </text>
+        }
+
+        .margin-top {
+            margin-top: 2%;
+        }
+        .margin-left {
+            margin-left: 5%;
+        }
+
+        .font-size {
+            font-size:20px;
+        }
+
+        .img-margin-left {
+            margin-left: 3%;
+        }
+        .downloadpic{
+            font-size:12px;
+        }
+        .Comments {
+            width: 100%;
+        }
+        /*必填标识*/
+        .spanremark {
+            color: red;
+            margin-top: 6%;
+            margin-right:0%;
+        }
+
+        /*属性及相关样式*/
+        .property-item{
+            margin-bottom: 1%;
+            margin-left: 1%;
+        }
+        .del-property-item {
+            font-size: 16px;
+            margin-bottom: 1.5%;
+            margin-left: 1%;
+        }
+        .add-property-item {
+            font-size: 16px;
+            margin-bottom: 1%;
+            margin-left: 1%;
+        }
+        .table, .table th, .table td {
+            text-align: center;
+        }
+        .table{
+            width:80%;
+        }
+        .th-number {
+            width: 15%;
+        }
+        .td-checkbox {
+            border: 1px solid #ced4da;
+            border-radius: .25rem;
+            margin-top:20%;
+        }
+        .table td {
+            vertical-align: middle;
+        }
+        .table td .td-checkbox {
+            margin-top: 0;
+        }
+        .table label {
+            border: 0px solid #ced4da;
+            margin: 0;
+            padding: 0;
+            height: auto;
+        }
+        .tip {
+            font-size: 8px;
+        }
+
+        /* 多图片上传 -start- */
+        #img-list {
+            max-width: 80%;
+            margin-top: 16px;
+            margin-bottom: 4px;
+        }
+        .clearfix:after,
+        .clearfix:before {
+            content: "";
+            display: block;
+            clear: both;
+        }
+        .img-box {
+            margin: 0;
+        }
+        .img-box li {
+            height: 100px;
+            display: inline-block;
+            margin: 0 32px 54px 0;
+            position: relative;
+            float: left;
+        }
+        .img-box .img-show {
+            width: 100px;
+            height: 100px;
+            overflow: hidden;
+            margin-bottom: 4px;
+            position: relative;
+        }
+        .handle-box {
+            position: absolute;
+            left: 0;
+            bottom: -24px;
+            width: 100%;
+            text-align: center;
+        }
+        .img-box .deletebutten {
+            position: static;
+            width: auto;
+            height: auto;
+            top: auto;
+            right: auto;
+            display: inline-block;
+            font-size: 12px;
+            margin-right: 2px;
+        }
+        .dad-noSelect, .dad-noSelect * {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            cursor: -webkit-grabbing !important;
+            cursor: -moz-grabbing !important;
+        }
+        .dad-container {
+            position: relative;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        .dad-container::after {
+            content: '';
+            clear: both !important;
+            display: block;
+        }
+        .dad-active .dad-draggable-area {
+            cursor: -webkit-grab;
+            cursor: -moz-grab;
+        }
+        .dads-children-clone {
+            opacity: 0.8;
+            z-index: 9999;
+            pointer-events: none;
+        }
+        .dads-children-placeholder {
+            overflow: hidden;
+            position: absolute !important;
+            box-sizing: border-box;
+            border: 2px dashed #666;
+            margin: 5px;
+            text-align: center;
+            color: #639BF6;
+            font-weight: bold;
+        }
+        /* 多图片上传 -end- */
+        input[type=checkbox], input[type=radio] {
+            vertical-align: middle;
+        }
+    </style>
+}
+
+<div class="card">
+    <div class="card-header">
+        <div class="form-inline">
+            <div class="text-left col-md-6 ">@(Model.IsAdd == true ? "新增课程" : "编辑课程")</div>
+            <div class="text-right col-md-6">
+                <a href="@Url.Action("Index")" data-id="" class="text-info">返回列表</a>
+            </div>
+        </div>
+
+    </div>
+    <div class="card-body">
+        @*课程名称*@
+        <!--<div class="form-group">
+            <div class="form-inline">
+                <label class="control-label mb-1"><span class="spanremark">*</span>课程名称：</label>
+                <input class="form-control getvalue" type="text" name="Name" id="Name" value="@Model.Name" style="width:70%;" />
+            </div>
+        </div>-->
+        @*课程名称*@
+        <div class="form-group">
+            <div class="form-inline">
+                <label class="control-label mb-1"><span class="spanremark">*</span>课程名称：</label>
+                <input class="form-control getvalue" type="text" name="Title" id="Title" value="@Model.Title" style="width:70%;" />
+            </div>
+        </div>
+
+        @*课程副标题*@
+        <div class="form-group">
+            <div class="form-inline">
+                <label class="control-label mb-1"><span class="spanremark">*</span>副 &nbsp;标 &nbsp;题：</label>
+                <input class="form-control getvalue" type="text" name="SubTitle" id="SubTitle" value="@Model.SubTitle" style="width:70%;" />
+            </div>
+        </div>
+
+        @*品牌分类、品牌*@
+        <div class="form-group">
+            @*品牌分类*@
+            <div class="form-inline">
+                @*<label class="control-label mb-1"><span class="spanremark">*</span>品牌分类：</label>
+                <div id="div_OrgType" class="selectPickerWrapper">
+                    <select id="div_OrgType_select" class="hidden">
+                        @if (listOrgTypes?.Any() == true)
+                        {
+                            foreach (var item in listOrgTypes)
+                            {
+                                <option value="@item.Value">@item.Text</option>
+                            }
+                        }
+                    </select>
+                </div>*@
+                @*<div style="margin-left:5%;"></div>*@
+                <label class="control-label mb-1"><span class="spanremark">*</span>商品品牌：</label>
+                <div id="div_Org" class="selectPickerWrapper">
+                    <select id="div_Org_select" class="hidden">
+                        @if (Model.ListOrgs?.Any() == true)
+                        {
+                            foreach (var item in Model.ListOrgs)
+                            {
+                                if (Model.OrgId?.ToString() == item.Value.ToLower())
+                                {
+                                    <option value="@item.Value" data-id="duihao-checked">@item.Text</option>
+                                }
+                                else
+                                {
+                                    <option value="@item.Value">@item.Text</option>
+                                }
+                            }
+                        }
+                    </select>
+                </div>
+
+                <a href="javascript:void(0)" class="addorg" style="border-bottom: 1px solid #00a0ff; color: #00a0ff;">新增品牌</a>
+
+            </div>
+        </div>
+
+        @*商品分类、分类*@
+        <div class="form-group">
+            @*商品分类*@
+            <div class="form-inline">
+                <label name="goodstypetip" class="control-label mb-1"><span class="spanremark">*</span>商品分类：</label>
+                <div>
+                    <div id="div_CourseType" class="selectPickerWrapper" @(Model.IsAdd == false ? "readonly" : "")>
+                        <select id="div_CourseType_select" class="hidden">
+                            @if (listGoodsTypes?.Any() == true)
+                            {
+                                var selectValue = Model.Type.ToString();
+                                foreach (var item in listGoodsTypes)
+                                {
+                                    if (selectValue == item.Value)
+                                    {
+                                        <option value="@item.Value" data-id="duihao-checked">@item.Text</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@item.Value">@item.Text</option>
+                                    }
+
+                                }
+                            }
+                        </select>
+                    </div>
+                    @*<<<<<<<<<<<<<<商品分类<<<<<<<<<<<<*@
+                    <div class="mb-auto" id="StepGoup">
+                        @if (Model.ListOldCommodityTypes != null)
+                        {
+                            foreach (var brandtype in Model.ListOldCommodityTypes)
+                            {
+                                <div class="steps form-inline">
+                                    <div id="@(Guid.NewGuid().ToString())" class="Setp1Select selectPickerWrapper" data-select="Setp1Select" data-id="@brandtype.Selected_d1.Code">
+                                        <select class="div_Setp1Select_select hidden">
+                                            @foreach (var item in brandtype.D1s)
+                                            {
+                                                if (item.Code == brandtype.Selected_d1.Code)
+                                                {
+                                                    <option data-id="duihao-checked" value="@item.Code">@item.Name</option>
+                                                }
+                                                else
+                                                {
+                                                    <option value="@item.Code">@item.Name</option>
+
+                                                }
+                                            }
+                                        </select>
+                                    </div>
+                                    <div id="@(Guid.NewGuid().ToString())" class="Setp2Select selectPickerWrapper" data-select="Setp2Select" data-id="@brandtype.Selected_d2.Code">
+                                        <select class="div_Setp2Select_select hidden">
+                                            @foreach (var item in brandtype.D2s)
+                                            {
+                                                if (item.Code == brandtype.Selected_d2.Code)
+                                                {
+                                                    <option data-id="duihao-checked" value="@item.Code">@item.Name</option>
+                                                }
+                                                else
+                                                {
+                                                    <option value="@item.Code">@item.Name</option>
+
+                                                }
+                                            }
+                                        </select>
+                                    </div>
+                                    <div id="@(Guid.NewGuid().ToString())" class="Setp3Select selectPickerWrapper" data-select="Setp3Select" data-id="@brandtype.Selected_d3.Code">
+                                        <select class="div_Setp3Select_select hidden">
+                                            @foreach (var item in brandtype.D3s)
+                                            {
+                                                if (item.Code == brandtype.Selected_d3.Code)
+                                                {
+                                                    <option data-id="duihao-checked" value="@item.Code">@item.Name</option>
+                                                }
+                                                else
+                                                {
+                                                    <option value="@item.Code">@item.Name</option>
+
+                                                }
+                                            }
+                                        </select>
+                                    </div>
+                                    <span style="float:right"> <a href="javascript:void(0);" id="" class="fa fa-minus-circle text-danger del-property-item " onclick="DelStep(this)"></a></span>
+                                </div>
+                                <br />
+                            }
+                        }
+                    </div>
+                </div>
+                <a href="javascript:void(0)" class="margin-left addnotice" onclick="AddStep(this)" data-index="11" style="border-bottom: 1px solid #00a0ff; color: #00a0ff;">添加分类</a>
+            </div>
+
+        </div>
+
+        @*适用年龄*@
+        <div class="form-group">
+            <div class="form-inline">
+                <label class="control-label mb-1"><span class="spanremark">*</span>适用年龄：</label>
+                <input class="form-control getvalue" type="text" name="MinAge" id="MinAge" placeholder="最小年龄" style="width:110px;" value="@Model.MinAge" />
+                <label class="control-label mb-1">至</label>
+                <input class="form-control getvalue" type="text" name="MaxAge" id="MaxAge" placeholder="最大年龄" style="width:110px; margin-left:1%;" value="@Model.MaxAge" />
+                <label class="control-label mb-1">&nbsp;岁</label>
+            </div>
+        </div>
+
+        @**@
+        <div class="form-group">
+            <label class="control-label mb-1" style="float:left;">上架频道：</label>
+            <div class="form-inline" check-group="chkg-online-channel">
+                <input id="NewUserExclusive" name="NewUserExclusive" type="checkbox" @(Model.NewUserExclusive == true ? "checked=\"checked\"" : "") style="margin-left:7%;">
+                <label for="NewUserExclusive">新用户专享</label>
+                <input id="LimitedTimeOffer" name="LimitedTimeOffer" type="checkbox" @(Model.LimitedTimeOffer == true ? "checked=\"checked\"" : "") style="margin-left:7%;">
+                <label for="LimitedTimeOffer">限时优惠</label>
+            </div>
+        </div>
+
+        @*是否隐形上架  是否爆款*@
+        <div class="form-group">
+            <label class="control-label mb-1" style="float:left;">扩展设置：</label>
+            <div class="form-inline">
+                <input id="IsInvisibleOnline" name="IsInvisibleOnline" type="checkbox" @(Model.IsInvisibleOnline == true ? "checked=\"checked\"" : "") style="margin-left:7%;" />
+                <label for="IsInvisibleOnline">是否隐形上架</label>
+                <input id="IsSystemCourse" name="IsSystemCourse" @(Model.Type == CourseTypeEnum.Course.ToInt() ? "" : "hidden") type="checkbox" @(Model.IsSystemCourse == true ? "checked=\"checked\"" : "") style="margin-left:7%;">
+                <label @(Model.Type == CourseTypeEnum.Course.ToInt() ? "" : "hidden") for="IsSystemCourse">是否系统课程</label>
+                <input id="IsExplosions" name="IsExplosions" type="checkbox" @(Model.Type == CourseTypeEnum.Course.ToInt() ? "hidden" : "") @(Model.IsExplosions == true ? "checked=\"checked\"" : "") style="margin-left:5%;">
+                <label for="IsExplosions" @(Model.Type == CourseTypeEnum.Course.ToInt() ? "hidden" : "")>是否爆款</label>
+                <input id="SetTop" name="SetTop" type="checkbox" @(Model.SetTop == true ? "checked=\"checked\"" : "") style="margin-left:7%;">
+                <label for="SetTop">是否置顶</label>
+            </div>
+        </div>
+
+        @*新增才有自动上下架 否则隐藏*@
+
+        @*上架时间-默认勾选立即上架、自动上架时间不可选；可选时，只能选择明天及之后的日期*@
+        <div class="form-group" @(!Model.IsAdd ? "hidden" : "")>
+            <div class="form-inline">
+                <label class="control-label mb-1">自动上架时间：</label>
+                <input class="form-control getvalue" type="text" value="" id="AutoOnShelfDate" readonly="readonly" name="LastOnShelfTime" placeholder="请选择时间">
+                <input id="OnShelfNow" name="OnOrOff" data-id="AutoOnShelfDate" type="checkbox" style="margin-left:5%;" checked="checked" />&nbsp;&nbsp; 立即上架
+                <span style="margin-left:5%;">提示：自动上架所选日期的0点上架</span>
+            </div>
+        </div>
+
+        @*下架时间-默认勾选不自动下架，自动下架时间不可选；可选时，只能选择明天及之后的日期*@
+        <div class="form-group" @(!Model.IsAdd ? "hidden" : "")>
+            <div class="form-inline">
+                <label class="control-label mb-1">自动下架时间：</label>
+                <input class="form-control getvalue" type="text" value="" id="AutoOffShelfDate" readonly="readonly" name="LastOffShelfTime" placeholder="请选择时间">
+                <input id="NoAutoOffShelf" name="OnOrOff" data-id="AutoOffShelfDate" type="checkbox" style="margin-left:5%;" checked="checked" />&nbsp;&nbsp; 不自动下架
+                <span style="margin-left:4%;">提示：自动下架所选日期的24点上架</span>
+            </div>
+        </div>
+
+        @*课程信息*@
+        <div class="form-group goodsnoshow" @(Model.Type == CourseTypeEnum.Goodthing.ToInt() ? "hidden" : "")>
+            <div style="border: 1px solid #ccc; width:80%;">
+                <label class="control-label mb-1" style="margin-top: 20px; margin-left: 30px; ">课程信息：</label>
+                <a href="javascript:void(0)" class="margin-left clear-courseInfo" style="border-bottom: 1px solid #00a0ff; color: #00a0ff;">清除课程信息</a>
+                <div class="form-inline margin-top" style="margin-left:3%; margin-bottom: 0%;">
+
+                    @*上课方式--多选*@
+                    <label class="control-label mb-1">上课方式：</label>
+                    <div id="div_Mode" class="selectPickerWrapper" multiple="multiple">
+                        <select id="div_Mode_select" class="hidden">
+                            @if (Model.ListModes?.Any() == true)
+                            {
+                                bool isTrue = Model.ListOldModes?.Any() == true ? true : false;
+                                foreach (var item in Model.ListModes)
+                                {
+                                    if (isTrue && Model.ListOldModes.Contains(Convert.ToInt32(item.Value)))
+                                    {
+                                        <option value="@item.Value" data-id="duihao-checked">@item.Text</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@item.Value">@item.Text</option>
+                                    }
+                                }
+                            }
+                        </select>
+                    </div>
+
+                    @*上课时长*@
+                    <label class="control-label mb-1 margin-left">上课时长：</label>
+                    <input class="form-control getvalue" type="text" name="Duration" id="Duration" placeholder="输入分钟数" style="width: 190px; margin-left: 1%; " value="@Model.Duration" />
+                    <label class="control-label mb-1">&nbsp;分钟</label>
+
+
+                </div>
+                <div div class="form-inline margin-top" style="margin-left:3%; margin-bottom: 3%;">
+                    @*科目分类*@
+                    @*<label class="control-label mb-1">科目分类：</label>
+                        <div id="div_Subject" class="selectPickerWrapper">
+                            <select id="div_Subject_select" class="hidden">
+                                @if (Model.ListSubjects?.Any() == true)
+                                {
+                                    foreach (var item in Model.ListSubjects)
+                                    {
+                                        if (Model.Subject == Convert.ToInt32(item.Value))
+                                        {
+                                            <option value="@item.Value" data-id="duihao-checked">@item.Text</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@item.Value">@item.Text</option>
+                                        }
+                                    }
+                                }
+                            </select>
+                        </div>*@
+
+                    @*年龄段*@
+                    <!--<label class="control-label mb-1" style="margin-left:5.5%;">年龄段：</label>
+                    <input class="form-control getvalue" type="text" name="MinAge" id="MinAge" placeholder="最小年龄" style="width:110px;" value="@Model.MinAge" />
+                    <label class="control-label mb-1">至</label>
+                    <input class="form-control getvalue" type="text" name="MaxAge" id="MaxAge" placeholder="最大年龄" style="width:110px; margin-left:1%;" value="@Model.MaxAge" />
+                    <label class="control-label mb-1">&nbsp;岁</label>-->
+                </div>
+            </div>
+        </div>
+
+        @*购前须知*@
+        <div class="form-group">
+            <div style="border: 1px solid #ccc; width:80%;">
+                <label class="control-label mb-1" style="margin-top: 20px; margin-left: 30px; margin-bottom: 20px !important;">购前须知：</label>
+                <a href="javascript:void(0)" class="margin-left addnotice" onclick="" data-index="10" style="border-bottom: 1px solid #00a0ff; color: #00a0ff;">添加分组</a>
+                @*分组列表*@
+                <div id="notelist">
+                    @*动态生成分组*@
+                </div>
+            </div>
+        </div>
+
+        @*关联大课1*@
+        <div class="form-group goodsnoshow" @(Model.Type == CourseTypeEnum.Goodthing.ToInt() ? "hidden" : "")>
+            <div style="border: 1px solid #ccc; width:80%;">
+                <label class="control-label mb-1" style="margin-top: 20px; margin-left: 30px; ">关联大课1（非必填，若填则带<span class="spanremark">*</span>项均必填）：</label>
+                <a href="javascript:void(0)" class="margin-left clear-bigcourseInfo" style="border-bottom: 1px solid #00a0ff; color: #00a0ff;">清除关联大课信息</a>
+                <input hidden="hidden" name="Id1" id="Id1" value="@Model.BigCoursesList[0]?.Id" />
+                @*大课名称*@
+                <div div class="form-inline margin-top" style="margin-left:3%;">
+                    <label class="control-label mb-1"><span class="spanremark">*</span>大课名称：</label>
+                    <input class="form-control getvalue issavebigcourse" type="text" name="BigCourseTitle" id="BigCourseTitle" placeholder="请填写大课名称" style="width:59%;" value="@Model.BigCoursesList[0]?.Title" />
+                    @*大课价格*@
+                    <label class="control-label mb-1"><span class="spanremark">*</span>大课价格：</label>
+                    <input class="form-control getvalue issavebigcourse" type="text" name="BigCoursePrice" id="BigCoursePrice" placeholder="请填价格" style="width:110px; margin-left:0%;" value="@(Model.Type==CourseTypeEnum.Goodthing.ToInt()?null:Model.BigCoursesList[0]?.Price)" />
+                </div>
+                @*达成条件*@
+                <div div class="form-inline margin-top" style="margin-left:3%;">
+                    <label class="control-label mb-1">达成条件 ：</label>
+                    <input class="form-control getvalue issavebigcourse" type="text" name="Condition" id="Condition" placeholder="请填写达成条件" style="width:80%;" value="@Model.BigCoursesList[0]?.Condition" />
+                </div>
+
+                @*价格、推广佣金*@
+                <div div class="form-inline margin-top" style="margin-left:3%;">
+                    @*推广佣金*@
+                    <label class="control-label mb-1">推广佣金 ：</label>
+                    <input class="form-control getvalue issavebigcourse" type="text" name="bigCashbackValue" id="bigCashbackValue" placeholder="请填数值" style="width:110px; margin-left:0%;" value="@Model.BigCoursesList[0]?.CashbackValue" />
+                    @*推广佣金类型*@
+                    <select name="bigCashbackType" id="bigCashbackType" asp-items="@ViewBag.CashbackTypeList" asp-for="@(Model.BigCoursesList[0].CashbackType)" class="form-control getvalue" style="margin-left:0.5%;"></select>
+                    @*平级佣金*@
+                    <div style="display:none;">
+                        <label class="control-label mb-1 margin-left">平级佣金：</label>
+                        <input class="form-control getvalue issavebigcourse" type="text" name="PJCashbackValue1" id="PJCashbackValue1" placeholder="请填数值" style="width:110px;" value="@Model.BigCoursesList[0]?.PJCashbackValue" />&nbsp;
+                        @*<select name="PJCashbackType1" id="PJCashbackType1" asp-items="@ViewBag.CashbackTypeList" asp-for="@Model.BigCoursesList[0].PJCashbackType" class="form-control getvalue"></select>*@
+                        <select name="PJCashbackType1" id="PJCashbackType1" class="form-control getvalue">
+                            <option value="2">元</option>
+                        </select>
+
+                        @*<label class="control-label mb-1 margin-left">上线佣金：</label>
+                            <input class="drpCheck" type="checkbox" name="IsBonusRate1" id="IsBonusRate1" @(Model.BigCoursesList[0]?.IsBonusRate == true ? "checked" : "") />工资系数计算*@
+                        @*<input class="drpCheck margin-left" type="checkbox" name="HeadFxUserExclusive1" id="HeadFxUserExclusive1" @(Model.BigCoursesList[0]?.HeadFxUserExclusiveValue > 0 ? "checked" : "") />上线独享*@
+                        <label class="control-label mb-1 margin-left">上线独享：</label>
+                        <input class="form-control getvalue issavebigcourse" type="text" name="HeadFxUserExclusiveValue1" id="HeadFxUserExclusiveValue1" placeholder="请填数值" style="width:110px;" value="@Model.BigCoursesList[0]?.HeadFxUserExclusiveValue" />&nbsp;
+                        <select name="HeadFxUserExclusiveType1" id="HeadFxUserExclusiveType1" asp-items="@ViewBag.CashbackTypeList" asp-for="@Model.BigCoursesList[0].HeadFxUserExclusiveType" class="form-control getvalue"></select>
+                    </div>
+                </div>
+                @*<div div class="form-inline tip">
+                        <div class="col-md-4"><span class="spanremark" style="margin-left:5%;">*勾选工资系数计算，则推广佣金必填</span></div>
+                        <div class="col-md-4"><span class="spanremark">*工资系数计算与上线独享至少二选一必填</span></div>
+                        <div class="col-md-4" style="margin-left:-3%;"><span class="spanremark">*勾选上线独享，则上线数值必填</span></div>
+
+                    </div>*@
+
+                @*时间--始终时间*@
+                <div div class="form-inline margin-top" style="margin-left:3%;">
+
+                    @*开始时间*@
+                    <label class="control-label mb-1" style="margin-left:0%;">开始时间 ：</label>
+                    <input class="form-control  getvalue bigtime issavebigcourse" type="text" name="BigStartTime" id="BigStartTime" style="width:120px;" placeholder="请选择日期" value="@Model.BigCoursesList[0]?.StartTime" />
+                    @*结束时间*@
+                    <label class="control-label mb-1" style="margin-left:3%;">结束时间 ：</label>
+                    <input class="form-control getvalue bigtime issavebigcourse" type="text" name="BigEndTime" id="BigEndTime" style="width:120px;" placeholder="请选择日期" value="@Model.BigCoursesList[0]?.EndTime" />
+                </div>
+                @*条件说明*@
+                <div div class="form-inline margin-top" style="margin-left:3%; margin-bottom: 2%;">
+                    <label class="control-label mb-1" style="margin-left:0%;">条件说明 ：</label>
+                    <textarea class="form-control getvalue issavebigcourse" name="ConditionDesc" id="ConditionDesc" cols="63" rows="4" placeholder="">@Model.BigCoursesList[0]?.Desc</textarea>
+
+                </div>
+            </div>
+        </div>
+
+        @*关联大课2*@
+        <div class="form-group goodsnoshow" @(Model.Type == CourseTypeEnum.Goodthing.ToInt() ? "hidden" : "")>
+            <div style="border: 1px solid #ccc; width:80%;">
+                <label class="control-label mb-1" style="margin-top: 20px; margin-left: 30px; ">关联大课2（非必填，若填则带<span class="spanremark">*</span>项均必填）：</label>
+                <a href="javascript:void(0)" class="margin-left clear-bigcourseInfo2" style="border-bottom: 1px solid #00a0ff; color: #00a0ff;">清除关联大课信息</a>
+                <input hidden="hidden" name="Id2" id="Id2" value="@Model.BigCoursesList[1]?.Id" />
+                @*大课名称*@
+                <div div class="form-inline margin-top" style="margin-left:3%;">
+                    <label class="control-label mb-1"><span class="spanremark">*</span>大课名称：</label>
+                    <input class="form-control getvalue issavebigcourse2" type="text" name="BigCourseTitle2" id="BigCourseTitle2" placeholder="请填写大课名称" style="width:59%;" value="@Model.BigCoursesList[1]?.Title" />
+                    @*大课价格*@
+                    <label class="control-label mb-1"><span class="spanremark">*</span>大课价格：</label>
+                    <input class="form-control getvalue issavebigcourse2" type="text" name="BigCoursePrice2" id="BigCoursePrice2" placeholder="请填价格" style="width:110px; margin-left:0%;" value="@(Model.Type==CourseTypeEnum.Goodthing.ToInt()?null:Model.BigCoursesList[1]?.Price)" />
+                </div>
+                @*达成条件*@
+                <div div class="form-inline margin-top" style="margin-left:3%;">
+                    <label class="control-label mb-1">达成条件 ：</label>
+                    <input class="form-control getvalue issavebigcourse2" type="text" name="Condition2" id="Condition2" placeholder="请填写达成条件" style="width:80%;" value="@Model.BigCoursesList[1]?.Condition" />
+                </div>
+
+                @*价格、推广佣金*@
+                <div div class="form-inline margin-top" style="margin-left:3%;">
+                    @*推广佣金*@
+                    <label class="control-label mb-1">推广佣金 ：</label>
+                    <input class="form-control getvalue issavebigcourse2" type="text" name="bigCashbackValue2" id="bigCashbackValue2" placeholder="请填数值" style="width:110px; margin-left:0%;" value="@Model.BigCoursesList[1]?.CashbackValue" />
+                    @*推广佣金类型*@
+                    <select name="bigCashbackType2" id="bigCashbackType2" asp-items="@ViewBag.CashbackTypeList" asp-for="@(Model.BigCoursesList[1].CashbackType)" class="form-control getvalue" style="margin-left:0.5%;"></select>
+
+                    <div style="display:none;">
+
+                        @*平级佣金*@
+                        <label class="control-label mb-1 margin-left">平级佣金：</label>
+                        <input class="form-control getvalue issavebigcourse" type="text" name="PJCashbackValue2" id="PJCashbackValue2" placeholder="请填数值" style="width:110px;" value="@Model.BigCoursesList[1]?.PJCashbackValue" />&nbsp;
+                        @*<select name="PJCashbackType2" id="PJCashbackType2" asp-items="@ViewBag.CashbackTypeList" asp-for="@Model.BigCoursesList[1].PJCashbackType" class="form-control getvalue"></select>*@
+                        <select name="PJCashbackType2" id="PJCashbackType2" class="form-control getvalue">
+                            <option value="2">元</option>
+                        </select>
+                        @*<label class="control-label mb-1 margin-left">上线佣金：</label>*@
+                        @*<input class="drpCheck" type="checkbox" name="IsBonusRate2" id="IsBonusRate2" @(Model.BigCoursesList[1]?.IsBonusRate == true ? "checked" : "") />工资系数计算*@
+                        @*<input class="drpCheck margin-left" type="checkbox" name="HeadFxUserExclusive2" id="HeadFxUserExclusive2" @(Model.BigCoursesList[1]?.HeadFxUserExclusiveValue > 0 ? "checked" : "") />上线独享*@
+
+                        <label class="control-label mb-1 margin-left">上线独享：</label>
+                        <input class="form-control getvalue issavebigcourse2" type="text" name="HeadFxUserExclusiveValue2" id="HeadFxUserExclusiveValue2" placeholder="请填数值" style="width:110px;" value="@Model.BigCoursesList[1]?.HeadFxUserExclusiveValue" />&nbsp;
+                        <select name="HeadFxUserExclusiveType2" id="HeadFxUserExclusiveType2" asp-items="@ViewBag.CashbackTypeList" asp-for="@Model.BigCoursesList[1].HeadFxUserExclusiveType" class="form-control getvalue"></select>
+                    </div>
+                </div>
+                <div div class="form-inline tip">
+                    @*<div class="col-md-4"><span class="spanremark" style="margin-left:5%;">*勾选工资系数计算，则推广佣金必填</span></div>*@
+                    @*<div class="col-md-4"><span class="spanremark">*工资系数计算与上线独享至少二选一必填</span></div>*@
+                    @*<div class="col-md-4" style="margin-left:-3%;"><span class="spanremark">*勾选上线独享，则上线数值必填</span></div>*@
+
+                </div>
+
+                @*时间--始终时间*@
+                <div div class="form-inline margin-top" style="margin-left:3%;">
+
+                    @*开始时间*@
+                    <label class="control-label mb-1" style="margin-left:0%;">开始时间 ：</label>
+                    <input class="form-control  getvalue bigtime issavebigcourse2" type="text" name="BigStartTime2" id="BigStartTime2" style="width:120px;" placeholder="请选择日期" value="@Model.BigCoursesList[1]?.StartTime" />
+                    @*结束时间*@
+                    <label class="control-label mb-1" style="margin-left:3%;">结束时间 ：</label>
+                    <input class="form-control getvalue bigtime issavebigcourse2" type="text" name="BigEndTime2" id="BigEndTime2" style="width:120px;" placeholder="请选择日期" value="@Model.BigCoursesList[1]?.EndTime" />
+                </div>
+                @*条件说明*@
+                <div div class="form-inline margin-top" style="margin-left:3%; margin-bottom: 2%;">
+                    <label class="control-label mb-1" style="margin-left:0%;">条件说明 ：</label>
+                    <textarea class="form-control getvalue issavebigcourse2" name="ConditionDesc2" id="ConditionDesc2" cols="63" rows="4" placeholder="">@Model.BigCoursesList[1]?.Desc</textarea>
+
+                </div>
+            </div>
+        </div>
+
+        @*属性及选项*@
+        <div id="property-list">
+            @*动态添加属性加载到此处*@
+        </div>
+        @*属性操作*@
+        <div class="form-group">
+            <div class="form-inline margin-top">
+                <label class="control-label mb-1">属性操作：</label>
+                <div class="col-md-2">
+                    @*添加属性是预留功能  hidden="hidden" *@
+                    <a href="javascript:void(0);" hidden="hidden" id="add-property" title="添加属性" class="fa fa-plus-square add-property" style="color: #17a2b8; font-size:40px;"></a>
+                    <a href="javascript:void(0);" id="save-property" title="保存属性" class="fa fa-check-square save-property" style="color: #17a2b8; font-size:40px;"></a>
+                </div>
+            </div>
+        </div>
+
+        @*属性选项-价格、库存、限购数量、显示*@
+        <div class="form-group" id="div-table">
+            @*动态加载属性列表*@
+        </div>
+
+        @*课程分销信息*@
+        <div div class="form-inline margin-top">
+            <label class="control-label mb-1">推广佣金：</label>
+            <input class="form-control getvalue" type="text" name="CashbackValue" id="CashbackValue" placeholder="请填数值" style="width:110px;" value="@Model.DrpInfo?.CashbackValue" />&nbsp;
+            <select name="CashbackType" id="CashbackType" asp-items="@ViewBag.CashbackTypeList" asp-for="@Model.DrpInfo.CashbackType" class="form-control getvalue"></select>
+
+            @*<label class="control-label mb-1 margin-left">上线佣金：</label>*@
+            @*<input class="drpCheck" type="checkbox" name="IsBonusRate" id="IsBonusRate" @(Model.DrpInfo?.IsBonusRate == true ? "checked" : "") />工资系数计算*@
+            @*<input class="drpCheck margin-left" type="checkbox" name="HeadFxUserExclusive" id="HeadFxUserExclusive" @(Model.DrpInfo?.HeadFxUserExclusiveValue > 0 ? "checked" : "") />上线独享*@
+            <div style="display:none;">
+                <label class="control-label mb-1 margin-left">平级佣金：</label>
+                <input class="form-control getvalue" type="text" name="PJCashbackValue" id="PJCashbackValue" placeholder="请填数值" style="width:110px;" value="@Model.DrpInfo?.PJCashbackValue" />&nbsp;
+                @*<select name="PJCashbackType" id="PJCashbackType" asp-items="@ViewBag.CashbackTypeList" asp-for="@Model.DrpInfo.PJCashbackType" class="form-control getvalue"></select>*@
+                <select name="PJCashbackType" id="PJCashbackType" class="form-control getvalue">
+                    <option value="2">元</option>
+                </select>
+
+                <label class="control-label mb-1 margin-left">上线独享：</label>
+                <input class="form-control getvalue" type="text" name="HeadFxUserExclusiveValue" id="HeadFxUserExclusiveValue" placeholder="请填数值" style="width:110px;" value="@Model.DrpInfo?.HeadFxUserExclusiveValue" />&nbsp;
+                <select name="HeadFxUserExclusiveType" id="HeadFxUserExclusiveType" asp-items="@ViewBag.CashbackTypeList" asp-for="@Model.DrpInfo.HeadFxUserExclusiveType" class="form-control getvalue"></select>
+            </div>
+        </div>
+        @*<div div class="form-inline tip">
+                <div class="col-md-3"><span class="spanremark">*勾选工资系数计算，则推广佣金必填</span></div>
+                <div class="col-md-3"></div>
+                <div class="col-md-3"><span class="spanremark">*勾选上线独享，上线数值必填</span></div>
+
+            </div>*@
+
+        @*运费*@
+        <div div id="div_freight" class="form-group margin-top " style="display:@(Model.Type == CourseTypeEnum.Goodthing.ToInt() ? "block" : "none");">
+            <div class="form-inline">
+                <label class="control-label mb-1">设置运费：</label>
+                <span style="margin:0 20px;"></span>
+                <div class="row div-freight-radio-group" radio-group="1">
+                    <label><input class="freight-radio-ty123" type="radio" />分区填写运费</label>
+                    <span style="margin:0 20px;"></span>
+                    <label><input class="freight-radio-ty10" type="radio" />自定义填写运费</label>
+                </div>
+            </div>
+            <pre class="hide init-data-freight">@(Model.Freights.ToJsonString(camelCase: true))</pre>
+            <div class="form-inline row">
+                <div class="col-12 row div-freight-ctn div-freight-ctn-ty123" style="display:none;">
+                    <div class="col-md-1"></div>
+                    <div class="col-md-11 form-group margin-top">
+                        <label class="control-label mb-1">江浙沪：</label>
+                        <input class="form-control freight-input-ty1" type="text" style="width:80px;" /><span style="margin:0 20px;"></span>
+                        <label class="control-label mb-1">偏远地区：</label>
+                        <input class="form-control freight-input-ty2" type="text" style="width:80px;" /><span style="margin:0 20px;"></span>
+                        <label class="control-label mb-1">其他地区：</label>
+                        <input class="form-control freight-input-ty3" type="text" style="width:80px;" />
+                    </div>
+                    <div class="col-md-1"></div>
+                    <div class="col-md-11"><span class="spanremark"><br />*偏远地区包括甘肃、黑龙江、吉林、辽宁、宁夏、青海、新疆、内蒙古、西藏</span></div>
+                </div>
+                <div class="col-12 row div-freight-ctn div-freight-ctn-ty10" style="display:none;">
+                    <div class="col-1"></div>
+                    <div class="col-11 row mt-2 div-freight-ctn-ty10-div">
+                        @* mymodules.freight *@
+                    </div>
+                </div>
+            </div>
+            <script type="text/template" id="tmpl_freight_addcity_win">
+                <div id="div_freight_addcity_win" class="form-group row" style="margin:5px;">
+                    <div class="col-12" style="border-bottom: 1px solid #dee2e6;">
+                        <label class="control-label m-2" citycode="0"><input type="checkbox" g="0" disabled />全国</label>
+                    </div>
+                    <div class="col-12 citys" style="border-bottom: 1px solid #dee2e6;height: 250px;">
+                        @if (ViewBag.FreightCitys is (int Code, string Name)[] citys)
+                        {
+                            @foreach (var city in citys)
+                            {
+                                <label class="control-label m-2" citycode="@(city.Code)"><input type="checkbox" g="1" disabled />@(city.Name)</label>
+                            }
+                        }
+                    </div>
+                    <div class="col-12" style="margin:0 auto;text-align:center;padding:5px 0;">
+                        <button id="freight_addcity_btn_ok" class="btn btn-primary btn-sm" style="width:90px;">确定</button>
+                        <span style="margin:0 20px;"></span>
+                        <button id="freight_addcity_btn_close" class="btn btn-primary btn-sm" style="width:90px;">取消</button>
+                    </div>
+                </div>
+            </script>
+        </div>
+
+        @* 不发货地区 *@
+        <div div id="div_freightBlackList" class="form-group margin-top " style="display:@(Model.Type == CourseTypeEnum.Goodthing.ToInt() ? "block" : "none");">
+            <pre class="hide init-data-freightBlackList">@(freightBlackList.ToJsonString(camelCase: true))</pre>
+            <div class="row">
+                <div class="col-1" style="padding-right: 0;">
+                    <label class="control-label mb-1">不发货地区：</label>
+                </div>
+                <div class="col-10 row ctn-ty10-div" style="">
+                    @* mymodules.freightBlackList *@
+                </div>
+            </div>
+            <script type="text/template" id="tmpl_freightBlackList_addcity_win">
+                <div id="div_freight_blacklist_addcity_win" class="form-group row" style="margin:5px;">
+                    <div class="col-12" style="border-bottom: 1px solid #dee2e6;">
+                        <label class="control-label m-2" citycode="0"><input type="checkbox" g="0" citycode="0" />全国</label>
+                    </div>
+                    <div class="col-12 citys" style="border-bottom: 1px solid #dee2e6;height: 250px;">
+                        @if (ViewBag.FreightCitys is (int Code, string Name)[] citys1)
+                        {
+                            @foreach (var city in citys1)
+                            {
+                                <label class="control-label m-2" citycode="@(city.Code)"><input type="checkbox" g="1" citycode="@(city.Code)" />@(city.Name)</label>
+                            }
+                        }
+                    </div>
+                    <div class="col-12" style="margin:0 auto;text-align:center;padding:5px 0;">
+                        <button class="addcity_btn_ok btn btn-primary btn-sm" style="width:90px;">确定</button>
+                        <span style="margin:0 20px;"></span>
+                        <button class="addcity_btn_close btn btn-primary btn-sm" style="width:90px;">取消</button>
+                    </div>
+                </div>
+            </script>
+        </div>
+
+        @*佣金锁定期*@
+        <div div class="form-inline margin-top">
+            <label class="control-label mb-1">佣金锁定期：</label>
+            <div class="col-md-3">
+                <input type="radio" checked="checked" />&nbsp; 确认收货后：
+                <input class="form-control getvalue" type="text" name="ReceivingAfterDays" id="ReceivingAfterDays" style="width:120px;" value="@Model.DrpInfo?.ReceivingAfterDays" />&nbsp;&nbsp;天
+            </div>
+            <div class="col-md-6">
+            </div>
+            <div class="col-md-3" style="display:none">
+                @*进行隐藏 start*@
+                <input style="display:none" type="radio" name="fxyj" value="@NolimitTypeEnum.ExactDate.ToInt()" @((Model.IsAdd || Model.DrpInfo?.NolimitType == NolimitTypeEnum.ExactDate.ToInt()) ? "checked" : "") />&nbsp;具体日期：
+                <input style="display:none" class="form-control getvalue" @((Model.DrpInfo?.NolimitType != 1 && Model.IsAdd == false) ? "readonly" : "" ) type="text" name="NolimitAfterDate" id="NolimitAfterDate" style="width:120px;" placeholder="请选择日期" value="@(Model.DrpInfo?.NolimitType==1?Model.DrpInfo?.NolimitAfterDate?.ToString("yyyy-MM-dd"):"")" />
+                @*进行隐藏  end*@
+
+            </div>
+
+            <div class="col-md-3" style="display:none">
+                @*进行隐藏 start*@
+                <input style="display:none" type="radio" name="fxyj" value="@NolimitTypeEnum.NDaysLater.ToInt()" @(Model.DrpInfo?.NolimitType == NolimitTypeEnum.NDaysLater.ToInt() ? "checked" : "") />&nbsp; 购买：
+                <input style="display:none" class="form-control getvalue" @(Model.DrpInfo?.NolimitType != 2 ? "readonly" : "" ) type="text" name="NolimitAfterBuyInDays" id="NolimitAfterBuyInDays" style="width:120px;" value="@Model.DrpInfo?.NolimitAfterBuyInDays" />&nbsp;&nbsp;天
+                @*进行隐藏  end*@
+            </div>
+            <div class="col-md-3" style="display:none">
+                @*进行隐藏  end*@
+                <input style="display:none" type="radio" name="fxyj" value="@NolimitTypeEnum.NotLocked.ToInt()" @(Model.DrpInfo?.NolimitType == NolimitTypeEnum.NotLocked.ToInt() ? "checked" : "") />&nbsp;不锁定（立即可提取）
+                @*进行隐藏  end*@
+            </div>
+        </div>
+
+        <div div class="form-inline">
+            <div class="col-md-1"></div>
+            <div class="col-md-3 tip"><span class="spanremark">*具体日期需要设置自动下架（自动下架所选日期的24点上架）</span></div>
+
+        </div>
+
+        <div class="form-inline margin-top" @(!Model.IsAdd ? "" : "hidden" )>
+            <label class="control-label mb-1">自动上架时间：</label>
+            <div class="col-md-3">
+                @* readonly="readonly" @((Model.DrpInfo?.NolimitType != 1 && Model.IsAdd == false) ? "readonly" : "" )
+                *@
+                <input class="form-control getvalue bigtime" type="text" value="@(Model.LastOnShelfTime?.ToString("yyyy-MM-dd"))" id="AutoOnShelfDate_Edit" name="AutoOnShelfDate_Edit" placeholder="请选择时间">
+            </div>
+        </div>
+        <div class="form-inline margin-top" @(!Model.IsAdd ? "" : "hidden" )>
+            <label class="control-label mb-1">自动下架时间：</label>
+            <div class="col-md-3">
+                @* readonly="readonly" @((Model.DrpInfo?.NolimitType != 1 && Model.IsAdd == false) ? "readonly" : "" )
+                *@
+                <input class="form-control getvalue bigtime" type="text" value="@(Model.LastOffShelfTime?.ToString("yyyy-MM-dd"))" id="AutoOffShelfDate_Edit" name="AutoOffShelfDate_Edit" placeholder="请选择时间">
+            </div>
+        </div>
+
+        @* 好物新用户立即返还 *@
+        @if (Model.IsAdd || Model.Type == CourseTypeEnum.Goodthing.ToInt())
+        {
+            <div id="div_NewUserReward" class="form-inline margin-top goodsneedshow">
+                <label class="control-label mb-1">新人立返佣金：</label>
+                <input class="form-control getvalue" type="text" name="NewUserRewardValue" id="NewUserRewardValue" placeholder="请填数值" style="width:110px;" value="@Model.DrpInfo?.NewUserRewardValue" />&nbsp;
+                <select name="NewUserRewardType" id="NewUserRewardType" asp-items="@ViewBag.CashbackTypeList" asp-for="@Model.DrpInfo.NewUserRewardType" class="form-control getvalue"></select>
+            </div>
+        }
+
+        @*视频*@
+        <div class="form-group margin-top">
+            <label class="form-control-label">视频</label>
+            <div class="div_vdo" ui-batch-uploadvideo="1" data-title="视频">
+                <div id="videshow" vdo="" class="row">
+                    @if (Model.Videos?.Any() == true)
+                    {
+
+                        <div id="" class="col-md-4">
+                            <div class="row ppvideo">
+                                <div class="col-md-4">
+                                    <video class="vdo_vdo" style="object-fit:cover;" width="250" height="150" controls="" data-id="a492dd5d-75ea-4ed8-8860-2d75a6755b71" poster="@(Model.VideoCovers[0])">
+                                        <source src="@(Model.Videos[0])" type="video/mp4">
+                                    </video>
+                                </div>
+                                @*删除*@
+                                <div class="col-md-6"><a id="delvideo" class="fa fa-minus-circle delvideo text-danger" style="margin-left:63%;"></a></div>
+                            </div>
+                            <a href="javascript:void(0)" id="downlvideo" data-id="" class="downloadpic text-info" data-input="@(Model.Videos[0])">下载</a>
+                        </div>
+                    }
+                </div>
+
+                <div item-add="" class="row">
+                    <div class="col-md-4">
+                        <input type="file" name="principalvideo" multiple="" accept="video/mp4,audio/mp4" title="只允许上传Mp4格式的视频!视频大小不能超过40M">
+                    </div>
+                    <div class="col-md-2">
+                        <input type="button" id="uploadsinglevideo" class="uploasingledvideo btn btn-info btn-block" data-video="principalvideo" data-input="principalvideo" value="上传">
+                    </div>
+                    <div class="col-md-6">
+                        <a href="javascript:;" data-toggle="tooltip" data-placement="bottom" title="" data-original-title="只允许上传Mp4格式的视频!视频大小不能超过40M">
+                            <i class="fa fa-question-circle"></i>视频格式
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @*课程banner/>*@
+        <div class="form-group margin-top">
+            <label class="control-label mb-1">课程banner：</label>
+            <div id="img-list" class="clearfix">
+                @if (!string.IsNullOrEmpty(Model.Banner))
+                {
+                    @*@Html.Raw(Model.Banner)*@
+                }
+                else
+                {
+                    <ul class="img-box">
+                        @*多图片上传*@
+                        <li class="upload-btn">
+                            <input type="file" id="@Model.Id" hidden="hidden" class="c_ignore updateFile" name="files" multiple accept="jpg,png" title="只允许上传Mp4格式的视频!视频大小不能超过40M" />
+                            <input type="button" id="uploadlogo" style="width: 100px; height: 100px; font-size: 50px;" class="uploadvideo-btn btn  btn-info btn-block c_ignore updateBtn" data-video="@Model.Id" data-input="InterviewVideos" value="+" />
+                        </li>
+                    </ul>
+
+                }
+            </div>
+            <input class="getvalue" type="text" id="hidUrlJson" name="Banner" hidden="hidden" value="@(string.IsNullOrEmpty(Model.BannerUrls)?" []":Model.BannerUrls)" />
+            <input class="getvalue" type="text" id="hidThunUrlJson" name="Banner_s" hidden="hidden" value="@(string.IsNullOrEmpty(Model.BannerUrls_s)?" []":Model.BannerUrls_s)" />
+
+        </div>
+
+        @*课程详情*@
+        <div class="form-group">
+            <label class="control-label mb-1" style="">课程详情：</label>
+            <div class="border uecontent" id="content" name="content" style="min-height:50px">
+                <script id="editor1" type="text/plain" style="width:100%;height:200px;">
+                </script>
+            </div>
+        </div>
+
+        @*操作按钮*@
+        <div class="text-center">
+            <button id="save" class="btn btn-primary btn-sm font-size" type="button" style="width:10%;height:2em;">提交</button>
+            <a href="@Url.Action(" Index")" data-id="" class="text-info">返回列表</a>
+        </div>
+
+    </div>
+</div>
+
+
+
+@*需要预定义ue编辑器*@
+<div class="border uecontent" id="preUE" hidden="hidden" placeholder="(提示:请录入图片和文字材料)" style="min-height:50px">
+    <script id="editor1" type="text/plain" style="width:100%;height:200px;">
+    </script>
+</div>
+
+<pre style="display:none;" id="tmp_Meal">@Html.Raw(Model.Detail)</pre>
+
+<input hidden="hidden" id="noticejson" value="@(Model.ListNotices==null?" []":JsonSerializationHelper.Serialize(Model.ListNotices))"></input>
+<input id="projson" hidden="hidden" value="@(JsonSerializationHelper.Serialize(Model.PropInfoList))" />
+<input id="supplierjson" hidden="hidden" value="@(JsonSerializationHelper.Serialize(Model.ListSuppliers))" />
+
+
+@section Scripts{
+
+
+    @*可搜索复选下拉框*@
+    <script src="~/js/jqselect/select.js"></script>
+
+    @*数据补全*@
+    <script src="@(ViewBag.StaticFile)/bootstrap-3-typeahead/4.0.2/bootstrap3-typeahead.min.js"></script>
+    @*taginput*@
+    <script src="@(ViewBag.StaticFile)/bootstrap-tagsinput/0.8.0/bootstrap-tagsinput.min.js"></script>
+
+    @*editor 富文本编辑器*@
+    <script type="text/javascript" charset="utf-8" src="~/ueditor/ueditor.config.nostyle4cccv1.js"></script>
+    <script type="text/javascript" charset="utf-8" src="~/ueditor/editor_api.js"></script>
+
+
+    <script src="~/js/jquery-validate.bootstrap-tooltip.min.js"></script>
+    <script src="~/assets/js/GetFormJson.js"></script>
+    <script src="~/assets/js/Completion.js"></script>
+    <script src="~/js/jq.postJSON.js"></script>
+
+    @*时间控件*@
+    <script src="@(ViewBag.StaticFile)/moment.js/2.18.1/moment-with-locales.min.js"></script>
+    <script src="@(ViewBag.StaticFile)/bootstrap-datetimepicker/4.17.47/js/bootstrap-datetimepicker.min.js"></script>
+    <script src="@(ViewBag.StaticFile)/bootstrap-3-typeahead/4.0.2/bootstrap3-typeahead.min.js"></script>
+    <script src="~/js/jquery.dad.min.js"></script>
+    <script src="~/js/Math.uuid.js"></script>
+
+    <script type="text/javascript">
+        //-----------全局变量声明与赋值--------------------
+        var mymodules = {};
+
+        //课程Id
+        var courseId = '@Model.Id';//课程Id
+        var isAdd = '@Model.IsAdd';//true：新增课程；false:编辑课程
+
+
+        //操作类型(1:新增(默认显示);2:更新;3:删除;4:其他(非操作))
+        var add = 1, update = 2, del = 3, query = 4;
+        var PropertyDbData = jQuery("#projson").val() != "" ? JSON.parse(jQuery("#projson").val()) : "";//数据库中属性信息
+        var SupplierData = jQuery("#supplierjson").val() != "" ? JSON.parse(jQuery("#supplierjson").val()) : "";// 供应商s
+        var v_changedSupplierAdrr = {}; // 供应商的地址s
+
+        //notice编辑器集合
+        var notice_UE_list = [];
+        debugger;
+        var noticejson = jQuery("#noticejson").val();
+
+        var dbNotice = JSON.parse(noticejson);
+         //ue编辑器
+        var ue = UE.getEditor('editor1', {
+            configPath: 'ueditor/config.json',
+            initialContent: "",
+            theme: 'tt',
+            elementPathEnabled: !1,
+            imageScaleEnabled: !1,
+            imagePopup: !1,
+            tableDragable: !1,
+            wordCount: !1,
+            autoHeight: false,
+            toolbars: [["source", "h2", "bold", "underline", "italic", "strikethrough", "forecolor", "blockquote", "horizontal", "justifyleft", "justifycenter", "justifyright", "link", "unlink", "|", "insertimage", "|", "selectall", "removeformat", "undo", "redo"]],
+            removeFormatTags: "b,big,code,del,dfn,em,font,i,ins,kbd,q,samp,small,span,strike,strong,sub,sup,tt,u,var,blockquote,h1,h2,h3,h4,h5,h6",
+            autotypeset:
+            {
+                mergeEmptyline: !0,
+                removeClass: !1,
+                removeEmptyline: !0,
+                pasteFilter: !0,
+                clearFontSize: !0,
+                clearFontFamily: !0
+            },
+        });
+        ue.ready(function () {
+            jQuery(this.container).click(function (e) {
+                e.stopPropagation()
+            });
+            ue.execCommand('serverparam', 'contentID', '@(Model.Id)');
+            ue.execCommand('serverparam', 'contentType', 'school_v3');
+            ue.execCommand('cleardoc');
+            ue.execCommand("insertHtml", '');
+            ue.setContent(jQuery('#tmp_Meal').html());
+        });
+        jQuery('.uecontent').click(function (e) {
+            e.stopPropagation();
+            var jQuerytarget = jQuery(this);
+            //解决多个ueditor切换后工具栏和输入框分离
+            jQuery('.edui-editor-toolbarbox').attr('style', '');
+            var content = jQuerytarget.html();
+            var currentParnet = ue.container.parentNode.parentNode;
+            var currentContent = ue.getContent();
+            jQuerytarget.html('');
+            jQuerytarget.append(ue.container.parentNode);
+            ue.reset();
+            setTimeout(function () {
+                ue.setContent(content);
+            }, 200)
+            jQuery(currentParnet).html(currentContent);
+            return false;
+        });
+        (function (b) {
+            ue.ready(function () {
+                if (b) return;
+                b = true, bind_toolbar_event();
+            });
+            function bind_toolbar_event() {
+                //ue 清除格式事件
+                jQuery('.edui-editor').on('click', '.edui-for-removeformat', function () {
+                    ue.setContent(rmStyle(ue.getContent()));
+                });
+            }
+        })();
+
+        //购前须知编辑器
+        function IntNoteUE(index,noticecontent) {
+            var  noticeUE = UE.getEditor('notice_editor_' + index + '', {
+                configPath: 'ueditor/config.json',
+                initialContent: "",
+                theme: 'tt',
+                elementPathEnabled: !1,
+                imageScaleEnabled: !1,
+                imagePopup: !1,
+                tableDragable: !1,
+                wordCount: !1,
+                autoHeight: false,
+                toolbars: [["source", "h2", "bold", "underline", "italic", "strikethrough", "forecolor", "blockquote", "horizontal", "justifyleft", "justifycenter", "justifyright", "link", "unlink", "|", "insertimage", "|", "selectall", "removeformat", "undo", "redo"]],
+                removeFormatTags: "b,big,code,del,dfn,em,font,i,ins,kbd,q,samp,small,span,strike,strong,sub,sup,tt,u,var,blockquote,h1,h2,h3,h4,h5,h6",
+                autotypeset:
+                {
+                    mergeEmptyline: !0,
+                    removeClass: !1,
+                    removeEmptyline: !0,
+                    pasteFilter: !0,
+                    clearFontSize: !0,
+                    clearFontFamily: !0
+                },
+            });
+
+            noticeUE.ready(function () {
+                jQuery(this.container).click(function (e) {
+                    e.stopPropagation()
+                });
+                noticeUE.execCommand('serverparam', 'contentID', '@(Model.Id)');
+                noticeUE.execCommand('serverparam', 'contentType', 'school_v3');
+                noticeUE.execCommand('cleardoc');
+                noticeUE.execCommand("insertHtml", '');
+                noticeUE.setContent(noticecontent);
+            });
+
+            jQuery('.uecontent').click(function (e) {
+                e.stopPropagation();
+                var jQuerytarget = jQuery(this);
+                //解决多个ueditor切换后工具栏和输入框分离
+                jQuery('.edui-editor-toolbarbox').attr('style', '');
+                var content = jQuerytarget.html();
+                var currentParnet = noticeUE.container.parentNode.parentNode;
+                var currentContent = noticeUE.getContent();
+                jQuerytarget.html('');
+                jQuerytarget.append(noticeUE.container.parentNode);
+                noticeUE.reset();
+                setTimeout(function () {
+                    noticeUE.setContent(content);
+                }, 200)
+                jQuery(currentParnet).html(currentContent);
+                return false;
+            });
+
+            (function (b) {
+                noticeUE.ready(function () {
+                    if (b) return;
+                    b = true, bind_toolbar_event();
+                });
+                function bind_toolbar_event() {
+                    //ue 清除格式事件
+                    jQuery('.edui-editor').on('click', '.edui-for-removeformat', function () {
+                        noticeUE.setContent(rmStyle(noticeUE.getContent()));
+                    });
+                }
+            })();
+
+            //notice编辑器集合
+            notice_UE_list.push({ "index": index, "noticeue": noticeUE });
+        }
+
+        jQuery(function () {
+
+            //大课信息
+            var BigCourse = (function () {
+
+                jQuery('.bigtime').datetimepicker({
+                    format: 'YYYY-MM-DD',
+                    locale: moment.locale('zh-cn'),
+                })
+
+                //开始时间
+                jQuery('#BigStartTime').bind('dp.change', function (e) {
+                    var d = new Date(e.date);
+                    var time = jQuery(this).val();
+                    jQuery("#BigEndTime").data("DateTimePicker").minDate(time);
+                })
+                jQuery('#BigStartTime2').bind('dp.change', function (e) {
+                    var d = new Date(e.date);
+                    var time = jQuery(this).val();
+                    jQuery("#BigEndTime2").data("DateTimePicker").minDate(time);
+                })
+                //jQuery('#BigEndTime').val("");
+
+                //结束时间
+                jQuery('#BigEndTime').bind('dp.change', function (e) {
+                    var d = new Date(e.date);
+                    var time = jQuery(this).val();
+                    jQuery("#BigStartTime").data("DateTimePicker").maxDate(time);
+                })
+                jQuery('#BigEndTime2').bind('dp.change', function (e) {
+                    var d = new Date(e.date);
+                    var time = jQuery(this).val();
+                    jQuery("#BigStartTime2").data("DateTimePicker").maxDate(time);
+                })
+                //jQuery('#BigStartTime').val("");
+
+
+
+            })()
+
+            // 时间
+            var OnOrOffTime = (function () {
+
+                //自动上架时间
+                jQuery('#AutoOnShelfDate').datetimepicker({
+                    format: 'YYYY-MM-DD',
+                    locale: moment.locale('zh-cn'),
+                }).data("DateTimePicker").minDate(new Date((new Date()).getTime() + 1000 * 60 * 60 * 24))// 时间控件 - 设置了最小日期为明天
+
+                jQuery('#AutoOnShelfDate').bind('dp.change', function (e) {
+                    var d = new Date(e.date);
+                    var time = jQuery(this).val();
+                    jQuery("#AutoOffShelfDate").data("DateTimePicker").minDate(time);
+                })
+                jQuery('#AutoOnShelfDate').val("");
+
+                //自动下架时间
+                jQuery('#AutoOffShelfDate').datetimepicker({
+                    format: 'YYYY-MM-DD',
+                    locale: moment.locale('zh-cn'),
+                }).data("DateTimePicker").minDate(new Date((new Date()).getTime() + 1000 * 60 * 60 * 24))// 时间控件 - 设置了最小日期为明天
+
+                jQuery('#AutoOffShelfDate').bind('dp.change', function (e) {
+                    var d = new Date(e.date);
+                    var time = jQuery(this).val();
+                    jQuery("#AutoOnShelfDate").data("DateTimePicker").maxDate(time);
+
+                    var mintime = new Date((new Date(d)).getTime() + 1000 * 60 * 60 * 24)//佣金锁定具体日期最小值（自动下架日期+1）
+                    jQuery("#NolimitAfterDate").data("DateTimePicker").minDate(mintime);
+                });
+                jQuery('#AutoOffShelfDate').val("");
+                jQuery("input[name=OnOrOff]").on("click", function () {
+                    var checkInput = jQuery(this);
+                    var timeId = checkInput.attr("data-id");
+                    if (checkInput.attr("checked")) {//去掉勾选
+                        checkInput.removeAttr("checked");
+                        jQuery("#" + timeId).removeAttr("readonly");//对应时间控件可选
+                    } else {//勾选
+                        debugger;
+                        checkInput.attr("checked", "checked");
+                        jQuery("#" + timeId).attr("readonly", "readonly");//对应时间控件只读，并清空时间
+                        jQuery("#" + timeId).val("");
+                    }
+                });
+
+
+                //编辑时的自动下架
+                var NolimitType = '@Model?.DrpInfo?.NolimitType';
+                debugger;
+                var timeCurrent = new Date(); //获取当前系统时间
+                var timeadd = new Date(timeCurrent.getTime() + 1 * 24 * 60 * 60 * 1000);  //对当前时间加1天
+                timeadd = timeadd.getFullYear() + "-" + (timeadd.getMonth() + 1) + "-" + timeadd.getDate();//重新拼接成yyyy-MM-dd 格式
+                debugger;
+                //
+                // 设置上下架时间后到期了会更新course表的status和ModifyDateTime
+                //
+                jQuery('#AutoOnShelfDate_Edit').datetimepicker({
+                    format: 'YYYY-MM-DD',
+                    locale: moment.locale('zh-cn'),
+                }).data("DateTimePicker").minDate(timeadd);//自动上架最小日期为明天
+                jQuery('#AutoOnShelfDate_Edit').val("@(Model.LastOnShelfTime?.ToString("yyyy-MM-dd") ?? "")");
+                //
+                jQuery('#AutoOffShelfDate_Edit').datetimepicker({
+                    format: 'YYYY-MM-DD',
+                    locale: moment.locale('zh-cn'),
+                }).data("DateTimePicker").minDate(timeadd);//自动下架最小日期为明天
+                /*jQuery('#AutoOffShelfDate_Edit').val("");
+                if (NolimitType != null && NolimitType== 1) {
+                    jQuery('#AutoOffShelfDate_Edit').val("@Model.LastOffShelfTime?.ToString("yyyy-MM-dd")");
+                }*/
+                jQuery('#AutoOffShelfDate_Edit').val("@(Model.LastOffShelfTime?.ToString("yyyy-MM-dd") ?? "")");
+                jQuery('#AutoOffShelfDate_Edit').bind('dp.change', function (e) {
+                    debugger;
+                    var d = new Date(e.date);
+                    var time = new Date((new Date(d)).getTime() + 1000 * 60 * 60 * 24)//佣金锁定具体日期最小值（自动下架日期+1）
+                    jQuery("#NolimitAfterDate").data("DateTimePicker").minDate(time);
+                });
+
+
+                //佣金锁定期-具体日期
+                jQuery('#NolimitAfterDate').datetimepicker({
+                    format: 'YYYY-MM-DD',
+                    locale: moment.locale('zh-cn'),
+                }).data("DateTimePicker").minDate(new Date((new Date()).getTime() + 1000 * 60 * 60 * 24 * 2))//锁定佣金具体日期的最小值是后天
+                jQuery('#NolimitAfterDate').val("");
+                if (NolimitType != null && NolimitType== 1) {
+                    jQuery('#NolimitAfterDate').val("@Model.DrpInfo?.NolimitAfterDate?.ToString("yyyy-MM-dd")");
+                }
+                jQuery('#NolimitAfterDate').bind('dp.change', function (e) {
+
+                    var d = new Date(e.date);//当前选择日期
+                    var time = new Date((new Date(d)).getTime() - 1000 * 60 * 60 * 24)
+
+                    if (isAdd == true) {
+                        //新增时的设置
+                        jQuery("#AutoOffShelfDate").data("DateTimePicker").maxDate(time);//自动下架最大日期（佣金锁定具体日期-1）
+                        jQuery("#AutoOnShelfDate").data("DateTimePicker").maxDate(time);//自动上架最大日期
+                    }
+                    else {
+                        debugger;
+                        //编辑时的设置自动下架
+                        jQuery("#AutoOffShelfDate_Edit").data("DateTimePicker").maxDate(time);//自动下架最大日期（佣金锁定具体日期-1）
+                    }
+
+                })
+
+
+            })();
+
+            //Table-tdnumber 控制小数位数
+            function TdNumberControl() {
+                //td库存-控制为正整数
+                HuLyegaJS.decimalInput({
+                    ele: '[name="td-stock"]',
+                    decimalPlaces: 0
+                });
+                //td价格-控制为2位小数
+                HuLyegaJS.decimalInput({
+                    ele: '[name="td-price"]',
+                    decimalPlaces: 2
+                });
+                //td原价-控制为2位小数
+                HuLyegaJS.decimalInput({
+                    ele: '[name="td-origprice"]',
+                    decimalPlaces: 2
+                });
+                //td限购数量-控制为自然数
+                HuLyegaJS.decimalInput({
+                    ele: '[name="td-limitedBuyNum"]',
+                    decimalPlaces: 0
+                });
+
+            }
+            //数字输入框控制小数位数
+            var intNumber = (function () {
+                //价格-控制为两位小数
+                HuLyegaJS.decimalInput({
+                    ele: '[name="Price"]',
+                    decimalPlaces: 2
+                });
+
+                //库存-控制为正整数
+                HuLyegaJS.decimalInput({
+                    ele: '[name="Stock"]',
+                    decimalPlaces: 0
+                });
+
+                //上课时长-控制为正整数
+                HuLyegaJS.decimalInput({
+                    ele: '[name="Duration"]',
+                    decimalPlaces: 0
+                });
+
+                //最小年龄-控制为正整数
+                HuLyegaJS.decimalInput({
+                    ele: '[name="MinAge"]',
+                    decimalPlaces: 0
+                });
+                //最大年龄-控制为正整数
+                HuLyegaJS.decimalInput({
+                    ele: '[name="MaxAge"]',
+                    decimalPlaces: 0
+                });
+                //最大年龄大于或者等于最小年龄
+                jQuery("#MaxAge,#MinAge").on("blur", function () {
+                    var $maxage = jQuery("#MaxAge");
+                    var $minage = jQuery("#MinAge");
+                    var maxage = parseInt($maxage.val());
+                    var minage = parseInt($minage.val());
+                    if (maxage < minage) {
+                        ShowAlert("最大年龄不能小于最小年龄，请重新填写！", 3000);
+                        jQuery(this).focus();
+                        return;
+                    }
+                });
+
+                //大课价格-控制为两位小数
+                HuLyegaJS.decimalInput({
+                    ele: '[name="BigCoursePrice"]',
+                    decimalPlaces: 2
+                });
+                HuLyegaJS.decimalInput({
+                    ele: '[name="BigCoursePrice2"]',
+                    decimalPlaces: 2
+                });
+
+                //大课返现比例-控制为两位小数
+                HuLyegaJS.decimalInput({
+                    ele: '[name="bigCashbackValue"]',
+                    decimalPlaces: 2
+                });
+                HuLyegaJS.decimalInput({
+                    ele: '[name="bigCashbackValue2"]',
+                    decimalPlaces: 2
+                });
+
+                //推广佣金-控制为两位小数
+                HuLyegaJS.decimalInput({
+                    ele: '[name="CashbackValue"]',
+                    decimalPlaces: 2
+                });
+
+                //上线独享控制为两位小数
+                HuLyegaJS.decimalInput({
+                    ele: '[name="HeadFxUserExclusiveValue"]',
+                    decimalPlaces: 2
+                });
+                HuLyegaJS.decimalInput({
+                    ele: '[name="HeadFxUserExclusiveValue1"]',
+                    decimalPlaces: 2
+                });
+                HuLyegaJS.decimalInput({
+                    ele: '[name="HeadFxUserExclusiveValue2"]',
+                    decimalPlaces: 2
+                });
+
+                //购买N天后-控制为正整数
+                HuLyegaJS.decimalInput({
+                    ele: '[name="NolimitAfterBuyInDays"]',
+                    decimalPlaces: 0
+                });
+
+                HuLyegaJS.decimalInput({
+                    ele: '[name="ReceivingAfterDays"]',
+                    decimalPlaces: 0
+                });
+
+                //平级佣金--两位小数
+                HuLyegaJS.decimalInput({
+                    ele: '[name="PJCashbackValue"]',
+                    decimalPlaces: 2
+                });
+                HuLyegaJS.decimalInput({
+                    ele: '[name="PJCashbackValue1"]',
+                    decimalPlaces: 2
+                });
+                HuLyegaJS.decimalInput({
+                    ele: '[name="PJCashbackValue2"]',
+                    decimalPlaces: 2
+                });
+
+
+                //Table-tdnumber 控制小数位数
+                TdNumberControl();
+
+
+            })();
+
+            //搜索下拉框
+            var searchSelect = (function () {
+                //搜索复选下拉框--渲染初始话
+                //jQuery("#div_OrgType").mySelect();           //品牌分类
+                jQuery("#div_Org").mySelect();               //品牌div_Org
+                jQuery("#div_CourseType").mySelect();           //商品分类
+                jQuery("#div_Subjects").mySelect();  //科目分类
+                jQuery("#div_GoodthingTypes").mySelect();  //好物分类
+
+                jQuery("#div_Mode").mySelect();              //上课方式
+                jQuery("#div_Subject").mySelect();           //科目div_Subject
+
+                //三级分类
+                var SetpGroup = jQuery("#StepGoup .selectPickerWrapper");
+                SetpGroup.each(function (index, select) {
+                    jQuery(select).mySelect();
+                });
+
+
+                //清除课程信息-包括（品牌、课程、课程信息）--重置为最初状态
+                jQuery(".clear-courseInfo").on("click", function () {
+                    //清空隐藏选中项value
+                    jQuery("#Duration").val("");//上课时长
+                    jQuery("#div_Mode_hidden").val("");//上课方式
+                    jQuery("#div_Subject_hidden").val("");//科目分类
+                    jQuery("#MinAge").val(""); jQuery("#MaxAge").val("");//年龄段
+
+                    ReRenderMySelect("div_Mode");//上课方式重置
+                    ReRenderMySelect("div_Mode");//上课方式重置
+                    ReRenderMySelect("div_Subject");//科目分类重置
+
+
+                });
+
+                  //品牌分类-品牌联动
+                //jQuery(document).on('click touch', '#div_OrgType .select-picker-options-list-item', function (e) {
+                //    debugger;
+                //    e.preventDefault();
+                //    SetOrgData(jQuery(this).attr("id"), jQuery("#div_Org"));
+
+                //});
+                function SetOrgData(orgTypeId, jQueryselect) {
+                    debugger;
+                    if (orgTypeId == null || orgTypeId == 0) {
+                        return;
+                    }
+                    jQuery.getJSON("@Url.Action("OrgSelectList", "Organization")", { orgType: orgTypeId }, function (data) {
+
+                        var options = "";
+                        jQuery.each(data, function (index, item) {
+                            options += '<option value="' + item.value + '">' + item.text + '</option>';
+                        });
+
+                        jQuery("#div_Org .select-picker-search").each(function (index) {
+                            jQuery(this).remove();
+                        })
+                        jQuery("#div_Org .select-picker-options-wrp").each(function (index) {
+                            jQuery(this).remove();
+                        })
+                        ReRenderMySelect("div_Org", options);
+                    });
+                }
+
+                 //商品分类-分类联动
+                jQuery(document).on('click touch', '#div_CourseType .select-picker-options-list-item', function (e) {
+                    debugger;
+                    e.preventDefault();
+                    var typeId = jQuery(this).attr("id");
+                    if (typeId == "1") {
+                        //课程--科目分类
+
+                        jQuery("#IsExplosions").attr("hidden", "hidden");
+                        jQuery('label[for=IsExplosions]').attr("hidden", "hidden");
+                        jQuery("#IsSystemCourse").removeAttr("hidden");
+                        jQuery('label[for=IsSystemCourse]').removeAttr("hidden");
+                        jQuery("#div_Subjects").removeAttr("hidden");
+                        jQuery("#div_GoodthingTypes").attr("hidden", "hidden");
+                        jQuery("#div_GoodthingTypes_hidden").val('');
+
+                        //课程信息、大课信息
+                        jQuery('.goodsnoshow').removeAttr("hidden");
+                        jQuery('.goodsneedshow').attr("hidden", "hidden");
+
+                        jQuery('#div_freight').hide();
+                        jQuery('#div_freightBlackList').hide();
+
+                    } else if (typeId == "2") {
+                        //好物--好物分类
+
+                        jQuery("#IsExplosions").removeAttr("hidden");
+                        jQuery('label[for=IsExplosions]').removeAttr("hidden");
+                        jQuery("#IsSystemCourse").attr("hidden", "hidden");
+                        jQuery('label[for=IsSystemCourse]').attr("hidden", "hidden");
+                        jQuery("#div_GoodthingTypes").removeAttr("hidden");
+                        jQuery("#div_Subjects").attr("hidden", "hidden");
+                        jQuery("#div_Subjects_hidden").val('');
+
+                        //去掉大课默认价格
+                        jQuery('input[name=BigCoursePrice]').val('')
+                        jQuery('input[name=BigCoursePrice2]').val('');
+
+                        //课程信息、大课信息
+                        jQuery('.goodsnoshow').attr("hidden", "hidden");
+                        jQuery('.goodsneedshow').removeAttr("hidden");
+
+                        jQuery('#div_freight').show();
+                        jQuery('#div_freightBlackList').show();
+                    }
+                });
+
+
+                //重新渲染下拉框
+                function ReRenderMySelect(id, options) {
+                    debugger;
+                    jQuery("#" + id + " .select-picker-search").each(function (index) {
+                        jQuery(this).remove();
+                    })
+                    jQuery("#" + id + " .select-picker-options-wrp").each(function (index) {
+                        jQuery(this).remove();
+                    })
+
+                    var iscanselect = false;//是否可选
+
+                    //options包含选中项，则把选项传入,否则重置所有选项为未选中
+                    if (options == null || options == undefined) {
+                        options = "";
+                        jQuery("#" + id + "_select").find("option").each(function () {
+                            var option = jQuery(this);
+                            options += '<option  value="' + option.val() + '">' + option.text() + '</option>';
+                        });
+                    }
+                    jQuery("#" + id + "_select").empty();
+                    jQuery("#" + id + "_select").append(options);
+                    jQuery("#" + id).mySelect();//重新渲染
+
+                }
+
+            })();
+
+            //banner-上传下载删除
+            var aboutBanner = (function () {
+                UploadImg();
+                downloadIamge();
+                //1、上传
+                var uploadIndex = 0;
+                function UploadImg(){
+
+                    //上传logo--选择图片
+                    jQuery('.updateBtn').click(function () {
+                        //最多上传10张
+                        var Url = JSON.parse(jQuery("#hidUrlJson").val());//图片集合
+                        if (Url.length > 10) {
+                            ShowAlert('最多上传10张图片');
+                            return;
+                        }
+                        return jQuery('#' + jQuery(this).attr('data-video')).click(); //注意这句，主要是需要return点击事件返回值
+                    });
+
+                    //上传logo--自动上传
+                    jQuery('.updateFile').on("change", function () {
+                        var fileinput = jQuery(this);//上传文件
+                        var videoInput = fileinput.attr('id');
+                        var $videoInput = document.getElementById(videoInput);
+                        uploadIndex = 0;
+                        if ($videoInput.files.length == 0) {
+                            return;
+                        }
+                        console.log('长度', $videoInput.files.length)
+                        var Url = JSON.parse(jQuery("#hidUrlJson").val());//图片集合
+                        console.log('集合', Url)
+                        if (Url.length + $videoInput.files.length > 10) {
+                            ShowAlert('最多上传10张图片');
+                            return;
+                        }
+                        Loading("正在上传图片");
+                        setTimeout(() => {
+                            for (var i = 0; i < $videoInput.files.length; i++) {
+                                var formData = new FormData();
+                                formData.append(videoInput, $videoInput.files[i]);
+                                formData.append('p', 'coursebanner');
+                                if (i >= 10) {
+                                    return;
+                                } else {
+                                    uploadApi(formData, fileinput, $videoInput.files.length);
+                                }
+                            }
+                        }, 100);
+                    })
+
+                }
+
+                var timer = null;
+                //上传接口
+                function uploadApi(formData, fileinput, len) {
+                    jQuery.ajax({
+                        url: "@ViewBag.OrgeEvltCrawlerUploadUrl",
+                        type: "post",
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        cache: false
+                    }).done(function (res) {
+                        uploadIndex++;
+                        //上传至最后一张才结束loading
+                        if (len == uploadIndex) {
+                            CloseLoading();
+                        }
+                        if (res.status == 200) {
+                            ShowAlert('上传成功', 1000, function () {
+                                fileinput.val('');
+                                var url = res.data.src;
+                                var url_s = res.data.src_s;
+                                AddUrl(url, url_s)
+                                timer = setTimeout(ReloadImg, 300);
+                            });
+                        } else {
+                            ShowAlert("上传失败:"+res.msg, -1);
+                        }
+
+                    }).fail(function (res) {
+                        ShowAlert("网络异常:"+res.msg, -1);
+                        CloseLoading();
+                    });
+                }
+
+                //2、删除图片
+                jQuery("body").on('click', '#img-list .deletebutten', function () {
+                    var $input = jQuery(this);
+                    var delUrl = $input.attr("data-input");//url
+                    var json = JSON.parse(jQuery("#hidUrlJson").val());
+                    var jsonResult = [];
+                    debugger;
+                    jQuery.each(json, function (index, url) {
+                        if (url != delUrl) {
+                            jsonResult.push(url);
+                        }
+                        else {
+                            debugger;
+                            var thundata = JSON.parse(jQuery("#hidThunUrlJson").val());
+                            thundata.splice(index, 1);
+                            jQuery("#hidThunUrlJson").val(JSON.stringify(thundata));
+                        }
+                    });
+                    jQuery("#hidUrlJson").val(JSON.stringify(jsonResult));
+                    GetImgHtml(jsonResult);
+                });
+
+                //3、下载
+                function downloadIamge() {//下载图片地址和图片名
+                    jQuery(".downloadpic").on("click", function () {
+                        var $aimg = jQuery(this);
+                        var url = $aimg.attr('data-input');
+                        var fileName = url.split(/(\\|\/)/g).pop();
+                        forceDownload(url, fileName);
+                    });
+
+                }
+                function forceDownload(url, fileName) {
+                    var xhr = new XMLHttpRequest();
+                    xhr.open("GET", url, true);
+                    xhr.responseType = "blob";
+                    xhr.onload = function () {
+                        var urlCreator = window.URL || window.webkitURL;
+                        var imageUrl = urlCreator.createObjectURL(this.response);
+                        var tag = document.createElement('a');
+                        tag.href = imageUrl;
+                        tag.download = fileName;
+                        document.body.appendChild(tag);
+                        tag.click();
+                        document.body.removeChild(tag);
+                    }
+                    xhr.send();
+                }
+
+                //重新渲染图片
+                function ReloadImg() {
+                    var data = JSON.parse(jQuery("#hidUrlJson").val());
+                    GetImgHtml(data);
+                }
+                function GetImgHtml(data) {
+                    var Banner = JSON.parse(jQuery("#hidUrlJson").val());
+                    var html = '<ul class="img-box">';
+                    jQuery(data).each(function (index, url) {
+                        //img
+                        html +=' <li class="dads-children dad-draggable-area">'
+                             +'     <div class="img-show">'
+                             +'        <img style="width:100px;height:100px;object-fit:cover;" src="'+url+'">'
+                             +'     </div>'
+                            + '    <div class="handle-box">'
+                            + '        <a class="delrankbtn deletebutten text-danger" data-input="' + url + '">删除</a>'
+                            + '        <a data-id="" class="downloadpic text-info"   data-input="' + Banner[index] +'" >下载</a>'
+                             +'     </div>'
+                            + '  </li>'
+                    });
+                    html += '<li class="upload-btn">'
+                         +'      <input type="file" id="@Model.Id" hidden="hidden" class="c_ignore updateFile" name="files" multiple accept="jpg,png" title="只允许上传Mp4格式的视频!视频大小不能超过40M" />'
+                         +'      <input type="button" id="uploadlogo" style="width: 100px; height: 100px; font-size: 50px;" class="uploadvideo-btn btn  btn-info btn-block c_ignore updateBtn" data-video="@Model.Id" data-input="InterviewVideos" value="+" />'
+                        +'  </li></ul>'
+                    jQuery("#img-list").html(html);
+                    //多图拖拽
+                    jQuery("#img-list .img-box").dad();
+                    UploadImg();
+                    downloadIamge();
+                    clearTimeout(timer);
+                }
+
+                //原图、缩略图集合增加图片地址
+                function AddUrl(url, thunurl) {
+                    debugger;
+                    var Url = JSON.parse(jQuery("#hidUrlJson").val());//图片集合
+                    var ThumUrl = JSON.parse(jQuery("#hidThunUrlJson").val());;//缩略图集合
+
+                    Url.push(url);
+                    ThumUrl.push(thunurl);
+                    jQuery("#hidUrlJson").val(JSON.stringify(Url));
+                    jQuery("#hidThunUrlJson").val(JSON.stringify(ThumUrl));
+                }
+
+                //如果#hidUrlJson存在图片直接渲染
+                if (JSON.parse(jQuery("#hidUrlJson").val())) {
+                    GetImgHtml(JSON.parse(jQuery("#hidUrlJson").val()))
+                }
+            })();
+
+            //属性相关js方法
+            var abloutproperty = (function () {
+
+                //添加属性
+                function AddProperty() {
+                    jQuery(".add-property").on("click", function () {
+                        var propCount = jQuery(".propertyname").length + 1;
+                        if (propCount > 3) {
+                            ShowAlert("目前属性个数上限为3个");
+                            return;
+                        }
+
+                        var html = "";
+                        html += '<div class="form-group">';
+                        html += '   <div style="border: 1px solid #ccc; width:80%;">';
+                        html += '       <div div class="form-inline margin-top" style="margin-left:3%;" >';
+                        html += '           <label class="control-label mb-1"><span class="spanremark">*</span>属性1：</label>';
+                        html += '           <input class="form-control propertyname" type="text" data-id="" data-operation="1" placeholder="输入属性1名称" style=" margin-left:0%;" value="" />';
+                        if (propCount > 1) {
+                            html += '           <a href="javascript:void(0);" id="" class="fa fa-minus-circle text-danger del-property" style="margin-left:99.0%;margin-top:-11.5%;"></a>';//@*删除属性*@
+                        }
+                        html += '   </div >';
+                        html += '       <div div class="form-inline margin-top" style="margin-left:3%; margin-bottom: 0%;" > ';
+                        html += '       <label class="control-label mb-1" > <span class="spanremark">*</span>属性1选项：</label > ';
+                        html += '   </div > ';
+                        //@* 属性选项 *@
+                        html += '      <div div class="form-inline" style="margin-left:3%; margin-bottom: 1%;" > ';
+                        html += '          <input class="form-control property-item" style="margin-right:1.3%;" type="text"  data-id="" data-operation="1" name="Property1Item1" placeholder="输入名称" value="" /> ';
+
+                        html += '          <input class="form-control property-item" type="text"  data-id="" data-operation="1" name="Property1Item1" placeholder="输入名称" value="" /> ';
+                        html += '          <a href="javascript:void(0);" id="" class="fa fa-minus-circle text-danger del-property-item" ></a > ';
+                        html += '          <a href="javascript:void(0);" class="add-property-item" onclick="OnClickAddProptem(this)" > <i class="fa fa-plus-circle" style="color: #17a2b8;"></i></a > ';
+                        html += '      </div > ';
+                        html += '   </div >';
+                        html += '</div >';
+                        jQuery("#property-list").append(html);
+                        AddPropertyItem(); DelPropertyItem(); DelProperty(); ChangeInputValue();
+
+                    })
+                }
+                AddProperty();//页面加载时
+                //删除属性
+                function DelProperty() {
+                    jQuery(".del-property").on("click", function () {
+                        var currentObj = jQuery(this);
+
+                        var status = currentObj.prev().attr("data-operation");
+                        if (status == add) {//新增的项删除，则无需入库，直接在界面删除即可
+                            currentObj.parent().parent().parent().remove();//直接界面删除
+                        }
+                        //更改属性输入框状态
+                        currentObj.prev().attr("data-operation", del)
+                        //隐藏
+                        currentObj.parent().parent().parent().attr("hidden", "hidden");
+                    })
+                }
+                //保存属性-选项
+                function SaveProperty() {
+                    jQuery("#save-property").on("click", function () {
+                        var isSave = false;//默认不保存，校验不通过，则不保存
+                        var samecount = 0;
+                        var allProItemNames = "";//属性名称重复判断
+
+
+                        //一、获取属性及选项相关数据
+                        var saveData = {};
+                        saveData["CourseId"] = courseId;
+                        saveData["PropertyInfos"] = [];//属性相关信息集合
+                        //1、遍历所有属性
+                        var pSort = 0;
+                        jQuery(".propertyname").each(function (i, p) {
+
+                            var prop = {};//属性实体
+                            prop["PropertyInfos"] = [];//属性相关信息集合
+                            var currentP = jQuery(p);
+
+                            var pName = currentP.val();//属性名称-(非删除状态)必填
+                            var pStatus = currentP.attr("data-operation");//属性操作类型
+                            if (!pName.trim() && pStatus != del) {
+                                ShowAlert("属性名称必填,请填写");
+                                currentP.focus();
+                                isSave = false;
+                                return;
+                            }
+                            if (pName.length > 10 && pStatus != del) {
+                                ShowAlert("属性名称长度不能超过10,请填写");
+                                currentP.focus();
+                                isSave = false;
+                                return;
+                            }
+                            //2、遍历该属性所有选项
+                            prop["ProItems"] = [];//选项集合
+                            currentP.parent().next().next().children("input").each(function (j, pi) {
+                                isSave = true;
+                                var item = {};//选项实体
+                                var currentI = jQuery(pi);
+                                var iName = currentI.val();//选项名称-(非删除状态)必填
+                                var iStatus = currentI.attr("data-operation");//选项操作类型
+                                var itemNames = "";
+                                currentP.parent().next().next().children("input").each(function (i, item) {
+                                    var value = jQuery(this).val() + "|";
+                                    itemNames += value; //获取所有的名称
+                                });
+                                if (iStatus != del && checkName(itemNames, iName + "|") == true) {
+                                    ShowAlert("选项名称重复了,请修改");
+                                    currentI.focus();
+                                    isSave = false;
+                                    ++samecount;
+                                    return;
+                                }
+                                if (!iName.trim() && iStatus != del) {
+                                    ShowAlert("选项名称必填,请填写");
+                                    currentI.focus();
+                                    isSave = false;
+                                    ++samecount;
+                                    return;
+                                }
+                                if (iName.length > 10 && iStatus != del) {
+                                    ShowAlert("选项名称长度不能超过10,请填写");
+                                    currentI.focus();
+                                    isSave = false;
+                                    ++samecount;
+                                    return;
+                                }
+                                item["ItemId"] = currentI.attr("data-id");//选项Id
+                                item["ItemName"] = iName;//选项名称
+                                item["Operation"] = iStatus;//选项操作类型
+                                item["Sort"] = j;//选项排序
+
+
+                                prop["ProItems"].push(item);//选项实体添加到选项集合
+
+
+                            })
+
+                            prop["PropertyId"] = currentP.attr("data-id");//属性Id
+                            prop["PropertyName"] = pName;//属性名称
+                            prop["Operation"] = pStatus;//属性操作类型
+                            prop["Sort"] = i;//属性排序排序
+
+                            saveData["PropertyInfos"].push(prop);//属性实体添加到属性集合中
+                        });
+                        //二、校验通过并保存数据
+                        if (isSave && samecount == 0) {
+                            showConfirm("确定保存属性-选项相关信息？", function () {
+                                jQuery.post("/Courses/SavePropertyInfo", saveData, function (result) {
+                                    console.log(result.data);
+                                    if (result.status == 200) {
+                                        ShowAlert("保存成功！", 1000, function () {
+                                            //属性-选项保存成功后，展示列表
+                                            jQuery.getJSON('/Courses/GetGoodsInfoList', { "CourseId": courseId }, function (res) {
+                                                if (res.isOk) {
+                                                    debugger;
+                                                    jQuery("#projson").val(res.propItems);
+                                                    PropertyDbData = jQuery("#projson").val() != "" ? JSON.parse(jQuery("#projson").val()) : "";//数据库中属性信息
+
+                                                    jQuery("#supplierjson").val(res.listSuppliers);
+                                                    SupplierData = jQuery("#supplierjson").val() != "" ? JSON.parse(jQuery("#supplierjson").val()) : "";//数据库中属性信息
+
+                                                    LoadPropertyDbData();
+                                                    ////每次保存成功后，则1、删除之前标识为删除的属性及选项；2、其他属性及选项均把状态变为query
+                                                    //jQuery(".propertyname").each(function (i, p) {
+                                                    //    debugger;
+                                                    //    if (jQuery(p).attr("data-operation") == del) {//直接从页面移除保存后为删除状态的属性
+                                                    //        jQuery(p).parent().parent().parent().remove();
+                                                    //    } else {
+                                                    //        jQuery(p).attr("data-operation", query);//保存后，非删除的属性状态均变为查询，避免重复插入
+                                                    //        jQuery(p).parent().next().next().children("input").each(function (j, pi) {
+                                                    //            if (jQuery(pi).attr("data-operation") == del) {//直接从页面移除保存后为删除状态的选项
+                                                    //                jQuery(pi).next().remove();
+                                                    //                jQuery(pi).remove();
+                                                    //            } else {
+                                                    //                jQuery(pi).attr("data-operation", query);//保存后，非删除的选项状态均变为查询，避免重复插入
+                                                    //            }
+                                                    //        })
+                                                    //    }
+
+                                                    //})
+                                                    RefreshTable(res.data);
+                                                }
+                                            });
+                                        });
+                                    }
+                                })
+                            });
+                        }
+                    })
+                }
+                SaveProperty();
+                //添加属性选项
+                function AddPropertyItem() {
+                    //jQuery(".add-property-item").on("click", function () {
+                    //    var currentObj = jQuery(this);
+                    //    alert(currentObj.attr("data-number"))
+                    //    debugger;
+                    //    var html = "";
+                    //    html += '<input class="form-control property-item" type="text"  data-id="" data-operation="1" name="" id="" placeholder="输入名称" value="" />';
+                    //    html += '<a href="javascript:void(0);" id="" class="fa fa-minus-circle text-danger del-property-item" ></a>';
+
+                    //    currentObj.before(html);
+                    //    DelPropertyItem(); ChangeInputValue();
+                    //    //新增选项，则所属非新增状态，则其状态为编辑
+                    //    var currentP = currentObj.parent().prev().prev().children(".propertyname");
+                    //    if (currentP.attr("data-operation") != add) {
+                    //        currentP.attr("data-operation", update);//选项编辑了，则属性状态也是编辑
+                    //    }
+                    //})
+                }
+                //属性-选项输入值发生变化
+                function ChangeInputValue() {
+                    jQuery(".property-item").on("change", function () {
+                        var currentObj = jQuery(this);
+                        if (currentObj.attr("data-operation") != add) {
+                            jQuery(this).attr("data-operation", update);
+                            jQuery(this).parent().prev().prev().children(".propertyname").attr("data-operation", update);//选项编辑了，则属性状态也是编辑
+
+                        }
+                    });
+                    jQuery(".propertyname").on("change", function () {
+                        var currentObj = jQuery(this);
+                        if (currentObj.attr("data-operation") != add) {
+                            jQuery(this).attr("data-operation", update);
+                        }
+                    })
+                }
+                //变更显示勾选状态
+                function ChangeCheckboxProperty() {
+                    jQuery(".td-checkbox[type=checkbox]").on("click", function () {
+                        var currentObj = jQuery(this);
+                        if (currentObj.attr("checked")) {
+                            currentObj.removeAttr("checked");
+                        } else {
+                            currentObj.attr("checked", "checked");
+                        }
+                    })
+                }
+
+                // sku的供应商
+                function ChangeSupplierSelect(goodsInfos) {
+                    jQuery("select[name=supplier_select]").off("change");
+                    jQuery("select[name=supplier_select]").on("change", function () {
+
+                        var currentObj = jQuery(this);
+                        var optionValue = currentObj.find("option:selected").val();
+
+                        var currentId = currentObj.attr('id');
+                        var skuid = currentId.replace('supplier_select_', '').toLowerCase();
+
+                        var inputObj = jQuery("input#supplier_input_" + currentId.replace('supplier_select_', ''));
+                        inputObj.val(optionValue);
+
+                        // 联动sku的供应商的多地址
+                        for (var i = 0, len = goodsInfos.length; i < len; i++) {
+                            var initData = goodsInfos[i];
+                            if (initData.goodsId.toLowerCase() == skuid) {
+                                var isloaded0 = !!initData._is_loaded;
+                                initData._is_loaded = 1;
+                                On_supplierId_changed_then_getSupplierAddress(currentId, optionValue, !isloaded0 && initData);
+                                break;
+                            }
+                        }
+                    });
+                    jQuery("select[name=supplier_select]").trigger("change");
+                }
+                // sku的供应商的多地址
+                function On_supplierId_changed_then_getSupplierAddress(id, supplierId, initData) {
+                    var $ = jQuery, c_select = $('#' + id).parents('tr').eq(0).find('[name=supplieaddress_select]');
+                    if (!v_changedSupplierAdrr[id]) v_changedSupplierAdrr[id] = 0;
+                    var v = v_changedSupplierAdrr[id] += 1;
+                    c_select.html(''); debugger;
+                    $.get('@Url.Action("GetSupplierAddresses")', { suppid: supplierId }, function(res) {
+                        var v1 = v_changedSupplierAdrr[id] || 0;
+                        if (v1 != v) return; // <select> is changed
+                        if (!res.succeed) return;
+                        var str_options = render_supplieaddress_select_options(res.data);
+                        c_select.html('').html(str_options);
+                        initData && c_select.val(initData.supplieAddressId);
+                    });
+                }
+
+                //加载或属性属性列表
+                function RefreshTable(data) {
+                    var type = jQuery("#div_CourseType_hidden").val();
+                    var html = '<label class="control-label mb-1">课程商品列表：</label>';
+                    html += '<table class="table table-bordered table-condensed table-hover" style="width:95%;">';
+                    html += '<thead>';
+                    html += '<tr>';
+                    html += '<th class="th-number">供应商</th>';
+                    html += '<th class="th-number" >供应商地址</th>';
+                    for (var i = 0; i < data.propertyCount; i++) {//属性列不定数
+                        html += '<th>属性' + (i + 1) + '-选项</th>';
+                    }
+                    if (type == 2) {
+                        html += '<th class="th-number">货号</th>';
+                    }
+                    html += '<th class="th-number"> <span class="spanremark">*</span>库存</th>';
+                    html += '<th class="th-number">成本价</th>';
+                    html += '<th class="th-number"> <span class="spanremark">*</span>价格</th>';
+                    html += '<th class="th-number">原价</th>';
+                    html += '<th >图片</th>'
+                    html += '<th class="th-number">限购数量</th>';
+                    html += '<th style="width:8%;">操作</th>';
+                    html += '<th hidden="hidden">商品Id</th>';
+                    html += '</tr>';
+                    html += '</thead>';
+                    html += '<tbody>';
+                    jQuery(data.courseGoods).each(function (index, goodsInfo) {
+                        html += '<tr>';
+
+                        // 供应商
+                        html += '<td>';
+                        html += '<input name="td-supplier" id="supplier_input_' + goodsInfo.goodsId + '"  hidden="hidden"  value ="' + (goodsInfo.supplierId || '').toUpperCase()+'" />';
+                        html += '<select name="supplier_select" id="supplier_select_' + goodsInfo.goodsId + '">'
+                        jQuery(SupplierData).each(function (i, item) {
+                            if ((goodsInfo.supplierId || '').toUpperCase() == item.Value) {
+                                html += '<option value = "' + item.Value + '" selected="selected"  > ' + item.Text + '</option>'
+                            } else {
+                                html += '<option value = "' + item.Value + '"  > ' + item.Text + '</option>'
+                            }
+                        });
+                        html += '</select>';
+                        html += '</td>';
+
+                        // 供应商地址s
+                        html += '<td><span>';
+                        html += '<select name="supplieaddress_select" data-skuid="' + (goodsInfo.supplierId || '') + '" style="width:100%;max-width:240px;">';
+                        html += render_supplieaddress_select_options(goodsInfo.supplieAddresses, goodsInfo.supplieAddressId);
+                        html += '</select>';
+                        html += '</span></td>';
+
+                        jQuery(goodsInfo.propertyItemNames).each(function (i, item) {
+                            html += '<td>';
+                            html += '<label class="form-control">' + item.propertyItemName + '</label>';
+                            html += '</td>';
+                        });
+                        // 货号
+                        if (type == 2) {
+                            html += '<td><input name="td-articleNo" class="form-control" placeholder="输入内容" value="' + (goodsInfo.articleNo || '') + '" ></td>';
+                        }
+                        html += '<td>';
+                        html += '<input name="td-stock" class="form-control" placeholder="输入内容" value="' + goodsInfo.stock + '" >';
+                        html += '</td>';
+                        // 成本价
+                        html += '<td><input name="td-costprice" class="form-control" placeholder="输入内容" value="' + (goodsInfo.costprice || '') + '" ></td>';
+                        html += '<td>';
+                        html += '<input name="td-price" class="form-control" placeholder="输入内容" value="' + goodsInfo.price + '" >';
+                        html += '</td>';
+                        html += '<td>';
+                        var origPrice = "";
+                        if (goodsInfo.origPrice != null) {
+                            origPrice = goodsInfo.origPrice;
+                        }
+                        html += '<input name="td-origprice" class="form-control" placeholder="输入内容" value="' + origPrice + '" >';
+                        html += '</td>';
+                        html += '<td>';
+                        html += '<div class="col-12 form-inline" style="width:100px;"><a class="fa fa-minus-circle deletebutten text-danger" data-input="' + (goodsInfo.cover || '') + '" ' + (goodsInfo.cover ? '' : 'style="display:none;right:10px;"') + '></a>';
+                        html += '<img class="goods-cover" ' + (goodsInfo.cover ? ('src="' + goodsInfo.cover + '" ') : '') + 'style="width:80px;height:80px;'
+                            + (goodsInfo.cover ? '' : 'display:none;') + '" /></div>'
+                            + '<label for="add-goods-cover-' + (index) + '" style="display:block;">'
+                            + '<a class="a-href" style="display:block;">' + (goodsInfo.cover ? '修改' : '添加') + '</a>'
+                            + '<input name="add-goods-cover" id="add-goods-cover-' + (index) + '" type="file" style="display:none;"/>'
+                            + '</label>';
+                        html += '</td>';
+                        html += '<td>';
+                        var limitedBuyNum = 0;
+                        if (goodsInfo.limitedBuyNum != null) {
+                            limitedBuyNum = goodsInfo.limitedBuyNum;
+                        }
+                        html += '<input name="td-limitedBuyNum" class="form-control" placeholder="输入内容" value="' + limitedBuyNum + '" >';
+                        html += '</td>';
+                        html += '<td style="white-space: nowrap;">';
+                        var show = "";
+                        if (goodsInfo.show == 1) {
+                            show = "checked";
+                        }
+                        html += '               <input class="td-checkbox"  type="checkbox" ' + show + ' >&nbsp;显示';
+                        html += '</td>';
+                        html += '<td hidden="hidden" >';
+                        html += '<input name="td-GoodsId" value="' + goodsInfo.goodsId + '" >';
+                        html += '</td>';
+                        html += '</tr>';
+                    });
+                    html += '</tbody>';
+                    html += '</table>';
+                    jQuery("#div-table").html("");
+                    jQuery("#div-table").append(html);
+                    ChangeCheckboxProperty(); TdNumberControl();
+                    ChangeSupplierSelect(data.courseGoods);
+                }
+
+                //动态加载属性数据
+                function LoadPropertyDbData() {
+                    debugger;
+                    if (PropertyDbData.length > 0) {//有历史数据
+                        var html = "";
+                        jQuery(PropertyDbData).each(function (i, prop) {
+                            html += '<div class="form-group">';
+                            html += '   <div style="border: 1px solid #ccc; width:80%;">';
+                            html += '       <div div class="form-inline margin-top" style="margin-left:3%;" >';
+                            html += '           <label class="control-label mb-1"><span class="spanremark">*</span>属性' + (i + 1) + '：</label>';
+                            html += '           <input class="form-control propertyname" type="text" data-id="' + prop.PropertyId + '" data-operation="' + prop.Operation + '" data-sort="' + prop.Sort + '"  value="' + prop.PropertyName + '"  placeholder="输入属性1名称" style=" margin-left:0%;" />';
+                            if (i > 0) {
+                                html += '           <a href="javascript:void(0);" id="" class="fa fa-minus-circle text-danger del-property" style="margin-left:99.0%;margin-top:-11.5%;"></a>';//@*删除属性*@
+                            }
+
+                            html += '   </div >';
+                            html += '       <div div class="form-inline margin-top" style="margin-left:3%; margin-bottom: 0%;" > ';
+                            html += '       <label class="control-label mb-1" > <span class="spanremark">*</span>属性' + (i + 1) + '选项：</label > ';
+                            html += '   </div > ';
+                            //@* 属性选项 *@
+                            html += '      <div div class="form-inline" style="margin-left:3%; margin-bottom: 1%;" > ';
+                            jQuery(prop.ProItems).each(function (j, item) {//选项
+
+                                if (j > 0) {
+                                    html += '<input class="form-control property-item" type="text"  data-id="' + item.ItemId + '" data-operation="' + item.Operation + '" data-sort="' + item.Sort + '" value="' + item.ItemName + '" placeholder="输入名称"  /> ';
+                                    html += '<a href="javascript:void(0);" id="" class="fa fa-minus-circle text-danger del-property-item" ></a > ';
+                                } else {
+                                    html += '<input class="form-control property-item" style="margin-right:1.3%;" type="text"  data-id="' + item.ItemId + '" data-operation="' + item.Operation + '" data-sort="' + item.Sort + '" value="' + item.ItemName + '" placeholder="输入名称"  /> ';
+
+                                }
+                            })
+
+                            html += '          <a href="javascript:void(0);" class="add-property-item" onclick="OnClickAddProptem(this)"  > <i class="fa fa-plus-circle" style="color: #17a2b8;"></i></a > ';
+                            html += '      </div > ';
+                            html += '   </div >';
+                            html += '</div >';
+                        })
+                        jQuery("#property-list").html("");
+                        jQuery("#property-list").append(html);
+                        AddPropertyItem(); DelPropertyItem(); DelProperty(); ChangeInputValue();
+
+                        //展示属性列表
+                        jQuery.getJSON('/Courses/GetGoodsInfoList', { "CourseId": courseId }, function (res) {
+                            debugger;
+                            if (res.isOk) {
+                                RefreshTable(res.data);
+                            }
+                        });
+                    } else {
+                        debugger;
+                        jQuery(".add-property").click();
+                    }
+                }
+                LoadPropertyDbData();//页面加载时
+
+                // 上传商品图片
+                jQuery('#div-table').on('change', '[name=add-goods-cover]', function () {
+                    console.log('add goods cover');
+                    Loading("正在上传图片！");
+                    var fileinput = jQuery(this)[0];
+                    var formData = new FormData();
+                    for (var i = 0; i < fileinput.files.length; i++) {
+                        formData.append(i, fileinput.files[i]);
+                    }
+                    jQuery.ajax({
+                        url: "@ViewBag.OrgeEvltCrawlerUploadUrl",
+                        type: "post",
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        cache: false
+                    }).done(function (res) {
+                        CloseLoading();
+                        if (res.status == 200) {
+                            fileinput.value = '';
+                            var url = res.data.src_s || res.data.src;
+                            if (!url) return ShowAlert('无结果返回');
+                            ShowAlert('上传成功', 1000);
+                            jQuery(fileinput).parents('td').eq(0).find('a.deletebutten').show();
+                            jQuery(fileinput).parents('td').eq(0).find('img').attr('src', url).show();
+                            jQuery(fileinput).parents('td').eq(0).find('a.a-href').text('修改');
+                        } else {
+                            ShowAlert("上传失败:"+res.msg, -1);
+                        }
+                    }).fail(function (res) {
+                        CloseLoading();
+                        ShowAlert("网络异常:" + res.msg, -1);
+                    });
+                });
+                jQuery('#div-table').on('click', 'a.deletebutten', function () {
+                    var a = jQuery(this), td = a.parents('td').eq(0);
+                    a.hide();
+                    td.find('img').attr('src', '').hide();
+                    td.find('a.a-href').text('添加');
+                });
+
+                function render_supplieaddress_select_options(supplieAddresses, selectedId) {
+                    var html = '', len = (supplieAddresses && supplieAddresses.length) || 0;
+                    selectedId = (selectedId || '').toLowerCase();
+                    if (len > 1) {
+                        html += '<option value="">===请选择===</option>'
+                    }
+                    for (var i = 0; i < len; i++) {
+                        var item = supplieAddresses[i], addr;
+                        try {
+                            var jo = JSON.parse(item.text);
+                            addr = jo.Receiver + ',' + jo.Phone + ',' + jo.Addr;
+                        } catch(_) {
+                            addr = item.text;
+                        }
+                        var itemValue = (item.value || '').toLowerCase();
+                        if (itemValue == selectedId) html += '<option value="' + itemValue + '" selected="selected">' + (addr) + '</option>';
+                        else html += '<option value="' + itemValue + '">' + (addr) + '</option>';
+                    }
+                    return html;
+                }
+
+            })();
+
+            //购前须知
+            var noticegroup = (function () {
+
+                //--------------------购前须知------------------------------------
+                jQuery(dbNotice).each(function (index, data) {
+                    GetNoticesGroupHtml(index, data.Title);
+                    debugger;
+                    var content = data.Content;
+                    IntNoteUE(index, data.Content);
+                });
+                function GetNoticesGroupHtml(index, title) {
+                    debugger;
+                    var html = "";
+                    html += '<div style="border: 1px solid #ccc; width:80%;background-color:lightgray; margin-left:3%; margin-bottom:2%;">';
+                    //删除分组
+                    html += '            <a href="javascript:void(0);" class="fa fa-minus-circle text-danger delnotice" style="margin-left:98%;"></a>';
+                    //标题
+                    html += '            <div div class="form-inline margin-top" style="margin-left:1%;">';
+                    html += '                <label class="control-label mb-1">标题：</label>';
+                    html += '                <input class="form-control getvalue notice" data-index="' + index + '" type="text" name="" id="notice_Title_' + index + '" placeholder="请填写标题" style="width:80%;" value="' + title + '" />';
+                    html += '            </div>';
+                    //正文
+                    html += '            <div div class="form-inline margin-top" style="margin-left:1%; margin-bottom: 2%;">';
+                    html += '                <label class="control-label mb-1" style="margin-left:0%;">正文 ：</label>';
+                    html += '                <div class="border uecontent" style="min-height:50px">';
+                    html += '                    <script id="notice_editor_' + index + '" type="text/plain" style="width:100%;height:200px;"><//script>';
+
+                    html += '</div>';
+                    html += '</div>';
+                    html += '</div>';
+                    jQuery("#notelist").append(html);
+                    DelNotice();
+                }
+                //添加分组
+                jQuery(".addnotice").on("click", function () {
+                    debugger;
+                    var $this = jQuery(this);
+                    var index = parseInt($this.attr("data-index")) + 1;
+                    GetNoticesGroupHtml(index, "");
+                    IntNoteUE(index, "");
+                    $this.attr("data-index", index);
+                })
+                //删除分组
+                function DelNotice() {
+                    jQuery(".delnotice").on("click", function () {
+                        jQuery(this).parent().remove();
+                    });
+                }
+            })();
+
+        });
+
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+        jQuery(function () {
+            var $ = jQuery;
+
+            $('[data-toggle="tooltip"]').tooltip();
+
+            // 'div[check-group]'
+            $('div[check-group]').on('click', 'input[type=checkbox]', function () {
+                var self = this, div = $(this).parents('div[check-group]').eq(0);
+                var b = self.checked;
+                div.find('input[type=checkbox]').each(function () {
+                    this.checked = this === self ? b : false;
+                });
+            });
+
+            // 'div[radio-group]'
+            $('div[radio-group]').on('click', 'input[type=radio]', function () {
+                var self = this, div = $(this).parents('div[radio-group]').eq(0);
+                var b = self.checked;
+                div.find('input[type=radio]').each(function () {
+                    this.checked = this === self ? b : false;
+                });
+            });
+        });
+
+        // 运费
+        (function (mymodules, fn) {
+            console.log('init for mymodules 运费');
+            mymodules.freight = {};
+            jQuery(function () { return fn(mymodules, jQuery) });
+        })(mymodules, function (mymodules, $) {
+            var is_initCustom = '@(freightIsCustom.ToString().ToLower())' === 'true', _tystr;
+            //
+            {
+                HuLyegaJS.decimalInput({
+                    ele: $('.div-freight-ctn-ty123').find('.freight-input-ty1'),
+                    decimalPlaces: 2
+                });
+                HuLyegaJS.decimalInput({
+                    ele: $('.div-freight-ctn-ty123').find('.freight-input-ty2'),
+                    decimalPlaces: 2
+                });
+                HuLyegaJS.decimalInput({
+                    ele: $('.div-freight-ctn-ty123').find('.freight-input-ty3'),
+                    decimalPlaces: 2
+                });
+            }
+            $('.div-freight-radio-group input[type=radio]').on('click', function () {
+                var self = $(this), checked = this.checked;
+                if (!checked) return;
+                console.log('div freight changed');
+                onselected_freighttype(self.parents('label').eq(0).text());
+            });
+            function onselected_freighttype(tystr) {
+                _tystr = tystr;
+                if (tystr == '分区填写运费') {
+                    $('.div-freight-ctn').hide();
+                    $('.div-freight-ctn-ty123').show();
+                }
+                else if (tystr == '自定义填写运费') {
+                    $('.div-freight-ctn').hide();
+                    $('.div-freight-ctn-ty10').show();
+                }
+            }
+            // render自定义运费
+            function onshow_ty10_item(item) {
+                var html = '<div item="1" class="col-3 row mb-2">';
+                html += '   <div class="col-6">'
+                html += '       <a class="fa fa-minus-circle text-danger" style="float:right;"></a>'
+                html += '       <a title="' + ((item.names || []).join('、')) + '" '
+                    + 'style="display:block;position:relative;white-space:nowrap;text-overflow:ellipsis;overflow:hidden; '
+                    + 'top:0.5em; padding-right:5px;background-color: #e9ecef;">' + ((item.names || []).join('、')) + '</a>';
+                html += '   </div>'
+                html += '   <div class="col-6"><input class="form-control freight-input-ty10" type="text" style="width:80px;" value="' + (item.cost || 0) + '" /></div>';
+                html += '</div>';
+                return html;
+            }
+            function onshow_ty10(data) {
+                if (!data) return;
+                var html = '', len = len = ((data && data.length) || 0);
+                for (var i = 0; i < len; i++) {
+                    html += onshow_ty10_item(data[i]);
+                }
+                html += '<div add-item="1" class="col-3">';
+                html += '   <a class="btn-link" href="javascript:;">添加城市</a>';
+                html += '</div>';
+                $('.div-freight-ctn-ty10-div').html(html);
+                if (len > 0) {
+                    $('.div-freight-ctn-ty10-div').find('[item]').each(function (i, n) {
+                        $(n).data(data[i]);
+                        // 限制2位小数
+                        HuLyegaJS.decimalInput({
+                            ele: $(n).find('.freight-input-ty10'),
+                            decimalPlaces: 2
+                        });
+                    });
+                }
+            }
+            // 删除
+            $('.div-freight-ctn-ty10').on('click', '[item] .fa', function () {
+                console.log('".div-freight-ctn-ty10" delete item');
+                $(this).parents('[item]').eq(0).remove();
+            });
+            // 打开窗口添加
+            $('.div-freight-ctn-ty10').on('click', '[add-item]', function () {
+                HuLyegaJS.win({
+                    noheader: false,
+                    nofooter: true,
+                    autoDispose: true,
+                    width: 600,
+                    height: 450,
+                    body: $('#tmpl_freight_addcity_win').html(),
+                    title: '添加城市',
+                    onshow: function () { oninit_addcity_win(this) }
+                });
+            });
+            // init win
+            function oninit_addcity_win(win) {
+                // 之前选了不能再选
+                var selectedCitys = [];
+                $.each(mymodules.freight.getdata('自定义填写运费'), function (_, n) {
+                    if (!(n.citys && n.citys.length)) return;
+                    $.each(n.citys, function () { selectedCitys.push(this.toString()) });
+                });
+                var is_selected0 = selectedCitys.length && selectedCitys.indexOf('0') > -1;
+                $.each($('#div_freight_addcity_win').find('[citycode]'), function () {
+                    var c = $(this), code = c.attr('citycode');
+                    var b = is_selected0 ? false
+                        : !selectedCitys.length ? true
+                        : selectedCitys.indexOf(code) == -1 && code != '0';
+                    if (b) c.find(':checkbox').removeAttr('disabled');
+                    else {
+                        c.find(':checkbox').attr('disabled', 'disabled');
+                        c.css('color', '#dedada');
+                    }
+                });
+
+                // 全国与具体地区选择互斥
+                $('#div_freight_addcity_win').on('click', 'input[type=checkbox]', function () {
+                    var self = this, g = $(self).attr('g');
+                    var b = self.checked;
+                    if (!b) return;
+                    $('#div_freight_addcity_win').find('input[type=checkbox]').each(function () {
+                        if (this === self) return;
+                        if ($(this).attr('g') === g) return;
+                        this.checked = false;
+                    });
+                });
+
+                // btn
+                $('#freight_addcity_btn_ok').on('click', function () {
+                    var citys = $.map($('#div_freight_addcity_win').find(':checked'), function (n) {
+                        var c = $(n).parents('label').eq(0).attr('citycode');
+                        return parseInt(c, 10);
+                    });
+                    var names = $.map($('#div_freight_addcity_win').find(':checked'), function (n) {
+                        var c = $(n).parents('label').eq(0).text();
+                        return c;
+                    });
+                    if (citys && citys.length) {
+                        var itemdata = { citys, names, type: parseInt('@FreightAreaTypeEnum.Custom.ToInt()') };
+                        // add 1
+                        var html = onshow_ty10_item(itemdata);
+                        $('.div-freight-ctn-ty10-div').find('[add-item]').before(html);
+                        var citem = $('.div-freight-ctn-ty10-div').find('[item]').last().data(itemdata);
+                        citem.find('.freight-input-ty10').val('');
+                        HuLyegaJS.decimalInput({
+                            ele: citem.find('.freight-input-ty10'),
+                            decimalPlaces: 2
+                        });
+                    } else {
+                        return ShowAlert('请选择地区');
+                    }
+                    win.close();
+                });
+                $('#freight_addcity_btn_close').on('click', function () {
+                    win.close();
+                });
+            }
+            //
+            // init
+            if (!is_initCustom) {
+                $('.freight-radio-ty123')[0].checked = true;
+                $('.freight-radio-ty123').click();
+            } else {
+                $('.freight-radio-ty10')[0].checked = true;
+                $('.freight-radio-ty10').click();
+            }
+            var arr_freights = JSON.parse($('.init-data-freight').html());
+            $('.init-data-freight').remove();
+            if (is_initCustom) onshow_ty10(arr_freights);
+            else {
+                onshow_ty10([]);
+                // init分区赋值
+                for (var i = 0, len = arr_freights.length; i < len; i++) {
+                    var item = arr_freights[i];
+                    if ('@isadd.ToString().ToLower()' === 'true') continue;
+                    $('.freight-input-ty' + item.type).val(item.cost || 0);
+                }
+            }
+            //
+            // exports
+            mymodules.freight.getdata = function (tystr) {
+                var arr = [];
+                tystr = tystr || _tystr;
+                if (tystr == '分区填写运费') {
+                    for (var i = 1; i <= 3; i++) {
+                        var money = $.trim($('.freight-input-ty' + i).val());
+                        if (money != '') arr.push({ type: i, cost: parseFloat(money, 10) });
+                    }
+                }
+                else if (tystr == '自定义填写运费') {
+                    $('.div-freight-ctn-ty10').find('[item]').each(function () {
+                        var c = $(this), item = c.data();
+                        item.type = parseInt('@FreightAreaTypeEnum.Custom.ToInt()');
+                        item.cost = parseFloat($.trim(c.find('.freight-input-ty10').val()) || '0', 10);
+                        arr.push(item);
+                    });
+                }
+                return arr;
+            };
+        });
+
+        // 不发货地区
+        (function (mymodules, fn) {
+            console.log('init for mymodules 不发货地区');
+            mymodules.freightBlackList = {};
+            jQuery(function () { return fn(mymodules, jQuery) });
+        })(mymodules, function (mymodules, $) {
+            var rootDiv = $('#div_freightBlackList');
+            //
+            // render自定义运费
+            function onshow_ty10_item(item) {
+                var html = '<div item="1" class="col-6 row mb-3">';
+                html += '   <div class="col-12">'
+                html += '       <a class="fa fa-minus-circle text-danger" style="float:right;"></a>'
+                html += '       <a title="' + ((item.names || []).join('、')) + '" '
+                    + 'style="display:block;position:relative;white-space:nowrap;text-overflow:ellipsis;overflow:hidden; '
+                    + 'top:0.5em; padding-right:5px;background-color: #e9ecef;">' + ((item.names || []).join('、')) + '</a>';
+                html += '   </div>'
+                html += '</div>';
+                return html;
+            }
+            function onshow_ty10(data) {
+                if (!data) return;
+                var html = '', len = len = ((data && data.length) || 0);
+                for (var i = 0; i < len; i++) {
+                    html += onshow_ty10_item(data[i]);
+                }
+                html += '<div add-item="1" class="col-3">';
+                html += '   <a class="btn-link" href="javascript:;">修改城市</a>';
+                html += '</div>';
+                rootDiv.find('.ctn-ty10-div').html(html);
+                if (len > 0) {
+                    rootDiv.find('.ctn-ty10-div').find('[item]').each(function (i, n) {
+                        $(n).data(data[i]);
+                    });
+                }
+            }
+            // 删除
+            rootDiv.find('.ctn-ty10-div').on('click', '[item] .fa', function () {
+                $(this).parents('[item]').eq(0).remove();
+                rootDiv.find('[add-item] .btn-link').text('添加城市');
+            });
+            // 打开窗口添加
+            rootDiv.find('.ctn-ty10-div').on('click', '[add-item]', function () {
+                HuLyegaJS.win({
+                    noheader: false,
+                    nofooter: true,
+                    autoDispose: true,
+                    width: 600,
+                    height: 450,
+                    body: $('#tmpl_freightBlackList_addcity_win').html(),
+                    title: rootDiv.find('[add-item] .btn-link').text(),
+                    onshow: function () { oninit_addcity_win(this) }
+                });
+            });
+            // on init win
+            function oninit_addcity_win(win) {
+                var selectedCitys = [];
+                $.each(mymodules.freightBlackList.getdata(), function (_, n) {
+                    if (!(n.citys && n.citys.length)) return;
+                    $.each(n.citys, function () { selectedCitys.push(this.toString()) });
+                });
+                var i_checked = 0, is_selected0 = selectedCitys.length && selectedCitys.indexOf('0') > -1;
+                $.each(win.ele.find('input[citycode]'), function () {
+                    var c = $(this), code = c.attr('citycode');
+                    if (code == 0) return;
+                    // init 选中
+                    var b = is_selected0 ? true
+                        : !selectedCitys.length ? false
+                        : selectedCitys.indexOf(code) > -1;
+                    if (b) {
+                        c[0].checked = true;
+                        i_checked++;
+                    }
+                });
+                if (i_checked == win.ele.find('input[citycode]').length - 1) {
+                    // init 全国也选中
+                    win.ele.find('input[citycode=0]')[0].checked = true;
+                }
+                // 全国与具体地区选择
+                win.ele.on('click', 'input[type=checkbox]', function () {
+                    var self = this, g = $(self).attr('g'), citycode = $(self).attr('citycode');
+                    var g1allckb = $('#div_freight_blacklist_addcity_win').find('input[type=checkbox][g=1]');
+                    // 全国
+                    if (g == 0 && citycode == 0) {
+                        g1allckb.each(function() { this.checked = self.checked });
+                    }
+                    // 一般地区
+                    else if (self.checked) {
+                        if (g1allckb.filter(':checked').length == g1allckb.length)
+                            win.ele.find('input[citycode=0]')[0].checked = true;
+                    } else {
+                        win.ele.find('input[citycode=0]')[0].checked = false;
+                    }
+                });
+                // btn
+                win.ele.find('.addcity_btn_ok').on('click', function () {
+                    var citys = win.ele.find('input[citycode=0]:checked').length ? [0] : $.map(win.ele.find('input[g=1]:checked'), function (n) {
+                        var c = $(n).attr('citycode');
+                        return parseInt(c, 10);
+                    });
+                    var names = win.ele.find('input[citycode=0]:checked').length ? [win.ele.find('label[citycode=0]').text()] : $.map(win.ele.find('input[g=1]:checked'), function (n) {
+                        var c = $(n).parents('label').eq(0).text();
+                        return c;
+                    });
+                    rootDiv.find('.ctn-ty10-div').find('[item]').remove();
+                    // on select changed
+                    if (citys && citys.length) {
+                        var itemdata = { citys, names };
+                        // add 1
+                        var html = onshow_ty10_item(itemdata);
+                        rootDiv.find('.ctn-ty10-div').find('[add-item]').before(html);
+                        rootDiv.find('.ctn-ty10-div').find('[item]').last().data(itemdata);
+                        rootDiv.find('[add-item] .btn-link').text('修改城市');
+                    } else {
+                        rootDiv.find('[add-item] .btn-link').text('添加城市');
+                    }
+                    win.close();
+                });
+                win.ele.find('.addcity_btn_close').on('click', function () {
+                    win.close();
+                });
+            }
+            //
+            // init
+            var arr_freights = JSON.parse($('.init-data-freightBlackList').html());
+            $('.init-data-freightBlackList').remove();
+            onshow_ty10(arr_freights);
+            //
+            // exports
+            mymodules.freightBlackList.getdata = function () {
+                var arr = [];
+                rootDiv.find('.ctn-ty10-div').find('[item]').each(function () {
+                    var c = $(this), item = c.data();
+                    arr.push(item);
+                });
+                return arr;
+            };
+        });
+
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+        //--------------------属性选项------------------------------------
+        //添加属性选项方法
+        function OnClickAddProptem(obj) {
+            var currentObj = jQuery(obj);
+            var html = "";
+            html += '<input class="form-control property-item" type="text" data-id="" data-operation="1" name="" id="" placeholder="输入名称" value="" />';
+            html += '<a href="javascript:void(0);" id="" class="fa fa-minus-circle text-danger del-property-item"></a>';
+
+            currentObj.before(html);
+            DelPropertyItem(); ChangeInputValue();
+            //新增选项，则所属非新增状态，则其状态为编辑
+            debugger;
+            var currentP = currentObj.parent().prev().prev().children(".propertyname");
+            if (currentP.attr("data-operation") != add) {
+                currentP.attr("data-operation", update);//选项编辑了，则属性状态也是编辑
+
+            }
+        }
+        //删除属性选项
+        function DelPropertyItem() {
+            jQuery(".del-property-item").on("click", function () {
+                var currentObj = jQuery(this);
+                var status = currentObj.prev().attr("data-operation");
+                if (status == add) {//新增的项删除，则无需入库，直接在界面删除即可
+                    currentObj.prev().remove();//prev()上一个兄弟节点
+                    currentObj.remove();
+                } else {
+                    //更改属性输入框状态
+                    currentObj.prev().attr("data-operation", del)
+                    currentObj.prev().attr("hidden", "hidden");
+                    currentObj.attr("hidden", "hidden");
+                    //选项被删除，则所属节点状态为编辑
+                    currentObj.parent().prev().prev().children(".propertyname").attr("data-operation", update);//选项编辑了，则属性状态也是编辑
+
+                }
+
+
+            })
+        }
+        //属性-选项输入值发生变化
+        function ChangeInputValue() {
+            jQuery(".property-item").on("change", function () {
+                var currentObj = jQuery(this);
+                if (currentObj.attr("data-operation") != add) {
+                    jQuery(this).attr("data-operation", update);
+                    jQuery(this).parent().prev().prev().children(".propertyname").attr("data-operation", update);//选项编辑了，则属性状态也是编辑
+
+                }
+            });
+            jQuery(".propertyname").on("change", function () {
+                var currentObj = jQuery(this);
+                if (currentObj.attr("data-operation") != add) {
+                    jQuery(this).attr("data-operation", update);
+                }
+            })
+        }
+
+        //名字重复判断
+        function checkName(values, val) {
+            debugger;
+            var newValue = values.replace(val, ""); //去除当前输入框的值
+
+            if (newValue == "") {
+                return false;
+            }
+            else {
+                if (newValue.indexOf(val) > -1) {  //当前值和newValue作比较
+                    return true;
+                }
+            }
+        }
+
+
+        //清除关联大课信息1
+        jQuery(".clear-bigcourseInfo").on("click", function () {
+            jQuery(".issavebigcourse").val("");
+        })
+        //清除关联大课信息2
+        jQuery(".clear-bigcourseInfo2").on("click", function () {
+            jQuery(".issavebigcourse2").val("");
+        })
+
+        //佣金锁定期，单选
+        jQuery("input[name=fxyj]").on("change", function () {
+            jQuery("input[type=radio]").removeAttr("checked");
+            jQuery(this).attr("checked", "checked");
+            //选中一项，则需要清空另外两项的值
+            if (jQuery(this).val() == 1) {//选择具体日期
+                debugger
+                //if (isAdd == true) {
+                //    jQuery("#NoAutoOffShelf").click();
+                //    //jQuery("#NoAutoOffShelf").removeAttr("checked");
+                //    //jQuery("#AutoOffShelfDate").removeAttr("readonly");
+
+                //}
+
+                jQuery("#NolimitAfterBuyInDays").attr("readonly", "readonly").val("");
+
+                jQuery("#NolimitAfterDate").removeAttr("readonly");
+                jQuery("#AutoOffShelfDate_Edit").removeAttr("readonly");
+
+            } else if (jQuery(this).val() == 2) {//选中购买N天后
+                jQuery("#NolimitAfterDate").attr("readonly", "readonly").val("");
+                jQuery("#AutoOffShelfDate_Edit").attr("readonly", "readonly").val("");
+
+                jQuery("#NolimitAfterBuyInDays").removeAttr("readonly");
+            }
+            else if (jQuery(this).val() == 3) {//不锁定
+                jQuery("#NolimitAfterDate").attr("readonly","readonly").val("");//具体日期
+                jQuery("#AutoOffShelfDate_Edit").attr("readonly", "readonly").val("");//自动下架时间
+
+                jQuery("#NolimitAfterBuyInDays").attr("readonly", "readonly").val("");//购买N天后
+            }
+        });
+
+        //上线佣金复选框
+        jQuery(".drpCheck").on("click", function () {
+            if (jQuery(this).attr("checked")) {
+                jQuery(this).removeAttr("checked");
+            } else {
+                jQuery(this).attr("checked", "checked");
+            }
+        })
+
+        //是否隐形上架  是否爆款
+        jQuery("#IsInvisibleOnline").on('click', function () {
+            var current = jQuery(this);
+            if (current.attr("checked"))
+                current.removeAttr("checked");
+            else
+                current.attr("checked", "checked");
+        });
+        //是否爆款/是否置顶
+        jQuery("#IsExplosions").on('click', function () {
+            var current = jQuery(this);
+            if (current.attr("checked"))
+                current.removeAttr("checked");
+            else
+                current.attr("checked", "checked");
+        });
+        //是否系统课程
+        jQuery("#IsSystemCourse").on('click', function () {
+            var current = jQuery(this);
+            if (current.attr("checked"))
+                current.removeAttr("checked");
+            else
+                current.attr("checked", "checked");
+        });
+
+
+        //跳到新增品牌页面
+        jQuery(".addorg").on('click', function () {
+            window.location.href = "/Organization/AddOrEditOrg";
+        });
+
+        //保存
+        jQuery("#save").on("click", function () {
+            var data = GetFormData();//获取表单数据
+            var isnull = false;
+
+            // 根据图片顺序提交
+            var Banner = [];
+            var Banner_s = [];
+            // 原图
+            jQuery("#img-list .handle-box .downloadpic").each(function (index) {
+                var src = jQuery(this).attr("data-input");
+                Banner.push(src);
+            });
+            // 缩略图
+            jQuery("#img-list .handle-box .deletebutten").each(function (index) {
+                var src = jQuery(this).attr("data-input");
+                Banner_s.push(src);
+            });
+
+            data.Banner = JSON.stringify(Banner);
+            data.Banner_s = JSON.stringify(Banner_s);
+            console.log(11, data)
+            debugger;
+
+            if (!(data.Title.trim())) {
+                ShowAlert("课程名称为必填项！");
+                jQuery("#Title").focus();
+                return;
+            }
+            //课程名称不能同时包含两个词：视频、在线
+            if (data.Title.indexOf("视频") >= 0 && data.Title.indexOf("在线") >= 0) {
+                ShowAlert("课程名称不能同时包含两个词：视频、在线");
+                jQuery("#Title").focus();
+                return;
+            }
+
+            if (!(data.SubTitle.trim())) {
+                ShowAlert("副标题为必填项！");
+                jQuery("#SubTitle").focus();
+                return;
+            }
+            if (data.OrgId == "") {
+                ShowAlert("品牌为必填项！");
+                return;
+            }
+
+            //商品分类； 商品分类==1，则科目分类必选；商品分类==2，则好物分类必选
+            //if (data.Type == ""
+            //    || (data.Type == 1 && data.Subjects == "[]")
+            //    || (data.Type == 2 && data.GoodthingTypes == "[]")) {
+            //    ShowAlert("商品分类为必选项！");
+            //    return;
+            //}
+            if (data.Type == "") {
+                ShowAlert("商品类型为必选项！");
+                return;
+            }
+
+            if (data.CommodityTypes.length == 0) {
+                ShowAlert("商品分类不能为空");
+                return;
+            }
+            data.CommodityTypes = JSON.stringify(data.CommodityTypes);
+
+            //适用年龄必填
+            if (data.MinAge == "") {
+                ShowAlert("年龄为必填项！");
+                jQuery("#MinAge").focus();
+                return;
+            } if (data.MaxAge == "") {
+                ShowAlert("年龄为必填项！");
+                jQuery("#MaxAge").focus();
+                return;
+            }
+
+            //购前须知
+            var noticeslist = [];
+            jQuery(".notice").each(function (index, input) {
+                var $input = jQuery(input);
+                if ($input.val() == "") {
+                    ShowAlert("购前须知标题为空，请填写！");
+                    $input.focus();
+                    return;
+                } else {
+                    var ii = parseInt($input.attr("data-index"));
+                    jQuery(notice_UE_list).each(function (uei, item) {
+                        if (item.index == ii) {
+                            noticeslist.push({ "Title": $input.val(), "Content": item.noticeue.getContent() });
+                        }
+                    });
+                }
+            });
+            data.ListNotices = noticeslist;
+
+
+
+            //商品列表的库存、价格为必填项
+            data.UpdateGoodsInfos = [];
+            jQuery("#div-table tbody tr").each(function (i, tr) {//遍历商品列表的数据行
+                var currentTr = jQuery(tr);
+                var currentinputs = currentTr.children().children("input");
+                var goodsInfo = {};
+                debugger;
+                jQuery(currentinputs).each(function (j, input) {
+                    //debugger;
+                    var currentI = jQuery(input);
+                    var currentIName = currentI.attr("name");//input的name
+                    if (currentIName == "td-stock") {//库存必填
+                        if (currentI.val() == "") {
+                            ShowAlert("商品的库存为必填项")
+                            currentI.focus();
+                            isnull = true;
+                            return;
+                        }
+                        else {
+                            goodsInfo["Stock"] = currentI.val();
+                        }
+                    } else if (currentIName == "td-price") {//价格必填
+                        if (currentI.val() == "") {
+                            ShowAlert("商品的价格为必填项")
+                            currentI.focus();
+                            isnull = true;
+                            return;
+                        }
+                        else {
+                            goodsInfo["Price"] = currentI.val();
+                        }
+
+                    } else if (currentIName == "td-supplier") {//供应商选填
+                        if (currentI.val() != "")
+                            goodsInfo["SupplierId"] = currentI.val();
+                    } else if (currentIName == "td-origprice") {//原价格选填
+                        if (currentI.val() != "")
+                            goodsInfo["OrigPrice"] = currentI.val();
+                    } else if (currentIName == "td-limitedBuyNum") {//限购数量
+                        if (currentI.val() != "")
+                            goodsInfo["LimitedBuyNum"] = currentI.val();
+                        else goodsInfo["LimitedBuyNum"] = 0;
+                    } else if (currentI.attr("type") == "checkbox") {//是否显示
+                        if (currentI.attr("checked") == undefined)
+                            goodsInfo["Show"] = 0;
+                    }
+                    else if (currentIName == 'td-articleNo') {
+                        goodsInfo["articleNo"] = currentI.val();
+                    }
+                    else if (currentIName == 'td-costprice') {
+                        goodsInfo["costprice"] = currentI.val();
+                    }
+                    else if (currentIName == 'td-GoodsId') {
+                        goodsInfo["GoodsId"] = currentI.val();
+                    }
+                });
+
+                // 供应商地址
+                goodsInfo['SupplieAddressId'] = currentTr.find('select[name=supplieaddress_select]').val() || null;
+
+                // sku图片
+                goodsInfo['Cover'] = currentTr.find('img.goods-cover').attr('src');
+
+                if (isnull == true)
+                    return;
+                else
+                    data.UpdateGoodsInfos.push(goodsInfo);
+            });
+
+            // check 供应商地址
+            if (data.UpdateGoodsInfos && data.UpdateGoodsInfos.length) {
+                for (var i = 0, len = data.UpdateGoodsInfos.length; i < len; i++) {
+                    var v = jQuery.trim(data.UpdateGoodsInfos[i]['SupplieAddressId']);
+                    if (!v) {
+                        return ShowAlert('请选择供应商地址', -1);
+                    }
+                }
+            }
+
+            // check 运费
+            if (data["Freights"] && data["Freights"].length) {
+                for (var i = 0, len = data["Freights"].length; i < len; i++) {
+                    var item = data["Freights"][i];
+                    if (item.cost < 0) {
+                        return ShowAlert('运费必须大于或等于0', -1);
+                    }
+                }
+            }
+
+            //编辑-佣金锁定期类型为-具体日期；则自动下架必填
+            if (data.IsAdd != "True" && data.NolimitType == 1 && !(data.AutoOffShelfDate_Edit.trim())) {
+                ShowAlert("自动下架时间为必填项！");
+                jQuery("#AutoOffShelfDate_Edit").focus();
+                return;
+            }
+
+            //勾选工资系数计算，则推广佣金为必填项
+            if (!(data.CashbackValue.trim()) && data.IsBonusRate == true) {
+                ShowAlert("推广佣金为必填项！");
+                jQuery("#CashbackValue").focus();
+                return;
+            }
+            //勾选上线独享，则上线独享数值为必填项
+            if (!(data.HeadFxUserExclusiveValue.trim()) && data.HeadFxUserExclusive == true) {
+                ShowAlert("上线独享数值必填项！");
+                jQuery("#HeadFxUserExclusiveValue").focus();
+                return;
+            }
+
+            //编辑-佣金锁定期类型为-具体日期；则具体日期必填
+            if (data.NolimitType == 1 && !(data.NolimitAfterDate.trim())) {
+                ShowAlert("具体日期为必填项！");
+                jQuery("#NolimitAfterDate").focus();
+                return;
+            }
+            //新增--佣金锁定期类型为-具体日期；则自动下架必填
+            if (data.IsAdd == "True" && data.NolimitType == 1 && !(data.LastOffShelfTime.trim())) {
+                debugger;
+                if (jQuery("#NoAutoOffShelf").attr("checked") == "checked") {
+                    jQuery("#NoAutoOffShelf").click().removeAttr("checked");
+                }
+                ShowAlert("佣金锁定期为【具体日期】，则自动下架时间为必填项");
+                jQuery("#AutoOffShelfDate").focus();
+                return;
+            }
+
+
+            if (parseInt(data.MaxAge) < parseInt(data.MinAge)) {
+                ShowAlert("最大年龄不能小于最小年龄，请重新填写！");
+                jQuery("#MaxAge").focus();
+                return;
+            }
+            //自动上架，则上架时间不能为空
+            if (jQuery("#OnShelfNow").attr("checked") == undefined && data["LastOnShelfTime"] == "") {//自动上架
+                ShowAlert("非立即上架，则自动上架时间是必填项");
+                return;
+            }
+
+            //如大课任何一项输入，则默认用户是需要录入大课信息，class="issavebigcourse"
+            var isaddbigC = false;
+            var isaddbigC2 = false;
+            jQuery(".issavebigcourse").each(function (index, item) {
+                if (jQuery(item).val().trim()) {
+                    isaddbigC = true;
+                    //data.IsUpdate = true;
+                    return true;
+                }
+            });
+            jQuery(".issavebigcourse2").each(function (index, item) {
+                if (jQuery(item).val().trim()) {
+                    isaddbigC2 = true;
+                    //data.IsUpdate = true;
+                    return true;
+                }
+            });
+
+            if (isaddbigC == true && isaddbigC2 == true && data.BigCourseTitle == data.BigCourseTitle2) {
+                ShowAlert("大课1与大课2名称重复，请重新填写");
+                jQuery("#BigCourseTitle2").focus();
+                return;
+            }
+
+            if (isaddbigC == true && !(data.BigCourseTitle.trim())) {//校验大课的非空项-大课名称
+                ShowAlert("大课1名称为必填项！");
+                jQuery("#BigCourseTitle").focus();
+                return;
+            }
+            if (isaddbigC == true && !(data.BigCoursePrice.trim())) {//校验大课的非空项-大课价格
+                ShowAlert("大课1价格为必填项！");
+                jQuery("#BigCoursePrice").focus();
+                return;
+            }
+            if (isaddbigC == true && data.BigCourseTitle && !(data.HeadFxUserExclusiveValue1.trim()) && data.IsBonusRate1 == false) {
+                ShowAlert("大课1工资系数计算与上线独享至少二选一必填");
+                jQuery("#HeadFxUserExclusiveValue1").focus();
+                return;
+            }
+            //大课1 勾选工资系数计算，则推广佣金为必填项
+            if (isaddbigC == true && !(data.bigCashbackValue.trim()) && data.IsBonusRate1 == true) {
+                ShowAlert("大课1返现比例为必填项！");
+                jQuery("#bigCashbackValue").focus();
+                return;
+            }
+            //大课1 勾选上线独享，则上线独享数值为必填项
+            if (isaddbigC == true && !(data.HeadFxUserExclusiveValue1.trim()) && data.HeadFxUserExclusive1 == true) {
+                ShowAlert("大课1上线独享数值必填项！");
+                jQuery("#HeadFxUserExclusiveValue1").focus();
+                return;
+            }
+            //推广佣金类型、推广佣金、价格三者关系
+            //1.1、大课1的返现信息--百分比
+            if (isaddbigC == true && data.bigCashbackType == 1 && parseFloat(data.bigCashbackValue) > 100) {
+                ShowAlert("大课1推广佣金不能超过100%，请重新填写")
+                jQuery("#bigCashbackValue").focus();
+                return;
+            }
+            //1.2、大课1的返现信息--元
+            if (isaddbigC == true && data.bigCashbackType == 2) {
+                ShowAlert("当前佣金不能设置成指定数值，请改用百分比，请重新填写")
+                jQuery("#bigCashbackValue").focus();
+                return;
+            }
+
+
+            if (isaddbigC2 == true && !(data.BigCourseTitle2.trim())) {//校验大课的非空项-大课名称
+                ShowAlert("大课2名称为必填项！");
+                jQuery("#BigCourseTitle2").focus();
+                return;
+            }
+            if (isaddbigC2 == true && !(data.BigCoursePrice2.trim())) {//校验大课的非空项-大课价格
+                ShowAlert("大课2价格为必填项！");
+                jQuery("#BigCoursePrice2").focus();
+                return;
+            }
+            if (isaddbigC2 == true && data.BigCourseTitle2 && !(data.HeadFxUserExclusiveValue2.trim()) && data.IsBonusRate2 == false) {
+                ShowAlert("大课2工资系数计算与上线独享至少二选一必填");
+                jQuery("#HeadFxUserExclusiveValue2").focus();
+                return;
+            }
+            //大课2 勾选工资系数计算，则推广佣金为必填项
+            if (isaddbigC2 == true && !(data.bigCashbackValue2.trim()) && data.IsBonusRate2 == true) {
+                ShowAlert("大课2推广佣金为必填项！");
+                jQuery("#bigCashbackValue2").focus();
+                return;
+            }
+            //大课2 勾选上线独享，则上线独享数值为必填项
+            if (isaddbigC2 == true && !(data.HeadFxUserExclusiveValue2.trim()) && data.HeadFxUserExclusive2 == true) {
+                ShowAlert("大课2上线独享数值必填项！");
+                jQuery("#HeadFxUserExclusiveValue2").focus();
+                return;
+            }
+            //1.1、大课2的返现信息--百分比
+            if (isaddbigC2 == true && data.bigCashbackType2 == 1 && parseFloat(data.bigCashbackValue2) > 100) {
+                ShowAlert("大课2推广佣金不能超过100%，请重新填写")
+                jQuery("#bigCashbackValue2").focus();
+                return;
+            }
+            //1.2、大课2的返现信息--元
+            if (isaddbigC2 == true && data.bigCashbackType2 == 2) {
+                ShowAlert("当前佣金不能设置成指定数值，请改用百分比，请重新填写")
+                jQuery("#bigCashbackValue2").focus();
+                return;
+            }
+
+
+            //属性必填
+            jQuery(".propertyname").each(function (i, d) {
+                if (isnull == true)
+                    return;
+                if (jQuery(this).attr("data-operation") != del && jQuery(this).val() == "") {
+                    ShowAlert("选项为必填项，请填写并保存属性！");
+                    jQuery(this).focus();
+                    isnull = true;
+                    return;
+                } else if (jQuery(this).attr("data-operation") != del && jQuery(this).val().length > 10) {//名称长度不能超过10个汉字
+                    ShowAlert("属性名称长度不能超过10，请重新填写！");
+                    jQuery(this).focus();
+                    isnull = true;
+                    return;
+                }
+            })
+            //选项必填
+            jQuery(".property-item").each(function (i, d) {
+                if (isnull == true)
+                    return;
+                if (jQuery(this).attr("data-operation") != del && jQuery(this).val() == "") {
+                    ShowAlert("选项为必填项，请填写并保存属性！");
+                    jQuery(this).focus();
+                    isnull = true;
+                    return;
+                } else if (jQuery(this).attr("data-operation") != del && jQuery(this).val().length > 10) {
+                    ShowAlert("选项名称长度不能超过10，请重新填写！");
+                    jQuery(this).focus();
+                    isnull = true;
+                    return;
+                }
+            })
+            //检查属性是否已经保存
+            if (jQuery("#div-table .table").length == 0) {
+                jQuery("#save-property").click();
+                ShowAlert("必须先保存属性，并填写库存价格等相关信息")
+                isnull = false;
+                return;
+            }
+
+            //2.1、体验课返现信息--百分比
+            if (data.CashbackValue.trim() != "" && data.CashbackType == 1 && parseFloat(data.CashbackValue) > 100) {//百分比
+                ShowAlert("课程推广佣金不能超过100%，请重新填写");
+                jQuery("#CashbackValue").focus();
+                return;
+            }
+            //2.2、体验课返现信息--百分比
+            var minPrice = 999999999;
+            jQuery("input[name=td-price]").each(function (i, d) {
+                if (minPrice > jQuery(this).val())
+                    minPrice = jQuery(this).val();
+            });
+            if (data.CashbackValue.trim() != "" && data.CashbackType == 2) {//元
+                ShowAlert("当前佣金不能设置成指定数值，请改用百分比，请重新填写")
+                jQuery("#CashbackValue").focus();
+                return;
+            }
+
+            if (isaddbigC) {//新增大课1
+
+                var big1 = {
+                    "Id": data.Id1, "Courseid": courseId, "Title": data.BigCourseTitle, "Price": data.BigCoursePrice, "StartTime": data.BigStartTime
+                    , "EndTime": data.BigEndTime, "Condition": data.Condition, "CashbackType": data.bigCashbackType, "CashbackValue": data.bigCashbackValue
+                    , "PJCashbackType": data.PJCashbackType1, "PJCashbackValue": data.PJCashbackValue1
+                    , "IsBonusRate": data.IsBonusRate1, "HeadFxUserExclusiveValue": data.HeadFxUserExclusiveValue1, "HeadFxUserExclusiveType": data.HeadFxUserExclusiveType1
+                    , "Desc": data.ConditionDesc, "CreateTime": new Date(), "Creator": "00000000-0000-0000-0000-000000000000"
+                };
+                data.BigCourseList.push(big1)
+            }
+            if (isaddbigC2) {//新增大课2
+
+                var big2 = {
+                    "Id": data.Id2, "Courseid": courseId, "Title": data.BigCourseTitle2, "Price": data.BigCoursePrice2, "StartTime": data.BigStartTime2
+                    , "EndTime": data.BigEndTime2, "Condition": data.Condition2, "CashbackType": data.bigCashbackType2, "CashbackValue": data.bigCashbackValue2
+                    , "PJCashbackType": data.PJCashbackType2, "PJCashbackValue": data.PJCashbackValue2
+                    , "IsBonusRate": data.IsBonusRate2, "HeadFxUserExclusiveValue": data.HeadFxUserExclusiveValue2, "HeadFxUserExclusiveType": data.HeadFxUserExclusiveType2
+                    , "Desc": data.ConditionDesc2, "CreateTime": new Date(), "Creator": "00000000-0000-0000-0000-000000000000"
+                };
+                data.BigCourseList.push(big2)
+            }
+
+            // 新人立返佣金
+            if (data.Type == 2) {
+                if (jQuery.trim(data.NewUserRewardValue) != '' && data.NewUserRewardType == 1 && parseFloat(data.NewUserRewardValue) > 100) {
+                    ShowAlert("新人立返佣金不能超过100%，请重新填写");
+                    jQuery("#NewUserRewardValue").focus();
+                    return;
+                }
+            } else {
+                data.NewUserRewardValue = '';
+                data.NewUserRewardType = null;
+            }
+
+            if (isnull == true)
+                return;
+            var showTile = data.IsAdd == "True" ? "确定新增商品？" : "确定更改商品信息？";
+            showConfirm(showTile, function () {
+                Loading("正在更新数据！");
+                jQuery("#save").attr('disabled', 'disabled');
+                jQuery.post("@Url.Action("SaveCourse")", data, function (result) {
+                    if (result.status == 200) {
+                        ShowAlert("保存成功！", 1000, function () {
+                            window.location.href = "/Courses/AddUpdateShow?id=" + data.Id;//新增的课程编程编辑页面
+
+                        });
+                    }
+                    else {
+                        jQuery("#save").removeAttr('disabled');
+                        if (result.msg == "同一个品牌下，不允许课程名称重复，请重新填写！") {
+                            ShowAlert(result.msg, 3000);
+                            jQuery("#Title").focus();
+                            CloseLoading();
+                        }
+                        else if (result.msg == "大课1的名称不允许重复，请重新填写！") {
+                            ShowAlert(result.msg, 3000);
+                            jQuery("#BigCourseTitle").focus();
+                            CloseLoading();
+                        }
+                        else if (result.msg == "大课2的名称不允许重复，请重新填写！") {
+                            ShowAlert(result.msg, 3000);
+                            jQuery("#BigCourseTitle2").focus();
+                            CloseLoading();
+                        }
+                        else if (result.msg == "推广佣金不能超过100%，请重新填写！") {
+                            ShowAlert(result.msg, 3000);
+                            jQuery("#CashbackValue").focus();
+                            CloseLoading();
+                        }
+                        else if (result.msg == "推广佣金金额不能超过商品最低价格，请重新填写！") {
+                            ShowAlert(result.msg, 3000);
+                            jQuery("#CashbackValue").focus();
+                            CloseLoading();
+                        }
+                        else if (result.msg == "大课1的推广佣金不能超过100%，请重新填写！") {
+                            ShowAlert(result.msg, 3000);
+                            jQuery("#bigCashbackValue").focus();
+                            CloseLoading();
+                        }
+                        else if (result.msg == "大课2的推广佣金不能超过100%，请重新填写！") {
+                            ShowAlert(result.msg, 3000);
+                            jQuery("#bigCashbackValue2").focus();
+                            CloseLoading();
+                        }
+                        else if (result.msg == "大课1的返现金额不能超过大课价格，请重新填写！") {
+                            ShowAlert(result.msg, 3000);
+                            jQuery("#bigCashbackValue").focus();
+                            CloseLoading();
+                        }
+                        else if (result.msg == "大课2的返现金额不能超过大课价格，请重新填写！") {
+                            ShowAlert(result.msg, 3000);
+                            jQuery("#bigCashbackValue2").focus();
+                            CloseLoading();
+                        }
+                        else {
+                            ShowAlert(result.msg, -1);
+                            CloseLoading();
+
+                        }
+
+                    }
+                });
+            });
+        });
+
+        //获取表单数据
+        function GetFormData() {
+            var data = {};
+
+            //可直接通过name获取的
+            jQuery(".getvalue").each(function (index, item) {
+                var vobj = jQuery(item);
+                data[vobj.attr("name")] = vobj.val();
+            })
+
+            data["Id"] = courseId;
+            data["OrgId"] = jQuery("#div_Org_hidden").val();//品牌Id
+
+
+            data["Type"] = jQuery("#div_CourseType_hidden").val();//商品分类
+
+            //var jsonSubjects = [], jsonGoodthingTypes = []; var subjectId = null;
+            //if (data["Type"] == "1") {//课程-科目分类
+            //    var strSubjects = jQuery("#div_Subjects_hidden").val().split(',');
+            //    jQuery(strSubjects).each(function (index, subject) {
+            //        if (subject != "" && subject != null) {
+            //            jsonSubjects.push(parseInt(subject, 10));
+
+            //        }
+            //    });
+            //    subjectId = jsonSubjects[0];
+            //} else {//好物--好物分类
+            //    var strGoodthingTypes = jQuery("#div_GoodthingTypes_hidden").val().split(',');
+            //    jQuery(strGoodthingTypes).each(function (index, gg) {
+            //        if (gg != "" && gg != null) {
+            //            jsonGoodthingTypes.push(parseInt(gg, 10));
+            //        }
+            //    });
+            //}
+
+
+            //三级分类的数据
+            var commtyTypes = [];
+            jQuery(".Setp3Select_hidden").each(function (index, data) {
+                var val = jQuery(data).val();
+                if (val != null && val > 0) {
+                    commtyTypes.push(val);
+                }
+            });
+            jQuery.unique(commtyTypes.sort());
+
+            var jsonModes = [];
+            var strModes = jQuery("#div_Mode_hidden").val().split(',');
+            jQuery(strModes).each(function (index, mode) {
+                if (mode != "" && mode != null) {
+                    jsonModes.push(parseInt(mode, 10));
+                    //jsonModes.push(mode);
+                }
+            });
+            data["Mode"] = JSON.stringify(jsonModes);//上课方式
+            data["CommodityTypes"] = commtyTypes; //三级分类数据
+            //data["Subjects"] = JSON.stringify(jsonSubjects);//科目分类
+            //data["GoodthingTypes"] = JSON.stringify(jsonGoodthingTypes);//好物分类
+            //data["Subject"] = subjectId;//(旧)科目Id
+            data["Detail"] = ue.getContent();//课程详情
+            data["IsAdd"] = '@Model.IsAdd';
+            data["OldOrgId"] = '@Model.OrgId';
+            data["OldSubject"] = '@Model.Subject';
+            data["IsUpdate"] = false;//默认不录入大课
+            data["NolimitType"] = jQuery("input[type=radio][checked]").val()
+            data["UpdateGoodsInfos"] = [];//商品待更新实体集
+
+            //课程的上线独享
+            data["IsBonusRate"] = true;//工资系数计算，写死是true
+            data["HeadFxUserExclusive"] = jQuery("#HeadFxUserExclusiveValue").val() == "" ? false : true;//上线独享
+
+            //大课1的上线独享
+            data["IsBonusRate1"] = true;//工资系数计算
+            data["HeadFxUserExclusive1"] = jQuery("#HeadFxUserExclusiveValue1").val() == "" ? false : true;//上线独享
+
+            //大课2的上线独享
+            data["IsBonusRate2"] = true;//工资系数计算
+            data["HeadFxUserExclusive2"] = jQuery("#HeadFxUserExclusiveValue2").val() == "" ? false : true;//上线独享
+            data["BigCourseList"] = [];//大课集合
+
+            //购前须知
+            data["ListNotices"] = [];
+
+            //是否隐形上线
+            data["IsInvisibleOnline"] = jQuery("#IsInvisibleOnline")[0].checked ? true : false;
+            //是否爆款
+            data["IsExplosions"] = jQuery("#IsExplosions")[0].checked ? true : false;
+            //是否系统课程
+            data["IsSystemCourse"] = jQuery("#IsSystemCourse")[0].checked ? true : false;
+            // 是否置顶
+            data["SetTop"] = jQuery("#SetTop")[0].checked ? true : false;
+            // 上架频道
+            data["NewUserExclusive"] = jQuery("#NewUserExclusive")[0].checked ? true : false;
+            data["LimitedTimeOffer"] = jQuery("#LimitedTimeOffer")[0].checked ? true : false;
+
+            var vv = [];
+            var v = jQuery(".vdo_vdo source").attr("src");
+            if (v) vv.push(v);
+            data["Videos"] = JSON.stringify(vv);
+
+            var cc = [];
+            var c = jQuery(".vdo_vdo").attr("poster");
+            if (c) cc.push(c);
+            data["VideoCovers"] = JSON.stringify(cc);
+
+            data["No"] = @(Model.No);
+
+            // 运费
+            if (data['Type'] == '@(CourseTypeEnum.Goodthing.ToInt())')
+            {
+                var arr = mymodules.freight.getdata();
+                data["Freights"] = arr;
+            }
+
+            // 不发货地区
+            if (data['Type'] == '@(CourseTypeEnum.Goodthing.ToInt())')
+            {
+                var a = mymodules.freightBlackList.getdata();
+                data["FreightBacklist"] = a && a.length ? a[0].citys : [];
+            }
+            debugger;
+            return data;
+        }
+
+        //==================三级分类===================
+
+        //三级联动效果
+        jQuery("#StepGoup").on('click', ".select-picker-options-list-item", function () {
+            var _this = jQuery(this);
+            var select = _this.attr("id");
+            var step = jQuery(_this.parents(".selectPickerWrapper")[0]).attr("data-select");
+            if (step == "Setp3Select") {
+                return;
+            }
+            jQuery.getJSON("/api/bg/MallFenleis/GetNomals?code=" + select, function (res) {
+                if (res.status != 200) {
+                    ShowAlert("请求分类接口错误：" + res.msg, -1);
+                } else {
+                    if (step == "Setp1Select") {
+                        //一级分类
+                        var step2 = jQuery(jQuery(_this.parents(".selectPickerWrapper")[0]).siblings(".Setp2Select")[0]);
+                        step2.setMySelectData({ "data": res.data.d2s, "code": res.data.selected_d2 == null ? null : res.data.selected_d2.code });
+                        var step3 = jQuery(jQuery(_this.parents(".selectPickerWrapper")[0]).siblings(".Setp3Select")[0]);
+                        step3.setMySelectData({ "data": res.data.d3s, "code": res.data.selected_d3 == null ? null : res.data.selected_d3.code });
+                    } else {
+                        //二级分类
+                        var parent = jQuery(jQuery(_this.parents(".selectPickerWrapper")[0]).siblings(".Setp3Select")[0]);
+                        parent.setMySelectData({ "data": res.data.d3s, "code": res.data.selected_d3 == null ? null: res.data.selected_d3.code });
+
+                    }
+                }
+            });
+
+        });
+        ////二级变更时
+        //jQuery("#StepGoup .Setp2Select").on('click', " .select-picker-options-list-item", function () {
+        //    var _this = jQuery(this);
+        //    var select = _this.attr("id");
+        //    jQuery.getJSON("/api/bg/MallFenleis/GetNomals?code=" + select, function (res) {
+        //            console.log(res);
+        //            if (res.status != 200) {
+        //                ShowAlert("请求三级分类失败:" + res.msg, -1);
+        //            } else {
+
+        //            }
+        //     });
+        //});
+
+        //删除科目组
+        function DelStep(btn) {
+            jQuery(btn).parent().parent(".steps").remove();
+        }
+        //添加科目组
+        function AddStep(btn) {
+            var html = '<div class="steps form-inline"><div id="' + Math.uuid() + '" class="Setp1Select selectPickerWrapper" data-select="Setp1Select"> <select class="div_Setp1Select_select hidden">';
+            @foreach (var item in ViewBag.Setp1.D1s)
+            {
+                @:html += '<option  value="@item.Code">@item.Name</option>';
+            }
+            html += "</select></div>";
+            html += '<div id="'+ Math.uuid()+'" class="Setp2Select selectPickerWrapper" data-select="Setp2Select" > <select class="div_Setp2Select_select hidden">';
+            html += "</select></div>";
+            html += '<div id="' + Math.uuid()+'" class="Setp3Select selectPickerWrapper" data-select="Setp3Select" > <select class="div_Setp2Select_select hidden">';
+            html += "</select></div>";
+            html += '<span style="float:right"><a href="javascript:void(0);" id="" class="fa fa-minus-circle text-danger del-property-item " onclick="DelStep(this)"></a></span>';
+            html += '</div><br/>';
+            jQuery("#StepGoup").append(html);
+            var steps = jQuery("#StepGoup .steps").last();
+            steps.find(".selectPickerWrapper").each(function (index, select) {
+                jQuery(select).mySelect();
+            });
+        }
+
+
+
+       //=====================视频=====================
+         //上传video
+        jQuery('.uploasingledvideo').on('click', function () {
+            debugger;
+            var k = jQuery(this).attr('data-video');
+            var fileUpload = jQuery('[name=' + k + ']').get(0);
+            var files = fileUpload.files;
+            if (files.length <= 0) {
+                return false;
+			}
+            Loading('视频上传中...');
+            var data = new FormData();
+            for (var i = 0; i < files.length; i++) {
+                data.append(k, files[i]);
+            }
+            jQuery.ajax({
+                type: "POST",
+                url: "/school/upload?type=3&id=@Model.Id",
+                contentType: false,
+                processData: false,
+                cache: false,
+                data: data
+            }).done(function (res) {
+                CloseLoading();
+                if (res.state == 200) {
+                    debugger;
+                    fileUpload.value = '';
+                    var coverurl = res.result[0].message;
+                    var mp4 = res.result[0].value;
+                    showvideo(mp4, coverurl);
+
+                    jQuery("#videshow").removeAttr("hidden");
+                    CloseLoading();
+                } else {
+                    ShowAlert(res.message);
+                }
+            }).fail(function (res) {
+                CloseLoading();
+                ShowAlert(res.message);
+            });
+        });
+        //删除视频
+        function delvideo() {
+            debugger;
+            jQuery("#delvideo").on('click', function () {
+                debugger;
+                jQuery(".vdo_vdo source").attr("src", '');
+                jQuery(".vdo_vdo").attr("poster", '');
+                jQuery("#videshow").html('');
+            });
+        } delvideo();
+
+
+
+
+
+
+        function showvideo(video,videocover) {
+            debugger;
+
+            var html = "";
+            html += '<div id="" class="col-md-4">';
+            html += '            <div class="row ppvideo">';
+            html += '                <div class="col-md-4">';
+            html += '                    <video class="vdo_vdo" style="object-fit:cover;" width="250" height="150" controls="" data-id="a492dd5d-75ea-4ed8-8860-2d75a6755b71" poster="' + videocover+'">';
+            html += '                        <source src="' + video+'" type="video/mp4">';
+            html += '                    </video>';
+            html += '                </div>';
+
+            html += '                <div class="col-md-6"><a id="delvideo" class="fa fa-minus-circle delvideo text-danger"></a></div>';
+            html += '            </div>';
+            html += '<a href="javascript:void(0)" id="downlvideo" data-id="" class="downloadpic text-info" data-input="' + video+'">下载</a>';
+            html += '         </div>';
+            jQuery("#videshow").html(html);
+            delvideo();
+            downloadIamge();
+        }
+    </script>
+}

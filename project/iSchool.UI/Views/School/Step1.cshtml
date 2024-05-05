@@ -1,0 +1,836 @@
+﻿@using iSchool;
+@using iSchool.Infrastructure;
+@using iSchool.Domain.Enum;
+@model iSchool.Application.ViewModels.SchoolExtensionDto
+@{
+    ViewData["Title"] = "数据录入";
+}
+
+@section css
+    {
+    <link href="@(ViewBag.StaticFile)/chosen/1.8.8.rc6/chosen.min.css" rel="stylesheet">
+    <link href="@(ViewBag.StaticFile)/bootstrap-tagsinput/0.8.0/bootstrap-tagsinput.css" rel="stylesheet">
+    <style type="text/css">
+        /*tags样式*/
+        .benmedia .down {
+            width: 94px;
+            font-size: 14px;
+            height: 30px;
+            overflow: hidden;
+        }
+
+            .benmedia .down a {
+                color: #0598fa;
+                display: inline-block;
+                width: 92px;
+                height: 28px;
+                line-height: 28px;
+                text-align: center;
+                border: 1px solid #0598fa;
+                border-radius: 2px;
+                margin-left: 35px;
+            }
+
+        .label-info {
+            display: inline-block;
+            padding: 2px 4px;
+            font-size: 11.844px;
+            font-weight: bold;
+            line-height: 14px;
+            text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+            white-space: nowrap;
+            vertical-align: baseline;
+            background-color: #3a87ad;
+            margin-right: 2px;
+            color: white;
+        }
+
+        .bootstrap-tagsinput {
+            background-color: #fff;
+            border: 1px solid #ccc;
+            box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+            /*display: inline-block;*/
+            /*padding: 4px 6px;*/
+            padding: .375rem .75rem;
+            color: #555;
+            vertical-align: middle;
+            border-radius: 4px;
+            max-width: 100%;
+            line-height: 22px;
+            cursor: text;
+            width: 100%;
+        }
+
+        .side-bar {
+            position: fixed;
+            bottom: 100px;
+            right: 25px;
+            font-size: 0;
+            line-height: 0;
+            z-index: 100;
+        }
+
+            .side-bar a {
+                width: 66px;
+                height: 66px;
+                display: inline-block;
+                margin-bottom: 2px;
+            }
+
+
+            .side-bar .icon-right {
+                background-position: 0 -62px;
+            }
+
+        #auditcard {
+            width: 500px;
+        }
+
+        label.form-check-label {
+            margin: 0px 1.5em 0 0
+        }
+
+        .dm-uploader {
+            cursor: default;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        /*来源上传附件相关样式Start*/
+        .cancel {
+            background: url(../images/uploader/cancel.png) no-repeat center center;
+            width: 18px;
+            height: 16px;
+            display: inline-block;
+            cursor: pointer;
+            margin-top: 7px;
+            margin-left: 30px;
+        }
+
+        .dm-uploader .btn {
+            position: relative;
+            overflow: hidden;
+        }
+
+            .dm-uploader .btn input[type="file"] {
+                position: absolute;
+                top: 0;
+                right: 0;
+                margin: 0;
+                border: solid transparent;
+                width: 100%;
+                opacity: .0;
+                filter: alpha(opacity= 0);
+                cursor: pointer;
+            }
+
+        .file_icon {
+            width: 26px;
+            height: 26px;
+            background: url("images/qitageshi.png") no-repeat center center;
+            font-size: 14px;
+            display: inline-block;
+            margin-left: 17px;
+            margin-top: 12px;
+        }
+
+        .fileindent {
+            display: inline-block;
+            margin-left: 35px;
+            line-height: 40px;
+        }
+
+        .fileicon_ai {
+            background-image: url("../images/uploader/ai.png");
+        }
+
+        .fileicon_doc {
+            background-image: url("../images/uploader/doc.png");
+        }
+
+        .fileicon_docx {
+            background-image: url("../images/uploader/doc.png");
+        }
+
+        .fileicon_jpg {
+            background-image: url("../images/uploader/jpg.png");
+        }
+
+        .fileicon_pdf {
+            background-image: url("../images/uploader/pdf.png");
+        }
+
+        .fileicon_png {
+            background-image: url("../images/uploader/png.png");
+        }
+
+        .fileicon_ppt {
+            background-image: url("../images/uploader/ppt.png");
+        }
+
+        .fileicon_psd {
+            background-image: url("../images/uploader/psd.png");
+        }
+
+        .fileicon_xls {
+            background-image: url("../images/uploader/xls.png");
+        }
+
+        .fileicon_txt {
+            background-image: url("../images/uploader/txt.png");
+        }
+
+        .fileicon_qitageshi {
+            background-image: url("../images/uploader/qitageshi.png");
+        }
+        /*源上传附件相关样式End*/
+    </style>
+}
+<form id="step1-form" action="@(Url.Action("Step1"))" method="post">
+    <div class="card">
+        <div class="card-header">基本信息</div>
+        <div class="card-body">
+            <div class="form-group">
+                <label class="control-label mb-1">学部ID</label>
+                <div>@(Model.ExtId)</div>
+            </div>
+            <div class="form-group">
+                <label class="control-label mb-1">学部/分部名称</label>
+                <input asp-for="Name" type="text" name="name" class="form-control">
+            </div>
+            <div class="form-group">
+                <label class="control-label mb-1">别称</label>
+                <input asp-for="NickName" type="text" name="nickname" class="form-control">
+            </div>
+            @if (Model.ExtId != null)
+            {
+                <div class="form-group">
+                    <label class="control-label mb-1">学部总类型</label>
+                    <div>@(new SchFType0(Model.SchFtype).GetDesc() ?? "无效的总类型")</div>
+                </div>
+            }
+            <div class="form-group">
+                <label class="control-label mb-1">学部/分校招生年级</label>
+                <select asp-for="Grade" asp-items="ViewBag.GradeSelect" class="form-control" disabled></select>
+            </div>
+            <div class="form-group">
+                <label class="control-label mb-1">学部/分校办学类型</label>
+                <select asp-for="Type" asp-items="ViewBag.SchoolTypeSelect" class="form-control standardSelect" disabled></select>
+                <br />
+                <div class="radio-div" id="discount-div" style="display:none;">
+                    <div class="col-3">
+                        <small>是否普惠学校</small>
+                    </div>
+                    <div class="form-check-inline form-check">
+                        <label class="form-check-label ">
+                            <input type="radio" asp-for="Discount" value="true" class="form-check-input">是
+                        </label>
+                        <label class="form-check-label ">
+                            <input type="radio" asp-for="Discount" value="false" class="form-check-input">否
+                        </label>
+                    </div>
+                </div>
+                <div class="radio-div" id="diglossia-div" style="display:none;">
+                    <div class="col-3">
+                        <small>是否双语学校</small>
+                    </div>
+                    <div class="form-check-inline form-check">
+                        <label class="form-check-label ">
+                            <input type="radio" asp-for="Diglossia" name="Diglossia" value="true" class="form-check-input">是
+                        </label>
+                        <label class="form-check-label ">
+                            <input type="radio" asp-for="Diglossia" name="Diglossia" value="false" class="form-check-input">否
+                        </label>
+                    </div>
+                </div>
+                <div class="radio-div" id="chinese-div" style="display: none;">
+                    <div class="col-3">
+                        <small>是否中国国籍学校</small>
+                    </div>
+                    <div class="form-check-inline form-check">
+                        <label class="form-check-label ">
+                            <input type="radio" value="true" asp-for="Chinese" class="form-check-input">是
+                        </label>
+                        <label class="form-check-label ">
+                            <input type="radio" asp-for="Chinese" value="false" class="form-check-input">否
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label mb-1">学部标签</label>
+                <input type="text" class="form-control c_contain" asp-for="Tags">
+            </div>
+            <div class="form-group">
+                <label class="control-label mb-1">高德ID</label>
+                <input type="text" class="form-control" asp-for="ClaimedAmapEid">
+            </div>
+            <div class="form-group">
+                <label class="control-label mb-1">数据来源</label>
+                <div>
+                    <div id="source-div">
+                        @if (Model != null && Model.Source != null)
+                        {
+                            foreach (var item in Model.Source)
+                            {
+                                <input type="text" name="source" class="form-control  mb-1" value="@item" placeholder="(输入链接)" />
+                            }
+                        }
+                        <input type="text" name="source" class="form-control  mb-1" value="" placeholder="(输入链接)" />
+                    </div>
+                    <div class="text-center">
+                        <button type="button" id="addScource" class=" btn btn-outline-secondary btn-lg btn-block">+</button>
+                    </div>
+                </div>
+            </div>
+            <!--数据来源支持上传文件-->
+            <input type="hidden" name="SourceAttachments" id="sourceattch" value="" />
+            <div class="row">
+                <div class="col-md-6 col-sm-12">
+                    <div id="drag-and-drop-zone" class="dm-uploader p-5">
+                        <div class="btn btn-primary btn-block mb-5">
+                            <span>来源附件上传</span>
+                            <input type="file" title='Click to add Files' />
+                        </div>
+                    </div>
+
+                </div>
+                <div class="col-md-6 col-sm-12" id="">
+                    <div class="bencard h-100" style="        border: 1px solid rgba(0,0,0,.125)
+">
+                        <div class="card-header">
+                            附件列表
+                        </div>
+
+                        <ul class="list-unstyled p-2 d-flex flex-column col" id="files">
+                            @if (Model != null && Model.ListSourceAttchments != null)
+                            {
+
+                                foreach (var item in Model.ListSourceAttchments)
+                                {
+                                    <li class="benmedia">
+                                        <div class="media-body mb-1">
+                                            <p class="mb-2">
+                                                <span class="file_icon @item.icon"></span>
+                                                <span class="fileindent">@item.uri.Split("/").Last()</span><span class="cancel" data-arridx="0" data-uri="@item.uri"></span>
+                                                @if (item.type == 2)//其他
+                                                {
+                                                    <span class="down"><a href="@item.uri" target="_blank" rel="nofollow">下载文件</a></span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="down"><a href="@item.uri" target="_blank" rel="nofollow">查看图片</a></span>
+
+                                                }
+                                            </p>
+
+                                            <hr class="mt-1 mb-1" />
+                                        </div>
+                                    </li>
+
+                                }
+                            }
+                            else
+                            {
+                                <li class="text-muted text-center empty"></li>
+                            }
+
+
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <script type="text/html" id="files-template">
+                <li class="benmedia">
+                    <div class="media-body mb-1">
+
+                        <p class="mb-2">
+                            <span class="file_icon %%filetype%%"></span>
+                            <span class="fileindent">%%filename%%</span> &nbsp; &nbsp;状态: <span class="text-muted">就绪</span><span data-arridx="%%arrayindex%%" class="cancel"></span>
+                        </p>
+                        <div class="progress mb-2">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
+                                 role="progressbar"
+                                 style="width: 0%"
+                                 aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                            </div>
+                        </div>
+                        <hr class="mt-1 mb-1" />
+                    </div>
+                </li>
+            </script>
+
+            <div class="form-group">
+                <label class="control-label mb-1">微信公众号</label>
+                <div>
+                    <input type="text" name="weixin" class="form-control  mb-1" placeholder="(多个微信公众号用英文逗号隔开)" asp-for="Weixin" />
+                </div>
+            </div>
+
+            @*学部简介*@
+            <div class="form-group">
+                <label class="control-label mb-1">学部简介</label>
+                <div>
+                    <textarea name="extintro" id="textarea-input" rows="4" placeholder="" class="form-control">@(Model.ExtIntro==null?string.Empty: Model.ExtIntro)</textarea>
+                </div>
+            </div>
+            <input type="hidden" asp-for="Sid" />
+            <input type="hidden" asp-for="ExtId" />
+            <input type="hidden" asp-for="Completion">
+            <input type="hidden" asp-for="SchFtype" />
+            <input type="hidden" id="operation" name="operation" />
+            <input type="hidden" id="SchoolTypeJson" value="@ViewBag.SchoolTypeJson" />
+            <input type="hidden" id="OnlyJumpOrSave" isOnlyJump="true" />
+        </div>
+        <div class="card-footer text-center">
+            <button type="button" class="save btn btn-outline-secondary" data-page="next" disabled>上一页</button>
+            <button type="button" class="save btn btn-outline-secondary" data-page="last" disabled>下一页</button>
+        </div>
+        @*右下角审核意见*@
+        <div class="side-bar qx qx-doaudit" style="width:66px;">
+            <a href="javascript:void(0);" class="icon-right">
+                <img src="~/images/right.png" alt="" />
+            </a>
+            <div class="card" id="auditcard" style="display:none">
+                <div class="card-body">
+                    <h5><strong>审核意见</strong></h5>
+                    @Html.TextArea("textarea-CurrAuditMessage", Model.CurrAuditMessage, 4, 4, new { @class = "form-control", @readonly = "readonly" })
+                    @*<textarea id="auditcontent" rows="3" class="form-control"></textarea>*@
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-primary" id="hidebtn">隐藏</button>
+                </div>
+            </div>
+        </div>
+        <input type="submit" id="save" style="display:none" />
+    </div>
+</form>
+@*<pre id="debugModel" style="display:none;">@(Model.ToJsonString())</pre>
+<pre id="debugGradeSelect" style="display:none;">@(((object)ViewBag.GradeSelect).ToJsonString())</pre>
+<pre id="debugSchoolTypeSelect" style="display:none;">@(((object)ViewBag.SchoolTypeSelect).ToJsonString())</pre>*@
+
+@section Scripts{
+
+    <script src="~/lib/uploader/jquery.dm-uploader.js"></script>
+    @*<script src="@(ViewBag.StaticFile)/chosen/1.8.8.rc6/chosen.jquery.min.js"></script>*@
+    @*数据补全*@
+    <script src="@(ViewBag.StaticFile)/bootstrap-3-typeahead/4.0.2/bootstrap3-typeahead.min.js"></script>
+    @*taginput*@
+    <script src="@(ViewBag.StaticFile)/bootstrap-tagsinput/0.8.0/bootstrap-tagsinput.min.js"></script>
+    @*linq js*@
+    <script src="@(ViewBag.StaticFile)/linq.js/2.2.0.2/linq.min.js"></script>
+    @*Completion*@
+    <script src="~/assets/js/Completion.js"></script>
+    <script src="~/js/schoolDataEnter.js?@(DateTime.Now.Ticks)"></script>
+    <script type="text/javascript">
+        if (typeof String.prototype.trim === 'undefined') {
+            String.prototype.trim = function () {
+                return this.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, '');
+            };
+        }
+    </script>
+    <script type="text/javascript">
+
+        var listSourceAttch = @Html.Raw(String.IsNullOrEmpty(Model.SourceAttachments)?"[]":Model.SourceAttachments);
+        jQuery(document).on("click", ".cancel", function () {
+             var r=confirm("你确定要移除该附件吗，操作不可恢复!");
+            if (r == true) {
+
+        var target = this;
+        var oldLen = listSourceAttch.length;
+        var newadd = jQuery(target).data("arridx");
+        //删除的是新增元素
+                if (newadd > 0) {
+                    newadd--;
+           listSourceAttch.splice(newadd, 1);
+        }
+        else {
+              var key = jQuery(target).data("uri");
+              listSourceAttch = listSourceAttch.filter(x => x.uri != key);
+        }
+            var afterOperLen = listSourceAttch.length;
+            if (oldLen == afterOperLen) {
+
+                 ShowAlert("删除操作异常，请联系技术人员！");
+            }
+            else {//删除成功
+                jQuery(target).parent().parent().remove();
+                console.log(listSourceAttch);
+            }
+    }
+        });
+        jQuery(function () {
+
+ jQuery('#drag-and-drop-zone').dmUploader({ //
+     url: '/School/Upload',
+     maxFileSize: 5000000, // 3 Megs
+     maxCount: 5, //限制文件上传数量
+     extraData: {
+         type: 4,
+         id:"@Model.Sid"},
+    onDragEnter: function(){
+      // Happens when dragging something over the DnD area
+      this.addClass('active');
+    },
+    onDragLeave: function(){
+      // Happens when dragging something OUT of the DnD area
+      this.removeClass('active');
+    },
+    onInit: function(){
+
+    },
+     onNewFile: function (id, file,settings) {
+
+         if (listSourceAttch.length >= settings.maxCount) {
+
+             ShowAlert("系统当前配置最大上传个数为" + settings.maxCount + "！");
+             return;
+         }
+      ui_multi_add_file(id, file);
+    },
+    onBeforeUpload: function(id){
+      ui_multi_update_file_status(id, 'uploading', '上传中...');
+      ui_multi_update_file_progress(id, 0, '', true);
+    },
+    onUploadCanceled: function(id) {
+      // Happens when a file is directly canceled by the user.
+      ui_multi_update_file_status(id, 'warning', '取消');
+      ui_multi_update_file_progress(id, 0, 'warning', false);
+    },
+    onUploadProgress: function(id, percent){
+      // Updating file progress
+      ui_multi_update_file_progress(id, percent);
+    },//上传附件成功回调
+     onUploadSuccess: function (id, data) {
+         if (data.state == 200) {
+             for (j = 0, len = data.result.length; j < len; j++) {
+
+                 var fileD = data.result[j];
+                 var isImg = BenExt.postfixUtil.IsImage(fileD.value);
+                 if (isImg) {
+                     listSourceAttch.push({ type: 1, uri: "" + fileD.value });
+                 }
+                 else {
+                      listSourceAttch.push({ type: 2, uri: "" + fileD.value });
+                 }
+
+              }
+             ui_multi_update_file_status(id, 'success', '上传成功！');
+             ui_multi_update_file_progress(id, 100, 'success', false);
+         }
+         else {
+             ShowAlert(data.message);
+              return;
+         }
+
+    },
+    onUploadError: function(id, xhr, status, message){
+      ui_multi_update_file_status(id, 'danger', message);
+      ui_multi_update_file_progress(id, 0, 'danger', false);
+    },
+    onFileSizeError: function(file){
+         ShowAlert("系统当前配置最大上传容量为5M，你选择的文件容量过大！");
+    }
+  });
+});
+function ui_multi_add_file(id, file)
+{
+    //添加索引以便在新添加附件时正确删除
+    var count = listSourceAttch.length;
+    count++;
+    var template = jQuery('#files-template').text();
+    template = template.replace('%%filetype%%', BenExt.postfixUtil.getClassByFileName(file.name));
+    //如果文件名太长进行截取
+    var showname = file.name;
+    if (showname.length>20) {
+        showname.substring(0, 20) + "...";
+    }
+  template = template.replace('%%arrayindex%%', count);
+  template = template.replace('%%filename%%', showname);
+  template = jQuery(template);
+  template.prop('id', 'uploaderFile' + id);
+  template.data('file-id', id);
+  jQuery('#files').find('li.empty').fadeOut(); // remove the 'no files yet'
+  jQuery('#files').prepend(template);
+}
+
+
+function ui_multi_update_file_status(id, status, message)
+{
+    //jQuery('#uploaderFile' + id).find('span ').html(message).prop('class', 'status text-' + status);
+    jQuery('#uploaderFile' + id).find('.text-muted ').html(message);
+}
+
+
+function ui_multi_update_file_progress(id, percent, color, active)
+{
+  color = (typeof color === 'undefined' ? false : color);
+  active = (typeof active === 'undefined' ? true : active);
+
+  var bar = jQuery('#uploaderFile' + id).find('div.progress-bar');
+
+  bar.width(percent + '%').attr('aria-valuenow', percent);
+  bar.toggleClass('progress-bar-striped progress-bar-animated', active);
+
+  if (percent === 0){
+    bar.html('');
+  } else {
+    bar.html(percent + '%');
+  }
+
+  if (color !== false){
+    bar.removeClass('bg-success bg-info bg-warning bg-danger');
+    bar.addClass('bg-' + color);
+  }
+        }
+
+        jQuery(function () {
+            var selectData = [
+                { "grade": 1, "type": 1, "other": [false, false, false] },
+                { "grade": 1, "type": 2, "other": [true, false, false] },
+                { "grade": 1, "type": 3, "other": [false, false, false] },
+                { "grade": 1, "type": 80, "other": [false, false, false] },
+                { "grade": 1, "type": 99, "other": [false, false, false] },
+                { "grade": 2, "type": 1, "other": [false, false, false] },
+                { "grade": 2, "type": 2, "other": [false, true, false] },
+                { "grade": 2, "type": 4, "other": [false, false, false] },
+                { "grade": 2, "type": 80, "other": [false, false, false] },
+                { "grade": 3, "type": 1, "other": [false, false, false] },
+                { "grade": 3, "type": 2, "other": [false, true, false] },
+                { "grade": 3, "type": 4, "other": [false, false, false] },
+                { "grade": 3, "type": 80, "other": [false, false, false] },
+                { "grade": 4, "type": 1, "other": [false, false, false] },
+                { "grade": 4, "type": 2, "other": [false, true, false] },
+                { "grade": 4, "type": 3, "other": [false, false, true] },
+                { "grade": 4, "type": 4, "other": [false, false, true] },
+                { "grade": 4, "type": 80, "other": [false, false, false] },
+            ];
+
+            @if (Model.AllowEdit != false)
+            {
+                <Text>
+            jQuery('#Grade').enable();
+            jQuery('#Type').enable();
+                </Text>
+            }
+            jQuery('.save').enable();
+
+            jQuery("#Tags").tagsinput({
+                tagClass: "label-info", //设置样式
+                trimValue: true,//去空格
+                confirmKeys: [13, 32, 44, 59],
+                typeahead: {
+                    afterSelect: function (val) { this.$element.val(""); },
+                    source: function (query) {
+                        var json = jQuery.getJSON("@Url.Action("Autocomplete","Tag")" + "?top=10&&term=" + query);
+                        console.log(json);
+                        return json;
+                    }
+                }
+            });
+            jQuery("#NickName").tagsinput({
+                tagClass: "label-info", //设置样式
+                trimValue: true,//去空格
+                confirmKeys: [13, 32, 44, 59],
+                typeahead: {
+                    afterSelect: function (val) { this.$element.val(""); },
+                    source: function (query) {
+                        console.log(json);
+                        return json;
+                    }
+                }
+            });
+            //添加来源
+            jQuery("#addScource").on("click", function () {
+                var html = '<input type="text" name="source" class="form-control  mb-1" placeholder="(输入链接)" />';
+                jQuery("#source-div").append(html);
+            });
+
+            //下拉框联动 @* 类型调整v2 at 2020.03.25 *@
+            //学校年级
+            jQuery("#Grade").on("change", function () {
+                var schoolTypeJson = JSON.parse(jQuery("#SchoolTypeJson").val());
+                var grade = jQuery(this).val();
+                var queryResult = Enumerable.From(selectData)
+                    .Where(function (x) { return x.grade == grade; })
+                    .Select(function (x) { return x.type })
+                    .ToArray();
+                var types = Enumerable.From(schoolTypeJson)
+                    .Where(function (x) {
+                        var value = x.Value;
+                        var result = queryResult.indexOf(parseInt(value)) != -1;
+                        return result;
+                    }).ToArray();
+                ChangeSelectOption(jQuery("#Type"), types);
+                jQuery("#Type").trigger('change');
+            });
+            //学校类型
+            jQuery("#Type").on("change", function () {
+                var radioDivs = jQuery(".radio-div");
+                var grade = jQuery("#Grade").val();
+                var type = jQuery("#Type").val();
+                var queryResult = Enumerable.From(selectData)
+                    .Where(function (x) { return x.grade == grade && x.type == type })
+                    .Select(function (x) { return x.other })
+                    .ToArray();
+                jQuery.each(queryResult[0], function (index, item) {
+                    var $div = jQuery(radioDivs[index]);
+                    if (item) {
+                        //true
+                        $div.css("display", "block");
+                        $div.find("input").css("display", "inline-block");
+                    } else {
+                        //false
+                        $div.css("display", "none");
+                        $div.find("input").css("display", "none");
+                    }
+                });
+                afterTypeChanged(grade, type);
+            }).trigger('change');
+            // 高中 '国际'和'外籍'对应固定的'是否中国国籍'
+            function afterTypeChanged(grade, type) {
+                if (grade == '@SchoolGrade.SeniorMiddleSchool.ToInt()' && type == '@SchoolType.International.ToInt()') {
+                    jQuery('#chinese-div input[name=Chinese][value=true]').enable().trigger('click');
+                    jQuery('#chinese-div input[name=Chinese]').disable();
+
+                } else if (grade == '@SchoolGrade.SeniorMiddleSchool.ToInt()' && type == '@SchoolType.ForeignNationality.ToInt()') {
+                    jQuery('#chinese-div input[name=Chinese][value=false]').enable().trigger('click');
+                    jQuery('#chinese-div input[name=Chinese]').disable();
+
+                }
+            }
+            //更改下拉款选项
+            function ChangeSelectOption($select, data) {
+                var html = "";
+                jQuery.each(data, function (index, item) {
+                    html += "<option value='" + item.Value + "'>" + item.Text + "</option>";
+                });
+                $select.html(html);
+            }
+
+            //是否只跳转页面
+            var isOnlyJump = true;
+            jQuery("#step1-form input[type=text],textarea[name=extintro],input[type=file]").on("change", function () {
+                isOnlyJump = false;
+            });
+
+            //保存数据
+            jQuery(".save").on("click", function () {
+
+
+                var name = jQuery("input[name='name']").val();
+                if (!name.trim()) {
+                    ShowAlert("学部名字不能为空！");
+                    return;
+                }
+
+                //学部简介<=2000
+                var extintro = jQuery("#textarea-input").val();
+                if (extintro.length > 2000) {
+                    ShowAlert("学部简介不能超过2000个字符");
+                    return;
+                }
+
+                var claimedAmapEid = jQuery('[name=ClaimedAmapEid]').val().trim();
+                if (claimedAmapEid != '' && !/^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$/gi.test(claimedAmapEid)) {
+                    return ShowAlert('无效的高德ID');
+                }
+                jQuery('[name=ClaimedAmapEid]').val(claimedAmapEid);
+
+                //var completion = Completion("step1-form");
+                jQuery("#Completion").val(0);
+                //去除disabled
+                jQuery("#Grade").removeAttr("disabled");
+                jQuery("#Type").removeAttr("disabled");
+                jQuery("#step1-form").find('input[type=radio]').removeAttr("disabled");
+                if (!jQuery('#Grade').val() || jQuery('#Grade').val() == '') {
+                    return ShowAlert('请选择年级', -1);
+                }
+                if (!jQuery('#Type').val() || jQuery('#Type').val() == '') {
+                    return ShowAlert('请选择办学类型', -1);
+                }
+                //调整因为多次选择而导致出现无效类型
+                do {
+                    if (jQuery('#discount-div').css('display') == 'none')
+                        jQuery('#discount-div').find('[name=Discount][value=false]').trigger('click');
+                    if (jQuery('#diglossia-div').css('display') == 'none')
+                        jQuery('#diglossia-div').find('[name=Diglossia][value=false]').trigger('click');
+                    if (jQuery('#chinese-div').css('display') == 'none')
+                        jQuery('#chinese-div').find('[name=Chinese][value=false]').trigger('click');
+                } while (0);
+                var operation = jQuery(this).attr("data-page");
+                jQuery("#operation").val(operation);
+                //数据来源
+                var strJsonSourceAttach=JSON.stringify(listSourceAttch);
+                jQuery('#sourceattch').val(strJsonSourceAttach);
+
+                //只跳转不保存
+                if (isOnlyJump) {
+                    //data-page="next"
+                    //data-page="last"
+                    if (operation == "last") {//下一页
+                        window.location.replace('/school/step2?sid=' + '@Model.Sid' + '&extid=' + '@(Model.ExtId)');
+                    }
+                    else {//上一页
+                        window.location.replace('/school/main?sid=' + '@Model.Sid');
+                    }
+                    isOnlyJump = true;
+                    return;
+                }
+
+                var json = jQuery("#step1-form").serialize();
+                Loading("正在保存！");
+
+                jQuery.post("@Url.Action("Step1")", json, function (data) {
+                    if (data.state != 200) {
+                        CloseLoading();
+                        jQuery("#Grade").attr("disabled", "disabled");
+                        jQuery("#Type").attr("disabled", "disabled");
+                        jQuery("#step1-form").find('input[type=radio]').attr("disabled", "disabled");
+                        ShowAlert(data.message, -1);
+                    } else {
+                        //取消onbeforeunload事件
+                        window.onbeforeunload = undefined;
+                        jQuery(window).attr('location', data.result);
+                    }
+                },"json");
+            });
+
+            //展开右下角审核意见
+            jQuery(".icon-right").on("click", function () {
+                jQuery(this).css("display", "none");
+                jQuery(".side-bar").css("width", "500px");
+                jQuery("#auditcard").css("display", "block");
+            });
+            //收回右下角审核意见
+            jQuery("#hidebtn").on("click", function () {
+                jQuery(".icon-right").css("display", "block");
+                jQuery(".side-bar").css("width", "66px");
+                jQuery("#auditcard").css("display", "none");
+                return false;
+            });
+
+
+            //初始化
+            var schoolType = '@(Model != null && Model.ExtId != null ? Model.Type.ToString() : "1")';
+            var schoolGrade = '@(Model != null && Model.ExtId != null ? Model.Grade.ToString() : "1")';
+            jQuery("#Grade").val(schoolGrade);
+            jQuery("#Grade").change();
+            jQuery("#Type").val(schoolType);
+            jQuery("#Type").change();
+            @if ((Model != null && Model.ExtId != null)) {
+                if (Model.AllowEdit != true) {
+                @:jQuery("#Grade").attr("disabled", "disabled");
+                @:jQuery("#Type").attr("disabled", "disabled");
+                @:jQuery("#step1-form").find('input[type=radio]').attr("disabled", "disabled");
+                }
+            }
+            @if (Model == null || Model.ExtId == null || Model.AllowEdit == true)
+            {
+                @:jQuery('[name=SchFtype]').val('');
+            }
+        });
+    </script>
+}

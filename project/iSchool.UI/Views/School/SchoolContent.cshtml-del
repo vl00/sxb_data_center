@@ -1,0 +1,583 @@
+﻿<div class="card">
+    <div class="card-header">基本信息</div>
+    <div class="card-body">
+        <div class="form-group">
+            <label class="control-label mb-1">学部/分部名称</label>
+            <input type="text" class="form-control">
+        </div>
+        <div class="form-group">
+            <label class="control-label mb-1">学部/分校招生年级</label>
+            <select name="select" id="select" class="form-control" >
+                <option value="0">Please select</option>
+                <option value="1">Option #1</option>
+                <option value="2">Option #2</option>
+                <option value="3">Option #3</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="control-label mb-1">学部/分校办学类型</label>
+            <select name="select" id="select" class="form-control">
+                <option value="0">Please select</option>
+                <option value="1">Option #1</option>
+                <option value="2">Option #2</option>
+                <option value="3">Option #3</option>
+            </select>
+        </div>
+    </div>
+</div>
+<div class="card">
+    <div class="card-header">学校概况</div>
+    <div class="card-body">
+        <div class="custom-tab">
+            <nav>
+                <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                    <a class="nav-item nav-link active show" id="custom-nav-contact-tab" data-toggle="tab" href="#custom-nav-contact" role="tab" aria-controls="custom-nav-contact" aria-selected="true">内容数据</a>
+                    <a class="nav-item nav-link " id="custom-nav-home-tab" data-toggle="tab" href="#custom-nav-home" role="tab" aria-controls="custom-nav-home" aria-selected="false">院校总评</a>
+                    <a class="nav-item nav-link " id="custom-nav-video-tab" data-toggle="tab" href="#custom-nav-video" role="tab" aria-controls="custom-nav-video" aria-selected="false">学校视频</a>
+                    <a class="nav-item nav-link " id="custom-nav-openday-tab" data-toggle="tab" href="#custom-nav-openday" role="tab" aria-controls="custom-nav-openday" aria-selected="false">开放日及行事历  </a>
+                    <a class="nav-item nav-link " id="custom-nav-achievement-tab" data-toggle="tab" href="#custom-nav-achievement" role="tab" aria-controls="custom-nav-achievement" aria-selected="false">升学成绩</a>
+                    <a class="nav-item nav-link " id="custom-nav-data-tab" data-toggle="tab" href="#custom-nav-data" role="tab" aria-controls="custom-nav-data" aria-selected="false">更多数据</a>
+                </div>
+            </nav>
+            <div class="tab-content pl-3 pt-2" id="nav-tabContent">
+                @*内容数据*@
+                <div class="tab-pane fade active show" id="custom-nav-contact" role="tabpanel" aria-labelledby="custom-nav-contact-tab">
+                    <div class="form-group">
+                        <label class="form-control-label">地区</label>
+                        <div class="form-inline">
+                            <select name="select" id="select" class="form-control">
+                                <option value="0">所有</option>
+                            </select>
+                            <select name="select" id="select" class="form-control">
+                                <option value="0">所有</option>
+                            </select>
+                            <select name="select" id="select" class="form-control">
+                                <option value="0">所有</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label mb-1">经纬度</label>
+                        <div class="map" id="map" data-latitude="116.38 " data-longitude="39.90"></div>
+                        <span class="badge">纬度：</span><span class="latitude badge badge-warning">39.90</span>
+                        <span class="badge">
+                            经度：
+                        </span><span class="longitude badge badge-warning"> 116.38</span>
+                        <input type="hidden" name="latitude" value="116.38" />
+                        <input type="hidden" name="longitude" value="39.90" />
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label mb-1">地址</label>
+                        <input type="text" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label mb-1">电话</label>
+                        <input type="text" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label mb-1">走读/寄宿</label>
+                        <select name="select" id="select" class="form-control">
+                            <option value="0">Please select</option>
+                            <option value="1">Option #1</option>
+                            <option value="2">Option #2</option>
+                            <option value="3">Option #3</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label mb-1">学生人数</label>
+                        <div class="form-inline">
+                            <input type="text" class="form-control">       <label class="pr-1  form-control-label">人</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label mb-1">师生比</label>
+                        <div class="form-inline">
+                            <label class="pr-1  form-control-label">1:</label>
+                            <input type="text" class="form-control">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label mb-1">学校认证</label>
+                        <div class="row">
+                            <div class="col-md-2">
+                                <section class="card">
+                                    <div class="card-body text-secondary">
+                                        abp
+                                    </div>
+                                </section>
+                            </div>
+                            <div class="col-md-2">
+                                <section class="card">
+                                    <div class="card-body text-secondary">
+                                        abp
+                                    </div>
+                                </section>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label mb-1">出国方向</label>
+                        <div class="row">
+                            <div class="col-md-2">
+                                <section class="card">
+                                    <div class="card-body text-secondary">
+                                        abp
+                                    </div>
+                                </section>
+                            </div>
+                            <div class="col-md-2">
+                                <section class="card">
+                                    <div class="card-body text-secondary">
+                                        abp
+                                    </div>
+                                </section>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-control-label">有无饭堂</label>
+                        <select name="select" id="select" class="form-control">
+                            <option value="0">Please select</option>
+                            <option value="1">Option #1</option>
+                            <option value="2">Option #2</option>
+                            <option value="3">Option #3</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-control-label">伙食情况</label>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label mb-1">学校特色课程或项目</label>
+                        <div class="row">
+                            <div class="col-md-2">
+                                <section class="card">
+                                    <div class="card-body text-secondary">
+                                        abp
+                                    </div>
+                                </section>
+                            </div>
+                            <div class="col-md-2">
+                                <section class="card">
+                                    <div class="card-body text-secondary">
+                                        abp
+                                    </div>
+                                </section>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @*院校总评*@
+                <div class="tab-pane fade" id="custom-nav-home" role="tabpanel" aria-labelledby="custom-nav-home-tab">
+                    <div class="form-group">
+                        <label class="form-control-label">师资力量</label>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <span class="badge">高级教师数量</span>
+                                <div class="form-inline">
+                                    <input type="text" class="form-control">
+                                    <label class="pr-1  form-control-label">人</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <span class="badge">
+                                    特级教师数量
+                                </span>
+                                <div class="form-inline">
+                                    <input type="text" class="form-control">
+                                    <label class="pr-1  form-control-label">人</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <span class="badge">
+                                    外教占比
+                                </span>
+                                <div class="form-inline">
+                                    <input type="text" class="form-control">
+                                    <label class="pr-1  form-control-label">%</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-control-label">硬件设施</label>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <span class="badge">
+                                    建校时间
+                                </span>
+                                <div class="form-inline">
+                                    <input type="text" class="form-control">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <span class="badge">
+                                    建筑面积
+                                </span>
+                                <div class="form-inline">
+                                    <input type="text" class="form-control">
+                                    <label class="pr-1  form-control-label">平方米</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <span class="badge">
+                                    学费
+                                </span>
+                                <div class="form-inline">
+                                    <input type="text" class="form-control">
+                                    <label class="pr-1  form-control-label">万元</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-control-label">毕业成绩</label>
+                    </div>
+
+                </div>
+                @*学校视频*@
+                <div class="tab-pane fade" id="custom-nav-video" role="tabpanel" aria-labelledby="custom-nav-video-tab">
+                    <h6 class="text-danger">
+                        视频数量建议不多于3个
+                    </h6>
+                    <div class="form-group">
+                        <label class="form-control-label">毕业成绩</label>
+                        <div class="row">
+                            <div class="col-md-4"><video></video></div>
+                            <div class="col-md-4"><video></video></div>
+                            <div class="col-md-4"><video></video></div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-control-label">学校专访</label>
+                        <div class="row">
+                            <div class="col-md-4"><video></video></div>
+                            <div class="col-md-4"><video></video></div>
+                            <div class="col-md-4"><video></video></div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-control-label">线上体验课程</label>
+                        <div class="row">
+                            <div class="col-md-4"><video></video></div>
+                            <div class="col-md-4"><video></video></div>
+                            <div class="col-md-4"><video></video></div>
+                        </div>
+                    </div>
+                </div>
+                @*开放日及行事历*@
+                <div class="tab-pane fade" id="custom-nav-openday" role="tabpanel" aria-labelledby="custom-nav-openday-tab">
+                    <div class="form-group openday">
+                        <label class="form-control-label">开放日</label>
+                        <div class="row">
+                            <div class="col-md-6">2019年初中校区开放日</div>
+                            <div class="col-md-6">2019-10-11</div>
+                            <div class="col-md-6">2019年初中校区开放日</div>   <div class="col-md-6">2019-10-11</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-control-label">学校行事历</label>
+                    </div>
+                </div>
+                @*升学成绩*@
+                <div class="tab-pane fade" id="custom-nav-achievement" role="tabpanel" aria-labelledby="custom-nav-achievement-tab">
+                    <div class="form-group">
+                        <label class="form-control-label">开放日</label>
+                        <div class="row">
+                            <div class="col-md-4" data-extId="" data-year="2019">
+                                <section class="card">
+                                    <div class="card-body text-secondary">
+                                        2019年升学成绩
+                                    </div>
+                                </section>
+                            </div>
+                            <div class="col-md-8"></div>
+                        </div>
+                    </div>
+                </div>
+                @*更多数据*@
+                <div class="tab-pane fade" id="custom-nav-data" role="tabpanel" aria-labelledby="custom-nav-data-tab">
+                    <div class="form-group">
+                        <label class="form-control-label">划片范围</label>
+                        <input type="text" class="form-control" id="range" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-control-label">对口学校</label>
+                        <br />
+                        <strong>碧桂园小学</strong>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-control-label">课后管理</label>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-control-label">PGC点评</label>
+                        <h6 class="text-danger">
+                            *数据中心只提供查看“PGC点评”的能力，修改该文章仍需要到运营管理平台中操作PGC点评的顺序按时间排序（另设置顶能力），在运营平台上操作
+                        </h6>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+<div class="card">
+    <div class="card-header">招生简章</div>
+    <div class="card-body">
+        <label class="form-control-label">招生计划</label>
+        <div class="form-group">
+            <span class="badge">招生年龄</span>
+            <div class="row">
+                <div class="form-inline col-md-3">
+                    <input type="number" name="age" class="form-control" value="" />
+                    <label class="pr-1  form-control-label">岁</label>
+                </div>
+                <div class="col-md-9"></div>
+            </div>
+        </div>
+        <div class="form-group">
+            <span class="badge">招生人数</span>
+            <div class="row">
+                <div class="form-inline col-md-3">
+                    <input type="number" name="age" class="form-control" value="" />
+                    <label class="pr-1  form-control-label">人</label>
+                </div>
+                <div class="col-md-9"></div>
+            </div>
+        </div>
+        <div class="form-group">
+            <span class="badge">招生对象</span>
+            <div class="row">
+                <div class="col-md-2">
+                    <section class="card">
+                        <div class="card-body text-secondary">
+                            abp
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <span class="badge">招录比例</span>
+            <div class="row">
+                <div class="form-inline col-md-3">
+                    <label class="pr-1  form-control-label">1: </label>
+                    <input type="number" name="age" class="form-control" value="" />
+                </div>
+                <div class="col-md-9"></div>
+            </div>
+        </div>
+        <div class="form-group">
+            <span class="badge">录取分数线</span>
+            <div class="row">
+                <div class="form-inline col-md-3">
+                    <input type="number" name="age" class="form-control" value="" />
+                    <label class="pr-1  form-control-label">分 </label>
+                </div>
+                <div class="col-md-9"></div>
+            </div>
+        </div>
+        <div class="form-group RecData">
+            <span class="badge">招生日期</span>
+            <div class="row">
+                <div class="col-md-6">2019年初中校区开放日</div>
+                <div class="col-md-6">2019-10-11</div>
+                <div class="col-md-6">2019年初中校区开放日</div>
+                <div class="col-md-6">2019-10-11</div>
+            </div>
+        </div>
+        <label class="form-control-label">入学流程</label>
+        <div class="form-group">
+            <span class="badge">报名所需资料</span>
+            <textarea id="auditcontent" rows="3" class="form-control" style="width:40%"></textarea>
+        </div>
+        <div class="form-group">
+            <span class="badge">报名方式</span>
+            <textarea id="auditcontent" rows="3" class="form-control" style="width:40%"></textarea>
+        </div>
+        <div class="form-group">
+            <span class="badge">考试科目</span>
+            <div class="row">
+                <div class="col-md-2">
+                    <section class="card">
+                        <div class="card-body text-secondary">
+                            英文
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <span class="badge">往期入学考试内容</span>
+        </div>
+        <div class="form-group">
+            <span class="badge">奖学金计划</span>
+            <textarea id="auditcontent" rows="3" class="form-control" style="width:40%"></textarea>
+        </div>
+    </div>
+</div>
+<div class="card">
+    <div class="card-header">课程体系</div>
+    <div class="card-body">
+        <div class="form-group">
+            <label class="form-control-label">课程设置</label>
+            <div class="row">
+                <div class="col-md-2">
+                    <section class="card">
+                        <div class="card-body text-secondary">
+                            英文
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-control-label">课程特色</label>
+        </div>
+        <div class="form-group">
+            <label class="form-control-label">课程认证</label>
+            <div class="row">
+                <div class="col-md-2">
+                    <section class="card">
+                        <div class="card-body text-secondary">
+                            英文
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+</div>
+<div class="card">
+    <div class="card-header">收费标准</div>
+    <div class="card-body">
+        <div class="form-group">
+            <label class="form-control-label">申请费用</label>
+            <div class="row">
+                <div class="form-inline col-md-4">
+                    <input type="text" class="form-control">
+                    <label class="pr-1  form-control-label">元</label>
+                </div>
+                <div class="col-md-8"></div>
+            </div>
+
+        </div>
+        <div class="form-group">
+            <label class="form-control-label">学费</label>
+            <div class="row">
+                <div class="form-inline col-md-4">
+                    <input type="text" class="form-control">
+                    <label class="pr-1  form-control-label">元</label>
+                </div>
+                <div class="col-md-8"></div>
+            </div>
+
+        </div>
+        <div class="form-group">
+            <label class="form-control-label">其它费用</label>
+            <div id="otherfee">
+                <div class="row form-group">
+                    <div class=" col-md-2">
+                        <input type="text" class="form-control">
+
+                    </div>
+                    <div class="col-md-3 form-inline">
+                        <input type="text" class="form-control">
+                        <label class="pr-1  form-control-label">元</label>
+                    </div>
+                    <div class="col-md-8"></div>
+                </div>
+                <div class="row form-group">
+                    <div class=" col-md-2">
+                        <input type="text" class="form-control">
+
+                    </div>
+                    <div class="col-md-3 form-inline">
+                        <input type="text" class="form-control">
+                        <label class="pr-1  form-control-label">元</label>
+                    </div>
+                    <div class="col-md-8"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="card">
+    <div class="card-header">师资力量及教学质量</div>
+    <div class="card-body">
+        <h6 class="text-danger">
+            *注意：标星号的字段将不列入完成度统计中
+        </h6>
+        <div class="form-group">
+            <label class="form-control-label">校长风采</label><br />
+            <video></video>
+        </div>
+        <div class="form-group">
+            <label class="form-control-label">教师风采<i class="fa fa-star"></i></label>
+        </div>
+        <div class="form-group">
+            <label class="form-control-label">学校荣誉<i class="fa fa-star"></i></label>
+        </div>
+        <div class="form-group">
+            <label class="form-control-label">学生荣誉<i class="fa fa-star"></i></label>
+        </div>
+    </div>
+</div>
+<div class="card">
+    <div class="card-header">硬件设施及学生生活</div>
+    <div class="card-body">
+        <h6 class="text-danger">
+            *注意：标星号的字段将不列入完成度统计中
+        </h6>
+        <div class="form-group">
+            <label class="form-control-label">硬件设施</label>
+        </div>
+        <div class="form-group">
+            <label class="form-control-label">学生生活</label>
+            <br />
+            <span class="badge">社团活动<i class="fa fa-star"></i></span>
+            <br />
+            <span class="badge">各年级课程表 </span>
+            <br />
+            <span class="badge">作息时间表<i class="fa fa-star"></i></span>
+            <br />
+            <span class="badge">校车路线 </span>
+
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    jQuery(function () {
+
+        //腾讯地图
+        var center = new qq.maps.LatLng(39.90, 116.38);
+        var map = new qq.maps.Map(document.getElementById("map"), {
+            center: center, zoom: 16
+        });
+        var marker = new qq.maps.Marker({ map: map, position: center });
+        var listener = qq.maps.event.addListener(map, 'click', function (event) {
+            jQuery('#map').siblings('.latitude').text(event.latLng.getLat());
+            jQuery('#map').siblings('.longitude').text(event.latLng.getLng());
+            jQuery('#map').siblings('input[name="latitude"]').val(event.latLng.getLat());
+            jQuery('#map').siblings('input[name="longitude"]').val(event.latLng.getLng());
+            marker.setMap(null);
+            marker = new qq.maps.Marker({
+                map: map, position: new qq.maps.LatLng(event.latLng.getLat(), event.latLng.getLng())
+
+            });
+        });
+        //划片范围
+        jQuery("#range").tagsinput({
+            tagClass: "label-info", //设置样式
+            trimValue: true,//去空格
+            confirmKeys: [13, 32, 44, 59]
+        });
+        //只读所有输入框
+        ReadOnlyInput();
+    });
+</script>
+

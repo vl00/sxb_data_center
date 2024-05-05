@@ -1,0 +1,80 @@
+﻿@using iSchool.Domain;
+@using iSchool.Infrastructure.Dapper;
+@using iSchool.Organization.Appliaction.ResponseModels;
+@using Microsoft.AspNetCore.Html;
+@model PagedList<MeterialItemDto>
+@{
+
+}
+
+@* page list *@
+<div class="row">
+    <div class="table-div col-sm-12">
+        <script type="text/template">
+            <table class="table table-striped table-bordered dataTable no-footer" role="grid" aria-describedby="bootstrap-data-table-export_info">
+                <thead></thead>
+                <tbody>
+                    @{ var i = 0; }
+                    @foreach (var item in Model.CurrentPageItems)
+                    {
+                        <text>
+                            <tr class="odd">
+                                <th class="" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Name: activate to sort column" style="width: 100px;">
+                                    序号
+                                </th>
+                                <td>@((i + 1) + (Model.CurrentPageIndex - 1) * Model.PageSize)</td>
+
+                                <th class="" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Position: activate to sort column" style="width: 100px;">
+                                    素材标题
+                                </th>
+                                <td>@(item.Title)</td>
+
+                                <th class="" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Office: activate to sort column" style="width: 100px;">
+                                    封面图片
+                                </th>
+                                <td><img src="@(item.Cover)" width="80" height="80" /></td>
+
+                                <th class="" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Office: activate to sort column" style="width: 100px;">
+                                    素材下载数
+                                </th>
+                                <td>@(item.DownloadTime)</td>
+
+                                <th class="" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Office: activate to sort column" style="width: 100px;">
+                                    商品名称
+                                </th>
+                                <td>@(item.CourseName)</td>
+
+                                <th class="" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Office: activate to sort column" style="width: 100px;">
+                                    发布时间
+                                </th>
+                                <td>@(item.CreateTime?.ToString("yyyy-MM-dd HH:mm:ss"))</td>
+
+                                <th class="" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Office: activate to sort column" style="width: 100px;">
+                                    其他操作
+                                </th>
+                                <td>
+                                    <a mid="@(item.Id)" class="text-info a-href qx " onclick="gotoaddup(this)">编辑</a>
+                                    &nbsp;&nbsp;
+                                    <a mid="@(item.Id)" class="text-info a-href qx " onclick="doOnlineOrOffOnline(this)">@(item.Status == 0 ? "上架" : "下架")</a>
+                                </td>
+                            </tr>
+                        </text>
+                        i++;
+                    }
+                </tbody>
+            </table>            
+        </script>
+    </div>
+</div>
+<div class="row">
+    <div class="col-sm-12 col-md-3">
+        <div class="dataTables_info" id="bootstrap-data-table-export_info" role="status" aria-live="polite">
+            总共 @(Model?.TotalItemCount) 条
+        </div>
+    </div>
+    <div class="col-sm-12 col-md-9">
+        <div class="dataTables_paginate paging_simple_numbers" id="bootstrap-data-table-export_paginate">
+            @{ await Html.RenderPartialAsync("Pager1", Model); }
+        </div>
+    </div>
+</div>

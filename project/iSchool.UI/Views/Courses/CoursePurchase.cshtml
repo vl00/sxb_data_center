@@ -1,0 +1,621 @@
+﻿@using iSchool.Organization.Appliaction.ViewModels.Courses;
+@using iSchool.Infrastructure.Dapper;
+@using iSchool.Organization.Appliaction.Service.Organization;
+@using iSchool.Infrastructure;
+@using iSchool.Organization.Domain.Enum;
+@model PagedList<CoursesOrderItem>
+@{
+    ViewData["Title"] = "上学帮商城订单";
+    var listOrg = ViewBag.OrgList;//机构
+    var listSubject = ViewBag.SubjectList;//科目
+    var listOrgType = ViewBag.listOrgType;//机构类型
+
+    var appointmentStatusList = ViewBag.BookingCourse; //约课状态列表
+}
+@section css{
+    <style>
+        .dataTables_paginate .pagination li.active span {
+            background: #272c33;
+            border-color: #272c33;
+            color: #fff;
+        }
+
+        .typeahead {
+            z-index: 8000;
+        }
+
+        .inline-form-control {
+            display: inline-block;
+            width: 100%;
+            height: calc(1.5em + .75rem + 2px);
+            padding: .375rem .75rem;
+            font-size: 1rem;
+            font-weight: 400;
+            line-height: 1.5;
+            color: #495057;
+            background-color: #fff;
+            background-clip: padding-box;
+            border: 1px solid #ced4da;
+            border-radius: .25rem;
+            transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+        }
+
+        .a-href {
+            cursor: pointer;
+        }
+
+        .sorting, .td-text-center {
+            text-align: center;
+        }
+
+        .scale-img {
+            overflow: hidden;
+        }
+
+            .scale-img img {
+                width: 100%;
+                height: 100%;
+                -webkit-object-fit: cover;
+                object-fit: cover;
+                transition: .5s all linear;
+                -ms-transition: .5s all linear; /* IE 9 */
+                -moz-transition: .5s all linear; /* Firefox */
+                -webkit-transition: .5s all linear; /* Safari 和 Chrome */
+                -o-transition: .5s all linear; /* Opera */
+                border: none;
+            }
+
+            .scale-img:hover img {
+                transform: scale3d(1.1,1.1,1.1);
+                -ms-transform: scale3d(1.1,1.1,1.1);
+                -moz-transform: scale3d(1.1,1.1,1.1);
+                -webkit-transform: scale3d(1.1,1.1,1.1);
+                -o-transform: scale3d(1.1,1.1,1.1);
+                border: none;
+            }
+    </style>
+    @*可搜索复选下拉框*@
+    <link href="~/css/jsselect/select.css" rel="stylesheet" />
+}
+
+@*分页数据预加载*@
+<pre id="pgjson1" style="display:none;">@(Model.ToJsonString(true))</pre>
+
+<form>
+    @*条件搜索*@
+    <div class="card">
+        <div class="card-body">
+            <div class="row form-group">
+
+                @*机构*@
+                <div class="col-md-2" style="margin-left:1.5%;">
+                    <label class="form-control-label" style="margin-left:5%;">机构</label>
+                    <div id="div_Org" class="selectPickerWrapper">
+                        <select id="div_Org_select" class="hidden">
+                            @foreach (var item in listOrg)
+                            {
+                                <option value="@item.Value">@item.Text</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+
+                @*机构级联课程*@
+                <div class="col-md-2" style="margin-left:1%;">
+                    <label class="form-control-label" style="margin-left:5%;">课程</label>
+                    <div id="div_Course" class="selectPickerWrapper">
+                        <select id="div_Course_select" class="hidden">
+                        </select>
+                    </div>
+                </div>
+
+                @*类型*@
+                <div class="col-md-2" style="margin-left:1%;">
+                    <label class="form-control-label" style="margin-left:5%;">类型</label>
+                    <div id="div_OrgType" class="selectPickerWrapper">
+                        <select id="div_OrgType_select" class="hidden">
+                            @foreach (var item in listOrgType)
+                            {
+                                <option value="@item.Value">@item.Text</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+
+                @*科目*@
+                <div class="col-md-2" style="margin-left:1%;">
+                    <label class="form-control-label" style="margin-left:5%;">科目</label>
+                    <div id="div_Subject" class="selectPickerWrapper">
+                        <select id="div_Subject_select" class="hidden">
+                            @foreach (var item in listSubject)
+                            {
+                                <option value="@item.Value">@item.Text</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                               
+            </div>
+            <div class="row form-group">
+
+
+                @*订单状态*@
+                <div class="col-md-2" style="margin-left:1.5%;">
+                    <label class="form-control-label">订单状态</label>
+                    <select name="Status" id="Status" asp-items="@ViewBag.OrderStatusList" class="form-control" style="width:180px;">
+                        <option value="" disabled selected hidden>请选择</option>
+                        @*<option value="-1">所有</option>*@
+                    </select>
+                </div>
+
+                @*课程名称*@
+                <div class="col-md-2" style="margin-left:1.5%;">
+                    <label class="form-control-label">课程名称：</label>
+                    <input class="form-control" type="text" id="Title" name="Title" property="输入课程名称" width="180" />
+                </div>
+
+                @*订单号*@
+                <div class="col-md-2" style="margin-left:1.5%;">
+                    <label class="form-control-label">订单号：</label>
+                    <input class="form-control" type="text" id="OrdCode" name="OrdCode" property="输入订单号" />
+                </div>
+                @*下单人手机号*@
+                <div class="col-md-2" style="margin-left:1.5%;">
+                    <label class="form-control-label">下单人手机号：</label>
+                    <input class="form-control" type="text" id="Mobile" name="Mobile" property="输入下单人手机号" />
+                </div>
+                <div class="col-md-3" style="padding-top:33px">
+                    <button class="btn btn-primary btn-sm" id="searchBtn" type="button">搜索</button>
+                    &nbsp;&nbsp;&nbsp;&nbsp;
+                    <button id="exportBtn" class="btn btn-primary btn-sm" type="button">导出</button>
+                </div>
+
+            </div>
+            <!--<div class="row form-group">-->
+                @*查询按钮*@
+                <!--<div class="col-md-9"></div>
+                <div class="col-md-3" style="padding-top:33px">
+                    <button class="btn btn-primary btn-sm" id="searchBtn" type="button">确定</button>
+                    &nbsp;&nbsp;&nbsp;&nbsp;
+                    <button id="exportBtn" class="btn btn-primary btn-sm" type="button">导出</button>
+                </div>
+            </div>-->
+        </div>
+    </div>
+</form>
+<div class="card">
+    @*<div class="card-header">课程列表</div>*@
+    <div class="card-body">
+        @*课程列表*@
+        <div id="tb"></div>
+    </div>
+</div>
+
+@*课程列表模板*@
+<script id="tmp_tb" type="text/template">
+    <%
+    var pages = data.currentPageItems;
+    %>
+    <div class="row">
+        <div class="col-sm-12">
+            <table id="bootstrap-data-table-export" class="table table-striped table-bordered dataTable no-footer" role="grid" aria-describedby="bootstrap-data-table-export_info">
+                <thead class="tbheader">
+                    <tr role="row">
+                        <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Office: activate to sort column ascending" style="width:0%;">
+                            订单号
+                        </th>
+                        <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Office: activate to sort column ascending" @*style="width: 8%;"*@>
+                            时间
+                        </th>
+                        <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Office: activate to sort column ascending" style="width: 5%;">
+                            机构
+                        </th>
+                        <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Office: activate to sort column ascending" style="width: 15%;">
+                            课程名称
+                        </th>
+                        <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Office: activate to sort column ascending" style="width: 15%;">
+                            套餐
+                        </th>
+                        @*<th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" style="width: 5%;">
+            科目
+        </th>*@
+                        <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" @*style="width: 5%;"*@>
+                            价格
+                        </th>
+                        <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" style="width: 5%;">
+                            下单人电话
+                        </th>
+                        <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" style="width: 5%;">
+                            下单人姓名
+                        </th>
+                        <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" style="width: 10%;">
+                            发货地址
+                        </th>
+                        <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" style="width: 10%;">
+                            订单状态
+                        </th>
+                        <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" style="width: 5%;">
+                            约课状态
+                        </th>
+                        <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" style="width: 10%;">
+                            物流单号/兑换码
+                        </th>
+                        <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" style="width: 13%;">
+                            操作
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% for (var i = 0, c = pages.length; i < c; i++) { %>
+                    <tr role="row" class="odd" style="text-align:center">
+                        <td><%= pages[i].code %></td>
+                        <td><label><%= pages[i].createTime %></label></td>
+                        <td><label><%= pages[i].orgName %></label></td>
+                        <td><label title="<%= pages[i].title %>"><%= pages[i].title.substring(0, 10) %>...</label></td>
+                        <td><%= pages[i].setMeal %></td>
+                        @*<td><label><%= pages[i].subject %></label></td>*@
+                        <td><label><%= pages[i].price %></label></td>
+                        <td><label><%= pages[i].mobile %></label></td>
+                        <td><label><%= pages[i].userName %></label></td>
+                        <td><label><%= pages[i].recvProvince %><%= pages[i].recvCity %></label></td>
+                        <td><label><%= pages[i].statusEnumDesc %></label></td>
+                        <td>
+                            <%
+                            var options=pages[i].appointmentStatusList;
+                            var ocount=pages[i].appointmentStatusList.length;
+                            %>
+                            <select class="listselect" data-id="<%= pages[i].id %>">
+                                <% for (var k = 0;k < ocount; k++) { %>
+                                <option value="<%= options[k].value%>" <%=options[k].selected==true?'Selected':''  %>><%= options[k].text%></option>
+                                <% } %>
+                            </select>
+
+                        </td>
+                        <td><label><%= (pages[i].ExpressCode==undefined && pages[i].ExchangeCode==undefined )?"无":( (pages[i].ExpressCode=="undefined"?"":pages[i].ExpressCode)+"/"+(pages[i].ExchangeCode=="undefined"?"":pages[i].ExchangeCode)) %></label></td>
+                        <td class="td-text-center">
+
+                            <%if(pages[i].status==3||pages[i].status==4||pages[i].status==5){%>
+                            <a href="javascript:void(0)" data-id="<%= pages[i].id %>" data-cid="<%= pages[i].courseId %>" class="text-info" onclick="ChangeOrderStatues(this)"><%= pages[i].status==3?"发货":pages[i].status==4?"退货":pages[i].status==5?"已退货":"" %></a>
+                            <a> | </a>
+                            <% } %>
+                            <a id="a-step1win" href="javascript:void(0)" data-id="" data-authorId="" data-title="" class="text-info show-logistics-details">物流</a>
+                            <a> | </a>
+                            <a href="javascript:void(0)" data-id="<%= pages[i].id %>" data-cid="<%= pages[i].courseId %>" data-mobile="<%= pages[i].mobile %>" class="text-info add-update-Btn" onclick="closeorder(this)">关闭</a>
+                        </td>
+                    </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-12 col-md-3">
+            <div class="dataTables_info" id="bootstrap-data-table-export_info" role="status" aria-live="polite">
+                总共 <%=data.totalItemCount %> 条
+            </div>
+        </div>
+        <div class="col-sm-12 col-md-9">
+            <div class="dataTables_paginate paging_simple_numbers" id="div_pager">
+            </div>
+        </div>
+    </div>
+</script>
+
+
+@section Scripts{
+
+    @*可搜索复选下拉框*@
+    <script src="~/js/jqselect/select.js"></script>
+
+    <script src="@(ViewBag.StaticFile)/moment.js/2.18.1/moment-with-locales.min.js"></script>
+    <script src="@(ViewBag.StaticFile)/bootstrap-3-typeahead/4.0.2/bootstrap3-typeahead.min.js"></script>
+
+    @*异步分页*@
+    <script src="~/js/bootstrap-pager.js"></script>
+    <script src="~/js/jq.postJSON.js"></script>
+    <script src="~/js/microTemplate.js"></script>
+
+
+    <script type="text/javascript">
+        var $mdu = new HuLyegaJS.event();
+        jQuery(function () {
+            //列表+查询
+            var reload = (function ($, render) {
+
+                //查询条件
+                var o = {};
+                o.pageSize = 10;
+                o.pageIndex = 1;
+                o.searchType = 0;
+                o.orgId = null;         //机构               
+                o.subjectId = null      //科目
+                o.orgTypeId = null      //机构类型
+                o.status = null;        //状态
+                o.title = "",           //课程名称
+                    o.courseId = null,      //课程Id
+                    o.ordCode = "",          //订单号
+                    o.mobile = "";            //下单人手机号
+
+                var bus = new LiejiaJS.event();
+                var msgType = {
+                    relist: 're-list',
+                };
+
+
+
+                var tmp = $('#tmp_tb').html();
+
+                function ui2o() {
+                    o.orgId = $("#div_Org_hidden").val();           //机构
+                    
+                    o.subjectId = $("#div_Subject_hidden").val();   //科目
+                    o.orgTypeId = $("#div_OrgType_hidden").val();   //机构类型
+                    o.status = $("#Status").val();                  //状态
+                    o.title = $("#Title").val();                    //课程名称
+                    o.courseId = $("#div_Course_hidden").val();     //课程
+                    o.ordCode = $("#OrdCode").val();                    //订单号
+                    o.mobile = $("#Mobile").val();                    //下单人手机号
+
+                }
+
+                function init(data) {
+                    debugger;
+                    console.log('init and rendering tb with str ...');
+                    var str = render(tmp, data);
+                    console.log('render tb str ok');
+                    $('#tb').html(str);
+
+                    $('#div_pager').page({
+                        count: data.totalItemCount,
+                        pageNum: o.pageIndex,
+                        pageSize: o.pageSize,
+                        canSkip: true,
+                    }).$element.on('pageChanged', function (e, p) {
+                        o.pageIndex = p.pageNum;
+                        ui2o(), ajax();
+                    });
+                    bus.emit(msgType.relist, 1);
+
+                    //约课状态
+                    $(".listselect").on("change", function () {
+                        var ordid = $(this).attr("data-id");
+                        var appointmentStatus = $(this).val();
+                       showConfirm('确定要更改约课状态？', function () {
+                           Loading("正在更新数据！");
+                           $.post("@Url.Action("ChangeAppointmentStatus")", { "OrdId": ordid, "AppointmentStatus": appointmentStatus }, function (data) {
+                               if (data.status == 200) {
+                                   ShowAlert('操作成功', 1000, function () {
+                                       jQuery("#searchBtn").click();
+                                       CloseLoading();
+                                   });
+                               } else {
+                                   ShowAlert(data.msg);
+                                   CloseLoading();
+                               }
+                           });
+            });
+
+                    })
+
+                }
+
+
+                function ajax() {
+                    $.getJSON('/Courses/CoursePurchase', o, function (res) {
+                        debugger;
+                        if (!res.isOk) {
+                            ShowAlert('网络异常');
+                            return console.log(res);
+                        } else {
+                            init(res.data);
+                        }
+                    });
+                }
+
+
+
+
+                //查询确定按钮
+                $('#searchBtn').click(function () {
+                    o.pageIndex = 1, o.searchType = 0, ui2o(), ajax();
+                });
+
+                //导出按钮
+                // export excel
+                $('#exportBtn').on('click', function () {
+                    get_ui_data_to_o($.extend({}, o));
+                    o.pageIndex = 1; o.pageSize = 1000000;
+                    $.postJSON('/Order/ExportXlsxP', o).then(function (res) {
+
+                        if (res.status != 200) {
+                            return ShowAlert(res.msg, -1);
+                        }
+                        var id = res.data;
+                        window.location.href = '/home/getxlsx?id=' + id;
+                    });
+                });
+                //$('#exportBtn').click(function () {
+                //    o.pageIndex = 1, o.searchType = 0, ui2o(), ajax();
+                //});
+
+
+
+                function get_ui_data_to_o(o) {
+                    $('[prop]').each(function () {
+                        var self = $(this);
+                        o[self.attr('prop')] = self.val();
+                    });
+                    $mdu.fire('get_ui_data', o);
+                }
+
+                var dt1 = JSON.parse($('#pgjson1').html()); //初始化分页数据
+
+                $('#pgjson1').remove();
+                if (dt1) {
+                    debugger;
+                    init(dt1);
+                } else {
+                    debugger;
+                    init({
+                        currentPageIndex: o.pageIndex,
+                        pageSize: o.pageSize,
+                        totalItemCount: 0,
+                        totalPageCount: 0,
+                        currentPageItems: [],
+                    });
+                    ajax();
+                }
+
+                return function () { ui2o(), ajax() };
+            })(jQuery, microTemplate);
+
+            //机构、科目、类型下拉框
+            var singlesearchselect = (function ($) {
+
+                //初始化
+                jQuery("#div_Org").mySelect();//机构
+                jQuery("#div_Course").mySelect();//课程
+                jQuery("#div_Subject").mySelect();//科目
+                jQuery("#div_OrgType").mySelect();//机构类型div_OrgType
+
+
+
+                 //机构-课程联动
+                jQuery(document).on('click touch', '#div_Org .select-picker-options-list-item', function (e) {
+                    debugger;
+                    e.preventDefault();
+                    SetCourseData(jQuery(this).attr("id"), jQuery("#div_Course"));
+
+                });
+                function SetCourseData(orgId, jQueryselect) {
+                    debugger;
+                    if (orgId == null || orgId == 0) {
+                        return;
+                    }
+                    jQuery.getJSON("@Url.Action("CourseSelectList", "Courses")", { orgId: orgId }, function (data) {
+
+                        var options = "";
+                        jQuery.each(data, function (index, item) {
+                            options += '<option value="' + item.value + '">' + item.text + '</option>';
+                        });
+
+                        jQuery("#div_Course .select-picker-search").each(function (index) {
+                            jQuery(this).remove();
+                        })
+                        jQuery("#div_Course .select-picker-options-wrp").each(function (index) {
+                            jQuery(this).remove();
+                        })
+                        ReRenderMySelect("div_Course", options);
+                    });
+                }
+                //重新渲染下拉框
+                function ReRenderMySelect(id, options) {
+                    debugger;
+                    jQuery("#" + id + " .select-picker-search").each(function (index) {
+                        jQuery(this).remove();
+                    })
+                    jQuery("#" + id + " .select-picker-options-wrp").each(function (index) {
+                        jQuery(this).remove();
+                    })
+
+                    var iscanselect = false;//是否可选
+
+                    //options包含选中项，则把选项传入,否则重置所有选项为未选中
+                    if (options == null || options == undefined) {
+                        options = "";
+                        jQuery("#" + id + "_select").find("option").each(function () {
+                            var option = jQuery(this);
+                            options += '<option  value="' + option.val() + '">' + option.text() + '</option>';
+                        });
+                    }
+                    jQuery("#" + id + "_select").empty();
+                    jQuery("#" + id + "_select").append(options);
+                    jQuery("#" + id).mySelect();//重新渲染
+
+                    //if (readonly) {
+                    //    jQuery("#" + id).removeClass("readonly");
+                    //}
+                }
+            })(jQuery)
+
+            //弹框-物流详情
+            jQuery(".show-logistics-details").on("click", function () {
+                debugger;
+                var LogisticeCode = "75460330181332"; //jQuery(this).attr('data-id');//物流单号
+                var title = jQuery(this).attr('data-title');
+                var authorId = jQuery(this).attr('data-authorId');
+                var json = { "LogisticeCode": LogisticeCode, "title": title, "authorId": authorId};
+
+                jQuery.get("@Url.Action("LogisticsDetails")", json, function (data) {
+                    //初始化时加载标签页面
+                    jQuery('#gameContainer').html(data);
+                    jQuery('#gameModal').modal('show');
+                });
+            })
+
+
+        });
+
+        //订单状态更改
+        function ChangeOrderStatues(obj) {
+            var $this = jQuery(obj);
+            var id = $this.attr("data-id");
+            var courseid = jQuery(obj).attr("data-cid");
+            var status = $this.text();
+            showConfirm('确定要' + status+'？', function () {
+                Loading("正在更新数据！");
+                jQuery.post("@Url.Action("ChangeOrderStatus")", { "courseid": courseid, "id": id, "nextstatus": status }, function (data) {
+                    if (data.status == 200) {
+                        ShowAlert('操作成功', 1000, function () {
+                            jQuery("#searchBtn").click();
+                            CloseLoading();
+                        });
+                    } else {
+                        ShowAlert(data.msg);
+                        CloseLoading();
+                    }
+                });
+            });
+        }
+
+        //关闭订单(留资)
+        function closeorder(obj) {
+            debugger;
+            //Guid courseid, Guid id,string phonenumber
+            var id = jQuery(obj).attr("data-id");
+            var courseid = jQuery(obj).attr("data-cid");
+            var phonenumber = jQuery(obj).attr("data-mobile");
+            showConfirm('确定要关闭订单？', function () {
+                Loading("正在更新数据！");
+                jQuery.post("@Url.Action("CloseOrder")", { "courseid": courseid, "id": id, "phonenumber": phonenumber}, function (data) {
+                    if (data.status == 200) {
+                        ShowAlert('操作成功', 1000, function () {
+                            jQuery("#searchBtn").click();
+                            CloseLoading();
+                        });
+                    } else {
+                        ShowAlert(data.msg);
+                        CloseLoading();
+                    }
+                });
+            });
+        }
+
+
+        //鼠标移上去放大图片
+        function moveover(obj) {
+            debugger;
+            var id = jQuery(obj).attr('id');
+            document.getElementById(id).width = "300"
+        }
+        //鼠标离开恢复图片大小
+        function moveback(obj) {
+            debugger;
+            var id = jQuery(obj).attr('id');
+            document.getElementById(id).width = "150";
+    }
+
+
+
+    </script>
+}

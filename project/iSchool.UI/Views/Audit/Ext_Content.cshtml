@@ -1,0 +1,711 @@
+﻿@using iSchool;
+@using iSchool.Domain.Enum;
+@using iSchool.Infrastructure;
+@using Newtonsoft.Json.Linq;
+@using static iSchool.Infrastructure.ObjectHelper;
+@using iSchool.Application.ViewModels;
+@{
+    var sExid = ViewBag.Eid;
+    var _model = Model as iSchool.Application.Service.Audit.SchoolExtQyResult_Content;
+    _model.Data = _model.Data ?? new iSchool.Domain.SchoolExtContent();
+    var listSchoolRange = _model.YearTagList?.FirstOrDefault(x => x.Field == SchoolExtFiledYearTag.Range.GetName());/*.ToList();*/
+    var listCounterpart = _model.YearTagList?.FirstOrDefault(x => x.Field == SchoolExtFiledYearTag.Counterpart.GetName());
+
+    IEnumerable<VideosInfo> schoolVideos = Model.Videos ?? Enumerable.Empty<VideosInfo>();
+
+    IEnumerable<UploadImgDto> schextImgs = Model.SchoolImages ?? Enumerable.Empty<UploadImgDto>();
+
+
+}
+@*自定义控件需要引入addTagHelper*@
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, iSchool.UI
+<style>
+    #div_sgArticle {
+        margin: 10px 0;
+    }
+    /*年份标签按钮默认样式*/
+    .btnCommon {
+        color: #000;
+        /*background-color: #FFF0F5;*/
+        border-color: #F5F5F5;
+        border-width: 2px;
+        margin: 5px;
+    }
+    /*选中样式*/
+    .btn-red {
+        color: #000;
+        background-color: #FFF0F5;
+        border-color: #F5F5F5;
+        border-width: 2px;
+        margin: 5px;
+    }
+    /*删除样式*/
+    .btn-grey {
+        color: #000;
+        background-color: #DCDCDC;
+        border-color: #F5F5F5;
+        border-width: 2px;
+        margin: 5px;
+    }
+
+    .div-addyear {
+        border: 2px solid #F5F5F5;
+    }
+</style>
+
+<div id="step2-content" class="card">
+    <div class="card-header">
+        <div class="col-6">学校概况</div>
+        <div class="col-4">&nbsp;&nbsp;</div>
+        <div class="col-2">@(Math.Round((_model.Data?.Completion ?? 0f) * 100, 2, MidpointRounding.AwayFromZero))%</div>
+    </div>
+    <div class="card-body">
+        <div class="custom-tab">
+            <nav>
+                <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                    <a class="nav-item nav-link active show" id="custom-nav-contact-tab" data-toggle="tab" href="#custom-nav-contact" role="tab" aria-controls="custom-nav-contact" aria-selected="true">内容数据</a>
+                    <a class="nav-item nav-link " id="custom-nav-home-tab" data-toggle="tab" href="#custom-nav-home" role="tab" aria-controls="custom-nav-home" aria-selected="false">院校总评</a>
+                    <a class="nav-item nav-link " id="custom-nav-video-tab" data-toggle="tab" href="#custom-nav-video" role="tab" aria-controls="custom-nav-video" aria-selected="false">学校视频</a>
+                    <a class="nav-item nav-link " id="custom-nav-openday-tab" data-toggle="tab" href="#custom-nav-openday" role="tab" aria-controls="custom-nav-openday" aria-selected="false">开放日及行事历 </a>
+                    <a class="nav-item nav-link " id="custom-nav-achievement-tab" data-toggle="tab" href="#custom-nav-achievement" role="tab" aria-controls="custom-nav-achievement" aria-selected="false">升学成绩</a>
+                    <a class="nav-item nav-link " id="custom-nav-data-tab" data-toggle="tab" href="#custom-nav-data" role="tab" aria-controls="custom-nav-data" aria-selected="false">更多数据</a>
+                </div>
+            </nav>
+            <div class="tab-content pl-3 pt-2" id="nav-tabContent">
+                @*内容数据*@
+                <div class="tab-pane fade active show" id="custom-nav-contact" role="tabpanel" aria-labelledby="custom-nav-contact-tab">
+                    <div class="form-group">
+                        <label class="form-control-label">地区</label>
+                        <div class="form-inline">
+                            <select name="select" class="form-control" disabled>
+                                <option>@_model.ProvinceName</option>
+                            </select>
+                            <select name="select" class="form-control" disabled>
+                                <option>@_model.CityName</option>
+                            </select>
+                            <select name="select" class="form-control" disabled>
+                                <option>@_model.AreaName</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label mb-1">经纬度</label>
+                        <div class="map" id="map" data-latitude="@(_model.Data?.Latitude ?? 39.90)" data-longitude="@(_model.Data?.Longitude ?? 116.38)"></div>
+                        <span class="badge">经度：</span><span class="longitude badge badge-warning">@_model.Data.Longitude</span>
+                        <span class="badge">纬度：</span><span class="latitude badge badge-warning">@_model.Data.Latitude</span>
+                        @*<input type="hidden" name="latitude" value="39.90" />*@
+                        @*<input type="hidden" name="longitude" value="116.38" />*@
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label mb-1">地址</label>
+                        <input type="text" readonly="readonly" class="form-control" value="@_model.Data.Address" />
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label mb-1">电话</label>
+                        <input type="text" readonly="readonly" class="form-control" value="@_model.Data.Tel" />
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label mb-1">走读/寄宿</label>
+                        <select name="select" id="div_Lodging" class="form-control" disabled>
+                            <option>
+                                @(_model.Lodging == 0 ? "未收录" :
+                                _model.Lodging == 1 ? "走读" : _model.Lodging == 2 ? "寄宿": "可走读、寄宿")
+                            </option>
+                        </select>
+                    </div>
+                    @* 师生人数 师生比例*@
+                    <div class="form-group" style="margin-left:-15px; margin-bottom:100px;">
+                        @*学生人数*@
+                        <div class="col-md-4">
+                            <label class="control-label mb-1">学生人数</label>
+                            <div class="form-inline">
+                                <input type="text" readonly="readonly" class="form-control" value="@_model.Data.Studentcount" style="width:80%;" />
+                                <label class="pr-1  form-control-label">人</label>
+                            </div>
+                        </div>
+                        @*教师人数*@
+                        <div class="col-md-4">
+                            <label class="control-label mb-1">教师人数</label>
+                            <div class="form-inline">
+                                <input type="text" readonly="readonly" class="form-control" value="@_model.Data.Teachercount" style="width:80%;" />
+                                <label class="pr-1  form-control-label">人</label>
+                            </div>
+                        </div>
+                        @*师生比例*@
+                        <div class="col-md-4">
+                            <label class="control-label mb-1">师生比</label>
+                            <div class="form-inline">
+                                <label class="pr-1  form-control-label">1：</label>
+                                <input type="text" readonly="readonly" class="form-control" value="@_model.Data.TsPercent" style="width:35%;" />
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="form-group">
+                        <label class="control-label mb-1">学校认证</label>
+                        <div id="div_schoolAuth">
+                            <input tags="1" type="text" readonly="readonly" class="form-control" value="@string.Join(",", _model.AuthTags.Select(_ => _.Name))" style="display:none;" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label mb-1">出国方向</label>
+                        <div id="div_sgAbroad">
+                            <input tags="1" type="text" readonly="readonly" class="form-control" value="@string.Join(",", _model.AbroadTags.Select(_ => _.Name))" style="display:none;" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-control-label">有无校车</label>
+                        <select name="select" class="form-control" disabled>
+                            <option>
+                                @(_model.Data.HasSchoolBus == null ? "未收录" :
+                                    _model.Data.HasSchoolBus == true ? "有" : "无")
+                            </option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-control-label">有无饭堂</label>
+                        <select name="select" class="form-control" disabled>
+                            <option>
+                                @(_model.Data.Canteen == null ? "未收录" :
+                                    _model.Data.Canteen == true ? "有" : "无")
+                            </option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-control-label">伙食情况</label>
+                        <div class="readonly" readonly="true">@Html.Raw(_model.Data.Meal)</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label mb-1">学校特色课程或项目</label>
+                        <div id="div_CharacteristicProject">
+                            <div style="margin:5px 0;">
+                                <input tags="1" type="text" readonly="readonly" class="form-control" value="@string.Join(",", _model.CharacteristicTags.Select(_ => _.Name))" style="display:none;" />
+                            </div>
+                            <br />
+                            <div class="readonly" readonly="true">@Html.Raw(_model.Data.Project)</div>
+                        </div>
+                    </div>
+                    @*学校品牌图片 *@
+                    <div class="form-group">
+                        <label class="control-label mb-1">学校品牌图片</label>
+                        <div id="div_schoolBrand" class="row" ui-batch-uploadBrand="@(SchoolImageEnum.SchoolBrand.ToInt())"
+                             data-title="@(EnumUtil.GetDesc(SchoolImageEnum.SchoolBrand))图片上传">
+                            <pre data-data style="display:none;">  
+@((schextImgs.FirstOrDefault(_ => _.Type == (byte)SchoolImageEnum.SchoolBrand)?.Items ?? Enumerable.Empty<UploadImgItemDto>()).ToJsonString(true))      
+                                        </pre>
+                        </div>
+                    </div>
+                </div>
+            @*院校总评*@
+            <div class="tab-pane fade" id="custom-nav-home" role="tabpanel" aria-labelledby="custom-nav-home-tab">
+                @*师资力量*@
+                <div class="form-group">
+                    <label class="form-control-label">师资力量</label>
+                    <div class="row">
+                        @*高级教师数量*@
+                        <div class="col-md-3">
+                            <span class="badge">高级教师数量</span>
+                            <div class="form-inline">
+                                <input type="text" readonly="readonly" class="form-control" value="@_model.Data.SeniorTea" style="width:80%;" />
+                                <label class="pr-1  form-control-label">人</label>
+                            </div>
+                        </div>
+                        @*特级教师数量*@
+                        <div class="col-md-3">
+                            <span class="badge">
+                                特级教师数量
+                            </span>
+                            <div class="form-inline">
+                                <input type="text" readonly="readonly" class="form-control" value="@_model.Data.CharacteristicTea" style="width:80%;" />
+                                <label class="pr-1  form-control-label">人</label>
+                            </div>
+                        </div>
+                        @*外教人数*@
+                        <div class="col-md-3">
+                            <span class="badge">
+                                外教人数
+                            </span>
+                            <div class="form-inline" id="div_ForeignTeaCount">
+                                <input type="text" readonly="readonly" class="form-control" value="@_model.Data.ForeignTeaCount" style="width:80%;" />
+                                <label class="pr-1  form-control-label">人</label>
+                            </div>
+                        </div>
+                        @*外教占比*@
+                        <div class="col-md-3">
+                            <span class="badge">
+                                外教占比
+                            </span>
+                            <div class="form-inline" id="div_ForeignTea">
+                                @*<label class="pr-1  form-control-label">1：</label>*@
+                                <input type="text" readonly="readonly" class="form-control" value="@_model.Data.ForeignTea" style="width:45%;" />
+                                <label class="pr-1  form-control-label">&nbsp; %</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-control-label">硬件设施</label>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <span class="badge">
+                                建校时间
+                            </span>
+                            <div class="form-inline">
+                                <input type="text" readonly="readonly" class="form-control" value="@(_model.Data.Creationdate?.ToString("yyyy-MM-dd"))" />
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <span class="badge">
+                                建筑面积
+                            </span>
+                            <div class="form-inline">
+                                <input type="text" readonly="readonly" class="form-control" value="@(_model.Data.Acreage)" />
+                                <label class="pr-1  form-control-label">平方米</label>
+                            </div>
+                        </div>
+                        @*<div class="col-md-4">
+                    <span class="badge">
+                        学费
+                    </span>
+                    <div class="form-inline">
+                        <input type="text" readonly="readonly" class="form-control">
+                        <label class="pr-1  form-control-label">万元</label>
+                    </div>
+                </div>*@
+                    </div>
+                </div>
+                @*<div class="form-group">
+            <label class="form-control-label">毕业成绩</label>
+        </div>*@
+
+            </div>
+                @*学校视频*@
+            <div class="tab-pane fade" id="custom-nav-video" role="tabpanel" aria-labelledby="custom-nav-video-tab">
+                <h6 class="text-danger">
+                    视频数量建议不多于3个
+                </h6>
+                @*学校简介*@
+                <div class="form-group">
+                    <label class="form-control-label">学校简介</label>
+                    <div class="div_vdo" ui-batch-uploadVideo="@((int)VideoType.Profile)"
+                         data-title="@(EnumUtil.GetDesc(VideoType.Profile))">
+                        <pre data-data style="display:none;">@(schoolVideos.Where(_=>_.Type==(byte)VideoType.Profile).ToJsonString(true))</pre>
+                    </div>
+                </div>
+                @*学校专访*@
+                <div class="form-group">
+                    <label class="form-control-label">学校专访</label>
+                    <div class="div_vdo" ui-batch-uploadVideo="@((int)VideoType.Interview)"
+                         data-title="@(EnumUtil.GetDesc(VideoType.Interview))">
+                        <pre data-data style="display:none;">@(schoolVideos.Where(_=>_.Type==(byte)VideoType.Interview).ToJsonString(true))</pre>
+                    </div>
+                </div>
+                @*线上体验课程*@
+                <div class="form-group">
+                    <label class="form-control-label">线上体验课程</label>
+                    <div class="div_vdo" ui-batch-uploadVideo="@((int)VideoType.Experience)"
+                         data-title="@(EnumUtil.GetDesc(VideoType.Experience))">
+                        <pre data-data style="display:none;">@(schoolVideos.Where(_=>_.Type==(byte)VideoType.Experience).ToJsonString(true))</pre>
+                    </div>
+                </div>
+            </div>
+                @*开放日及行事历*@
+                <div class="tab-pane fade" id="custom-nav-openday" role="tabpanel" aria-labelledby="custom-nav-openday-tab">
+                    <div class="form-group openday">
+                        <label class="form-control-label">开放日</label>
+                        <div id="div_openday">
+                            @{
+                                var openhours_rjt = Tryv(() => _model.Data.Openhours.ToObject<KeyValuePair<string, object>[]>(true), new KeyValuePair<string, object>[0]) ?? new KeyValuePair<string, object>[0];
+                            }
+                            @foreach (var a in openhours_rjt)
+                            {
+                                <div class="row">
+                                    <div class="col-md-6">@a.Key</div>
+                                    <div class="col-md-6">@a.Value</div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-control-label">学校行事历</label>
+                        <div id="div_sgCalendar">
+                            @{
+                                var calendar_rjt = Tryv(() => _model.Data.Calendar.ToObject<KeyValuePair<string, object>[]>(true), new KeyValuePair<string, object>[0]) ?? new KeyValuePair<string, object>[0];
+                            }
+                            @foreach (var a in calendar_rjt)
+                            {
+                                <div class="row">
+                                    <div class="col-md-6">@a.Key</div>
+                                    <div class="col-md-6">@a.Value</div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+                @*升学成绩*@
+                <div class="tab-pane fade" id="custom-nav-achievement" role="tabpanel" aria-labelledby="custom-nav-achievement-tab">
+                    <div id="div_sgAchievement" class="form-group">
+                        @*<label class="form-control-label">开放日</label>
+                            <div class="row">
+                                <div class="col-md-4" data-extId="" data-year="2019">
+                                    <section class="card">
+                                        <div class="card-body text-secondary">
+                                            2019年升学成绩
+                                        </div>
+                                    </section>
+                                </div>
+                                <div class="col-md-8"></div>
+                            </div>*@
+                    </div>
+                </div>
+            @*更多数据*@
+            <div class="tab-pane fade" id="custom-nav-data" role="tabpanel" aria-labelledby="custom-nav-data-tab">
+                @*划片范围*@
+                <div class="form-group">
+                    <label class="form-control-label">划片范围</label>
+                    <div id="div_moredataRange">
+                        @if (listSchoolRange != null)
+                        {
+                            <div>
+                                @*年份展示标签*@
+                                <PreviewCustomYearsBtnShow field=@listSchoolRange.Field latest-year=@listSchoolRange.Year.ToString() years=@listSchoolRange.Years e-id=@listSchoolRange.Eid step-name=@("step2")></PreviewCustomYearsBtnShow>
+                            </div>
+                            <div class="" id="show_input_item_@listSchoolRange.Field">
+                                <div class="form-inline">
+                                    <CustomYears name=@listSchoolRange.Field data=@listSchoolRange.Years fields=@listSchoolRange.Field set-value=@listSchoolRange.Year></CustomYears>
+                                </div>
+                                <textarea Name="Year_Range" class="form-control " style="margin-bottom:10px;width:40%;" readonly="readonly">@listSchoolRange.Content</textarea>
+                            </div>
+                        }
+                        else
+                        {
+                            <div id="div_moredataRange">
+                                <textarea class="form-control " readonly="readonly">@_model.Data.Range</textarea>
+                            </div>
+
+                        }
+                    </div>
+                </div>
+                @*对口学校*@
+                <div class="form-group">
+                    <label class="form-control-label">对口学校</label>
+                    <div id="div_Counterpart">
+                        @if (listCounterpart != null)
+                        {
+                            <div>
+                                @*年份展示标签*@
+                                <PreviewCustomYearsBtnShow field=@listCounterpart.Field latest-year=@listCounterpart.Year.ToString() years=@listCounterpart.Years step-name=@("step2")></PreviewCustomYearsBtnShow>
+                            </div>
+
+                            <div class="row counterpart_container notnull" id="show_input_item_@listCounterpart.Field" hidden="hidden" ac="1" data-primarykey="@listCounterpart.Id" style="margin-bottom:20px;margin-left:5px">
+                                <div class="form-inline" style="align-items:baseline;margin-right:0px">
+                                    <CustomYears name=@listCounterpart.Field data=@listCounterpart.Years fields=@listCounterpart.Field set-value=@listCounterpart.Year></CustomYears>
+                                </div>
+                                <div id="@(listCounterpart.Field + "_Content")">
+                                    @*动态加载输入项*@
+                                </div>
+                            </div>
+                            <hr />
+
+                        }
+                    </div>
+                </div>
+                @*课后管理*@
+                <div class="form-group">
+                    <label class="form-control-label">课后管理</label>
+                    <div id="div_Afterclass" class="readonly" readonly="true">@Html.Raw(_model.Data.Afterclass)</div>
+                </div>
+                @*PGC点评*@
+                <div class="form-group">
+                    <label class="form-control-label">PGC点评</label>
+                    <h6 class="text-danger">
+                        *数据中心只提供查看“PGC点评”的能力，修改该文章仍需要到运营管理平台中操作PGC点评的顺序按时间排序（另设置顶能力），在运营平台上操作
+                    </h6>
+                    <div id="div_sgArticle"></div>
+                </div>
+            </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+@*yearfield--cache db data*@
+<input hidden="hidden" id="dbdataofyearfield" value="[]" />
+
+<script src="~/js/yeartagselect.js"></script>
+<script src="~/yearfield/yearfieldCommon.js"></script>
+<script type="text/javascript">
+    jQuery(function () {
+
+        // init图片上传ui组件
+        jQuery.each(jQuery('#step2-content [ui-batch-uploadBrand]'), function (_, x) {
+            x = jQuery(x);
+            jQuery.batchUploadImg(jQuery.extend({}, imgOption, {
+                el: x,
+            }));
+        });
+        // init视频上传ui组件
+        jQuery.each(jQuery('#step2-content [ui-batch-uploadVideo]'), function (_, x) {
+            x = jQuery(x);
+            jQuery.batchUploadVideo(jQuery.extend({}, videoOption, {
+                el: x,
+            }));
+        });
+
+        var onshow_event = {};
+        jQuery(".yeartag").yearTagSelect();
+        //腾讯地图
+        var md = jQuery('#map').data();
+        var center = new qq.maps.LatLng(md.latitude, md.longitude);
+        var map = new qq.maps.Map(document.getElementById("map"), {
+            center: center, zoom: 16
+        });
+        var marker = new qq.maps.Marker({ map: map, position: center });
+        var listener = qq.maps.event.addListener(map, 'click', function (event) {
+            jQuery('#map').siblings('.latitude').text(event.latLng.getLat());
+            jQuery('#map').siblings('.longitude').text(event.latLng.getLng());
+            jQuery('#map').siblings('input[name="latitude"]').val(event.latLng.getLat());
+            jQuery('#map').siblings('input[name="longitude"]').val(event.latLng.getLng());
+            marker.setMap(null);
+            marker = new qq.maps.Marker({
+                map: map, position: new qq.maps.LatLng(event.latLng.getLat(), event.latLng.getLng())
+
+            });
+        });
+
+        //只读所有输入框
+        ReadOnlyInput();
+        //根据学校类型hide显示项
+        hide_with_dataExt();
+
+        jQuery('#extContent_content [tags]').each(function () {
+
+            var p = jQuery(this);
+            p.tagsinput();
+            p.prev().removeClass('bootstrap-tagsinput').find("input").remove();
+        });
+
+        var vds = jQuery('#custom-nav-video video');
+        vds.on('playing', function () {
+            var self = this;
+            vds.each(function () {
+                self !== this && this.pause();
+            });
+        });
+
+        //tab切换
+        jQuery('#extContent_content a[data-toggle=tab]').on('show.bs.tab', function (e) {
+            var a = jQuery(e.target), div = jQuery('#' + a.attr('aria-controls')), has_show = div.attr('has_show') == '1';
+            if (has_show) return;
+
+            div.attr('has_show', 1);
+            onshow_event['onshow_' + div.attr('id')] && onshow_event['onshow_' + div.attr('id')]();
+        });
+        //升学成绩
+        onshow_event['onshow_' + 'custom-nav-achievement'] = function () {
+            function load(i) {
+                var o = {};
+                o.eid = dataExt.Id;
+                jQuery('#div_sgAchievement').html('加载中...');
+                jQuery.get('/audit/GetSchoolAchievementYear', o).ignoreGlobal().then(function (str) {
+                    jQuery('#div_sgAchievement').html(str);
+                });
+            }
+            load();
+        };
+        //更多数据 加载school文章
+        onshow_event['onshow_' + 'custom-nav-data'] = function () {
+            function init() {
+                jQuery('#div_sgArticle a[data-dt-idx]').on('click', function () {
+                    var a = $(this), pi = parseInt(a.attr('data-dt-idx'), 10);
+                    if (pi < 1) return false;
+                    if (pi == data.currentPageIndex) return false;
+                    if (pi > data.totalPageCount) return false;
+                    load(pi);
+                });
+            }
+            function load(i) {
+                var o = {};
+                o.pageIndex = i;
+                o.pageSize = 10;
+                o.eId = dataExt.Id;
+
+                jQuery.postJSON('/audit/GetSchoolArticlePageList', o).ignoreGlobal().then(function (res) {
+                    jQuery('#div_sgArticle').html(res);
+                    init();
+                }, function (jqxhr) {
+                    console.log('get Article list error: ' + jqxhr.responseText);
+                });
+            }
+            load(1);
+        };
+    });
+
+
+    //---------以下都是年份标签字段改版使用的----------------
+    var act_delete = 0, act_update = 1, act_select = 2, act_add = 3;
+    var pagecacheinputId = "dbdataofyearfield", eid = "@ViewBag.Eid";
+    //【展示内容】  点击年份标签按钮时，
+    jQuery(".step2btnyearclick").on("click", function () {
+
+        var yearBtn = jQuery(this);
+        var feild = yearBtn.attr("id").split("_")[0];
+
+        //首先设置样式
+        //1、统一处理非选中年份按钮样式
+        var btns = getFieldButtons(yearBtn);
+        jQuery.each(btns, function (index, item) {
+            var dinput = jQuery(item).attr('data-input');
+            if (dinput != act_delete.toString()) {
+                jQuery(item).attr('class', 'btnyearclick btn btnCommon');
+                jQuery(item).removeAttr('disabled');
+            }
+        });
+
+        //2、设置选中年份按钮样式
+        //不允许点击，防止多次重复请求
+        yearBtn.attr('class', 'btnyearclick btn btn-red');
+        yearBtn.attr('disabled', 'disabled');
+        //隐藏已编辑标签
+        jQuery("#span_" + feild + "").attr("hidden", "hidden");
+
+        //最后加载数据：data-input=2_,动态去请求数据库；data-input=1_，直接读取页面隐藏的json
+        var act = yearBtn.attr('data-input');
+        var field_year = yearBtn.attr('data-extid');
+
+        if (act == act_select.toString()) {
+            step2LoadDBData(field_year);
+        }
+
+        //显示输入项
+        jQuery("#show_input_item_" + feild).removeAttr("hidden");
+    });
+    
+    //更新点选标签已选标签展示
+    function step2UpdateTagShow(jsonData, tageShowIdPostfix, tagType) {
+
+        var html = "";
+        jQuery.each(jsonData, function (index) {
+            html += '<span class="tag label label-info">' + jsonData[index].Key + '<span data-role="remove"></span></span>';
+        });
+        var input = tageShowIdPostfix;// 展示标签div的后缀并且是隐藏input的id  Target_1000,Target,Subjects,Subjects_1000
+        var tagType = tagType;//标签类型
+        //如果是招生对象
+        var temp = input.split("_");
+        if (temp[1]) {
+            jQuery("#tag-list-" + tagType + "-" + temp[1]).html(html);
+        }
+        else
+            jQuery("#tag-list-" + tagType).html(html);
+
+        jQuery("#" + input).val(JSON.stringify(jsonData));
+    }
+
+    //加载数据库对应年份数据
+    function step2LoadDBData(field_year) {
+
+        var strArr = field_year.split('_');
+        var currentSelect = jQuery("select[name='" + strArr[0] + "']");
+        currentSelect.val(strArr[1]);
+        var fieldNames = currentSelect.attr("data-input");
+        var list = fieldNames.split('|');        
+        var year = strArr[1];
+
+        //get pagecache
+            var cachedata = QueryPageCacheByBtnId(field_year, pagecacheinputId);
+            //get api-data
+            if (cachedata == null) {
+                var json = { "fieldName": fieldNames, "eid": eid, "year": year };
+                jQuery.get("@Url.Action("GetSchoolYearFieldContentByCondition", "School")", json, function (data) {
+                    //show
+                    var arrValue = step2ShowContent(field_year, null, data);
+                    //dbdata to page-cache
+                    DbDataToPageCache(pagecacheinputId, list[0], year, arrValue);
+                });
+            }
+            else {
+                //show
+                step2ShowContent(field_year, cachedata, null);
+            }       
+    }
+
+    //show-- dbdata or cachedata --content
+    function step2ShowContent(field_year, cachedata, dbdata) {
+        
+        var strArr = field_year.split('_');
+        var currentSelect = jQuery("select[name='" + strArr[0] + "']");
+        currentSelect.val(strArr[1]);
+        var fieldNames = currentSelect.attr("data-input");
+        var list = fieldNames.split('|');
+        var tageShowIdPostfix = currentSelect.attr("tage_show_id_postfix");
+        var tagType = currentSelect.attr("data-tag");
+        var isDataTag = (tagType == undefined || tagType == "") ? false : true;//是否是点选标签
+        var preid = currentSelect.attr("preid");//ue编辑器相关变量pre-id
+
+        var arrValue = ["", "", null];
+        //展示值 文本框类
+        var list = fieldNames.split('|');
+        for (var i = 0; i < list.length; i++) {
+            var dataValue = cachedata == null ? dbdata.result[list[i]] : cachedata[i].content;
+            try { arrValue[2] = JSON.parse(dataValue); }
+            catch{ arrValue[2] = dataValue; }
+
+            //点选标签
+            if (isDataTag) {
+                if (dataValue == undefined) {
+                    UpdateTagShow(null, tageShowIdPostfix, tagType);
+                }
+                else {
+                    UpdateTagShow(arrValue[2], tageShowIdPostfix, tagType);
+                }
+            }
+            //ue编辑器
+            else if (preid) {
+
+                //方案一：只是替换值方案
+                var ueValue = jQuery("#" + preid).innerHTML = dataValue;
+                ue.setContent(ueValue == undefined ? "" : ueValue);
+            }
+            //其他
+            else {
+                var _name = list[i];
+                //数据库只要一个字段，界面展示两个字段
+                step2OneFieldShowMore(field_year, _name, dataValue, true);
+                jQuery("[name='Year_" + list[i] + "']").val(dataValue);
+            }
+        }
+        return arrValue;
+    }
+
+    //数据库只要一个字段，界面展示多个控件
+    function step2OneFieldShowMore(currentBtnId, field, dataValue, isDB) {
+        
+        if (field == "Counterpart") {
+            jQuery("#" + field + "_Content").html('');
+            jQuery(".updateaddinputitem").remove();
+            var content = null;
+            if (isDB) { try { content = JSON.parse(dataValue); } catch{ content = dataValue; } }
+            else content = dataValue;
+            var inputItemCount = 0;
+            var html = '';
+            jQuery.each(content, function (index, item) {
+                ++inputItemCount;
+                var select = '<select disabled data-placeholder="选择一个学校" name="Year_' + field + '_' + index + '" class="counterschool selonchange" tabindex="1"><option value="' + item.Value + '">' + item.Key+'</option></select >';
+                //html += '<div class="form-group" style="margin:5px;margin-bottom:50px;margin-top:10px;margin-left:-15px; " id="show_input_item_' + field + '_' + index + '"><div class="col-md-6" style="margin-top:7px;">' + select + '</div><div class="col-md-2" style="margin-top:7px;"></div><div class="col-md-4"  ></div></div>';
+                html += '<div class="form-group" style="margin:5px;margin-bottom:0px;margin-top:10px;margin-left:0px; " id="show_input_item_' + field + '_' + index + '">' + select+'</div >';
+            });
+
+            //动态渲染输入项
+            jQuery("#" + field + "_Content").append(html);
+            
+            //当前年份按钮记录输入项的项数
+            jQuery("#" + currentBtnId).attr('inputitemcount', inputItemCount);
+        }
+    }
+        //---------以上都是年份标签字段改版使用的----------------
+
+</script>

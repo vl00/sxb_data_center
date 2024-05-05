@@ -1,0 +1,932 @@
+﻿
+@{
+    Layout = null;
+}
+@using iSchool.Domain.Enum
+<script src="@(ViewBag.StaticFile)/jquery/3.2.1/jquery.min.js"></script>
+<style type="text/css">
+    .ioc-gray {
+        color: #6c757d !important;
+    }
+</style>
+<script>
+    jQuery(function () { jQuery(".yeartag").yearTagSelect(); });
+    var listfieldyeartags = [];
+
+    //替换成动态生成的年份拉下框及选项，由添加其他年份按钮中获取
+    function listyearhtml(parentid, template) {
+        var yeartemplate = jQuery('#' + parentid + '_year').text();
+        template = template.replace("%%year%%", yeartemplate);
+        return template;
+    }
+</script>
+
+<!--招生计划，招生年龄段start-->
+<style>
+    .cancel {
+        background: url(../images/uploader/cancel.png) no-repeat center center;
+        width: 18px;
+        height: 16px;
+        display: inline-block;
+        cursor: pointer;
+        margin-top: 7px;
+        margin-left: 30px;
+    }
+</style>
+<script type="text/html" id="age-range-template">
+    <div class="age_year_tag div-addyear notnull" style="margin-bottom:20px;margin-left:5px">
+        <div class="form-inline" style="margin:10px;margin-left:-5px">
+            <div class="col-md-11">%%year%%</div>
+            <div class="col-md-1"><a href="javascript:void(0)" onclick="DelAgeRange(this)"><i class="fa fa-times-circle text-danger"></i></a></div>
+        </div>
+        <div class="form-inline" style="margin:10px;">
+            <input type="text" name="Year_Age_New" class="form-control number-new" checkednull="" min="0"  />
+            <label class="pr-1  form-control-label">至</label>
+            <input type="text" name="Year_MaxAge_New" class="form-control number-new" checkednull="" min="0" />
+            <label class="pr-1  form-control-label">岁</label>
+        </div>
+        <div class="col-md-9"></div>
+
+    </div>
+</script>
+<script>
+    var agecount = 1
+    function AddAgeRange(parentid) {
+
+        if (agecount < 4) {
+            ++agecount;
+
+            var template = jQuery('#age-range-template').text();
+            template = listyearhtml(parentid, template);
+            jQuery("#" + parentid).before(template);
+            jQuery(".yeartag").yearTagSelect();
+
+            //年龄限制为最多1位小数
+            HuLyegaJS.decimalInput({
+                ele: '[name="Year_Age_New"]',
+                decimalPlaces: 1
+            });
+            HuLyegaJS.decimalInput({
+                ele: '[name="Year_MaxAge_New"]',
+                decimalPlaces: 1
+            });
+        }
+        else {
+            confirm("单次添加年份上限是3个");
+            return;
+        }
+    }
+    function DelAgeRange(target) {
+        var r = confirm("你确定要删除该项吗?")
+        if (r) {
+            --agecount;
+            var container = jQuery(target).parent().parent().parent();
+            var ageId = container.data("primarykey");
+            var maxAgeId = container.data("maxprimarykey");
+            if (ageId) {//旧数据删除
+                listfieldyeartags.push({ id: ageId, isvalid: false });
+                listfieldyeartags.push({ id: maxAgeId, isvalid: false });
+            }
+            container.remove();
+        }
+    }
+    function onAgeSave() {
+        jQuery(".age_year_tag").each(function myfunction() {
+            var target = jQuery(this);
+            var year = target.find("select").val();
+            var uc = target.find("[name=Year_Age_New]");
+            if (uc.length > 0) {
+                var age = uc.val();
+                var primaryKey = target.data("primarykey");
+                primaryKey ? listfieldyeartags.push({ id: primaryKey, year: year, field: "Age", content: age })
+                    : listfieldyeartags.push({ year: year, field: "Age", content: age });
+            }
+            uc = target.find("[name=Year_MaxAge_New]");
+            if (uc.length > 0) {
+                var maxage = uc.val();
+                var maxprimaryKey = target.data("maxprimarykey");
+                maxprimaryKey ? listfieldyeartags.push({ id: maxprimaryKey, year: year, field: "MaxAge", content: maxage })
+                    : listfieldyeartags.push({ year: year, field: "MaxAge", content: maxage });
+            }
+        });
+
+    }
+</script>
+<!--招生计划，招生年龄段end-->
+<!--招生计划，招生人数start-->
+<script type="text/html" id="recruit_count-template">
+    <div class="recruit_people_count div-addyear notnull" style="margin-bottom:20px;margin-left:5px">
+        <div class="form-inline" style="margin:10px;margin-left:-5px">
+            <div class="col-md-11">%%year%% </div>
+            <div class="col-md-1"><a href="javascript:void(0)" onclick="DelRecruitCount(this)"><i class="fa fa-times-circle text-danger"></i></a></div>
+        </div>
+        <div class="form-inline" style="margin:10px;">
+            <input type="number" name="Year_Count_New" class="form-control" checkednull="" min="0" onkeyup="(this.v=function(){this.value=this.value.replace(/[^0-9-]+/,'');}).call(this)" onblur="this.v();" />
+            <label class="pr-1  form-control-label">人</label>
+        </div>
+        <div class="col-md-9"></div>
+    </div>
+</script>
+<script>
+
+    var recruitCount = 1;
+    function AddRecruitCount(parentid) {
+        if (recruitCount < 4) {
+            ++recruitCount;
+            var template = jQuery('#recruit_count-template').text();
+            template = listyearhtml(parentid, template);
+            jQuery("#" + parentid).before(template);
+            jQuery(".yeartag").yearTagSelect();
+        }
+        else {
+            confirm("单次添加年份上限是3个");
+            return;
+        }
+
+    }
+    function DelRecruitCount(target) {
+        var r = confirm("你确定要删除该项吗?")
+        if (r) {
+            --recruitCount;
+            var container = jQuery(target).parent().parent().parent();
+            var peoplecount = container.data("primarykey");
+            if (peoplecount) {//旧数据删除
+                listfieldyeartags.push({ id: peoplecount, isvalid: false });
+
+            }
+            container.remove();
+        }
+    }
+    function onCountSave() {
+        jQuery(".recruit_people_count").each(function myfunction() {
+            var target = jQuery(this);
+            var year = target.find("select").val();
+            var uc = target.find("[name=Year_Count_New]");
+            if (uc.length < 1) return;
+            var count = uc.val();
+            //var needadd = target.data("needadd");
+            //if (needadd != undefined) {//旧数据
+            //    if (0 == needadd) {
+            //        count = target.find("input[name=Count]").val();
+            //    }
+            //    else {
+            //        return;
+            //    }
+            //}
+            //if ("" == count || 0 == count) return false;
+            var primaryKey = target.data("primarykey");
+            if (primaryKey) //修改操作
+            {
+                listfieldyeartags.push({ id: primaryKey, year: year, field: "Count", content: count });
+            }
+            else {
+                listfieldyeartags.push({ year: year, field: "Count", content: count });
+            }
+        });
+    }
+</script>
+<!--招生计划，招生人数end-->
+<!--招生计划，报名材料start-->
+<script type="text/html" id="enterschool-data-template">
+    <div class="div-addyear recruit_enterschool_data notnull" style="margin-bottom:20px;margin-left:5px">
+        <div class="form-inline" style="align-items:baseline;margin:10px;margin-left:-5px">
+            <div class="col-md-11">%%year%%</div>
+            <div class="col-md-1"><a href="javascript:void(0)" onclick="DelRecruitData(this)"><i class="fa fa-times-circle text-danger"></i></a></div>
+        </div>
+        <textarea Name="Year_Data_New" rows="3" class="form-control" checkednull="" style="width:40%;margin:10px;"></textarea>
+
+    </div>
+</script>
+<script>
+    var RecruitDatacount = 1;
+    function AddEnterSchoolData(parentid) {
+        if (RecruitDatacount < 4) {
+            ++RecruitDatacount;
+            var template = jQuery('#enterschool-data-template').text();
+            template = listyearhtml(parentid, template);
+            jQuery("#" + parentid).before(template);
+            jQuery(".yeartag").yearTagSelect();
+        }
+        else {
+            confirm("单次添加年份的上限是3");
+            return;
+        }
+    }
+    function DelRecruitData(target) {
+        var r = confirm("你确定要删除该项吗?")
+        if (r) {
+            --RecruitDatacount;
+            var container = jQuery(target).parent().parent().parent();
+            var enterdata = container.data("primarykey");
+            if (enterdata) {//旧数据删除
+                listfieldyeartags.push({ id: enterdata, isvalid: false });
+
+            }
+            container.remove();
+        }
+    }
+    function onDataSave() {
+        jQuery(".recruit_enterschool_data").each(function myfunction() {
+            var target = jQuery(this);
+            var year = target.find("select").val();
+            var uc = target.find("[name=Year_Data_New]");
+            if (uc.length < 1) return;
+            var data = uc.val();
+            //var needadd = target.data("needadd");
+            //if (needadd != undefined) {//旧数据
+            //    if (0 == needadd) {
+            //        data = target.find("textarea[name=Data]").val();
+            //    }
+            //    else {
+            //        return;
+            //    }
+            //}
+            //if ("" == data || 0 == data) return false;
+            var primaryKey = target.data("primarykey");
+            if (primaryKey) //修改操作
+            {
+                listfieldyeartags.push({ id: primaryKey, year: year, field: "Data", content: data });
+            }
+            else {
+                listfieldyeartags.push({ year: year, field: "Data", content: data });
+            }
+        });
+    }
+</script>
+<!--招生计划，报名材料end-->
+<!--招生计划，报名方式start-->
+<script type="text/html" id="enterschool-contact-template">
+    <div class="div-addyear recruit_enterschool_contact notnull" style="margin-bottom:20px;margin-left:5px">
+        <div class="form-inline" style="align-items:baseline;margin:10px;margin-left:-5px">
+            <div class="col-md-11">%%year%%</div>
+            <div class="col-md-1"><a href="javascript:void(0)" onclick="DelRecruitContact(this)"><i class="fa fa-times-circle text-danger"></i></a></div>
+        </div>
+        <textarea Name="Year_Contact_New" rows="3" class="form-control" checkednull="" style="width:40%;margin:10px;"></textarea>
+
+    </div>
+</script>
+<script>
+    var RecruitContactcount = 1;
+    function AddEnterSchoolContact(parentid) {
+        if (RecruitContactcount < 4) {
+            ++RecruitContactcount;
+            var template = jQuery('#enterschool-contact-template').text();
+            template = listyearhtml(parentid, template);
+            jQuery("#" + parentid).before(template);
+            jQuery(".yeartag").yearTagSelect();
+        }
+        else {
+            confirm("单次添加年份的上限是3");
+            return
+        }
+
+    }
+    function DelRecruitContact(target) {
+        var r = confirm("你确定要删除该项吗?")
+        if (r) {
+            --RecruitContactcount;
+            var container = jQuery(target).parent().parent().parent();
+            var entercontact = container.data("primarykey");
+            if (entercontact) {//旧数据删除
+                listfieldyeartags.push({ id: entercontact, isvalid: false });
+
+            }
+            container.remove();
+        }
+    }
+    function onContactSave() {
+
+        jQuery(".recruit_enterschool_contact").each(function myfunction() {
+            var target = jQuery(this);
+            var year = target.find("select").val();
+            var uc = target.find("[name=Year_Contact_New]");
+            if (uc.length < 1) return;
+            var contaict = uc.val();
+            //var needadd = target.data("needadd");
+            //if (needadd != undefined) {//旧数据
+            //    if (0 == needadd) {
+            //        contaict = target.find("textarea[name=Contact]").val();
+            //    }
+            //    else {
+            //        return;
+            //    }
+            //}
+            //if ("" == contaict || 0 == contaict) return false;
+            var primaryKey = target.data("primarykey");
+            if (primaryKey) //修改操作
+            {
+                listfieldyeartags.push({ id: primaryKey, year: year, field: "Contact", content: contaict });
+            }
+            else {
+                listfieldyeartags.push({ year: year, field: "Contact", content: contaict });
+            }
+        });
+
+    }
+</script>
+<!--招生计划，报名方式end-->
+<!--招生计划，奖学金计划start-->
+<script type="text/html" id="scholarship-template">
+    <div class="div-addyear recruit_scholarship notnull" style="margin-bottom:20px;margin-left:5px">
+        <div class="form-inline" style="align-items:baseline;margin:10px;margin-left:-5px">
+            <div class="col-md-11">%%year%%</div>
+            <div class="col-md-1"><a href="javascript:void(0)" onclick="DelScholarship(this)"><i class="fa fa-times-circle text-danger"></i></a></div>
+        </div>
+        <textarea Name="Year_Scholarship_New" rows="3" class="form-control" checkednull="" style="width:40%;margin:10px;"></textarea>
+
+    </div>
+</script>
+<script>
+    var scholarshipcount = 1;
+    function AddScholarship(parentid) {
+        if (scholarshipcount < 4) {
+            ++scholarshipcount;
+            var template = jQuery('#scholarship-template').text();
+            template = listyearhtml(parentid, template);
+            jQuery("#" + parentid).before(template);
+            jQuery(".yeartag").yearTagSelect();
+        }
+        else {
+            confirm("单次添加年份上限是3个");
+            return;
+        }
+
+    }
+    function DelScholarship(target) {
+        var r = confirm("你确定要删除该项吗?")
+        if (r) {
+            --scholarshipcount;
+            var container = jQuery(target).parent().parent().parent();
+            var scholarshipid = container.data("primarykey");
+            if (scholarshipid) {//旧数据删除
+                listfieldyeartags.push({ id: scholarshipid, isvalid: false });
+
+            }
+            container.remove();
+        }
+    }
+    function onScholarshipSave() {
+        jQuery(".recruit_scholarship").each(function myfunction() {
+            var target = jQuery(this);
+            var year = target.find("select").val();
+            var uc = target.find("[name=Year_Scholarship_New]");
+            if (uc.length < 1) return;
+            var scholarship = uc.val();
+            // var needadd = target.data("needadd");
+            //if (needadd != undefined) {//旧数据
+            //    if (0 == needadd) {
+            //        scholarship = target.find("textarea[name=Scholarship]").val();
+            //    }
+            //    else {
+            //        return;
+            //    }
+            //}
+            //if ("" == scholarship || 0 == scholarship) return false;
+            var primaryKey = target.data("primarykey");
+            if (primaryKey) //修改操作
+            {
+                listfieldyeartags.push({ id: primaryKey, year: year, field: "Scholarship", content: scholarship });
+            }
+            else {
+                listfieldyeartags.push({ year: year, field: "Scholarship", content: scholarship });
+            }
+        });
+    }
+</script>
+<!--招生计划，奖学金计划end-->
+<!--招生计划，招生对象start-->
+<script type="text/html" id="zhaosheng-object-template">
+    <div class="div-addyear zsdx-data-container" style="margin-bottom:1rem ;margin-bottom:20px;margin-left:5px;">
+        <div class="form-inline" style="align-items:baseline;margin-bottom:1rem;margin-left:2rem;margin:10px;">
+            <div class="col-md-2" style="margin-left:-10px;">%%year%%</div>
+            <div class="col-md-9">
+                @*data-input="Target_%%input%%"*@
+                <button type="button" class="btn btn-outline-secondary btn-lg createtag" name="btn_Target" data-input="Target_%%input%%" data-tag="@((byte)TagType.Recruit)">  +&nbsp;&nbsp;立即创建</button>
+                <input type="hidden" class="tag-4" />
+            </div>
+            <div class="col-md-1"><a href="javascript:void(0)" onclick="DelZhaoShengObject(this)"><i class="fa fa-times-circle text-danger"></i></a></div>
+        </div>
+
+        <div class="form-inline" id="tag-list-@((byte)TagType.Recruit)-%%container%%">
+
+        </div>
+        <input type="hidden" name="Year_Target_New" id="Target_%%current%%" class="c_ignore" value="" />
+    </div>
+</script>
+<script>
+    var zhaoshengobjectcontainer_count = 0;
+    var zscount = 1;
+    function AddZhaoShengObject(parentid) {
+        if (zscount < 4) {
+            ++zscount;
+            var template = jQuery('#zhaosheng-object-template').text();
+            zhaoshengobjectcontainer_count++;
+            template = template.replace('%%container%%', zhaoshengobjectcontainer_count);
+            template = template.replace('%%current%%', zhaoshengobjectcontainer_count);
+            template = template.replace('%%input%%', zhaoshengobjectcontainer_count);
+            template = listyearhtml(parentid, template);
+            jQuery("#" + parentid).before(template);
+            jQuery(".yeartag").yearTagSelect();
+        }
+        else {
+            confirm("单次添加年份上限是3个");
+            return;
+        }
+
+    }
+    function DelZhaoShengObject(target) {
+        var r = confirm("你确定要删除该项吗?")
+        if (r) {
+            --zscount;
+            var container = jQuery(target).parent().parent().parent();
+            var zsdx = container.data("primarykey");
+            if (zsdx) {//旧数据删除
+                listfieldyeartags.push({ id: zsdx, isvalid: false });
+
+            }
+            container.remove();
+        }
+    }
+    function onZhaoShengDuiXiangSave() {
+        jQuery(".zsdx-data-container").each(function myfunction() {
+            var target = jQuery(this);
+            var year = target.find("select").val();
+            var uc = target.find("[name=Year_Target_New]");
+            if (uc.length < 1) return;
+            var zsdx = uc.val() || '[]';
+            //var needadd = target.data("needadd");
+            //if (needadd != undefined) {//旧数据
+            //    if (0 == needadd) {
+            //        zsdx = target.find("input[name=Target]").val();
+            //    }
+            //    else {
+            //        return;
+            //    }
+            //}
+            // if ("" == zsdx || 0 == zsdx || undefined == zsdx) return false;
+            var primaryKey = target.data("primarykey");
+            if (primaryKey) //修改操作
+            {
+                listfieldyeartags.push({ id: primaryKey, year: year, field: "Target", content: zsdx });
+            }
+            else {
+                listfieldyeartags.push({ year: year, field: "Target", content: zsdx });
+            }
+        });
+    }
+</script>
+<!--招生计划，招生对象end-->
+<!--招生计划，考试科目start-->
+<script type="text/html" id="exam-subject-template">
+    <div class="div-addyear exam-subject-container" style="margin-bottom:1rem ;margin-bottom:20px;margin-left:5px;">
+        <div class="form-inline" style="align-items:baseline;margin-bottom:1rem;margin-left:2rem;margin:10px;">
+            <div class="col-md-2" style="margin-left:-10px;">%%year%%</div>
+            <div class="col-md-9">
+                <button type="button" class="btn btn-outline-secondary btn-lg createtag" name="btn_Subjects" data-input="Subjects_%%input%%" data-tag="@((byte)TagType.Subject)">  +&nbsp;&nbsp;立即创建</button>
+                <input type="hidden" class="tag-@((byte)TagType.Subject)" />
+            </div>
+            <div class="col-md-1"><a href="javascript:void(0)" onclick="DelZhaoShengObject(this)"><i class="fa fa-times-circle text-danger"></i></a></div>
+        </div>
+        <div class="form-inline" id="tag-list-@((byte)TagType.Subject)-%%container%%">
+
+        </div>
+        <input type="hidden" name="Year_Subjects_New" id="Subjects_%%current%%" class="c_ignore" value="" />
+
+
+    </div>
+</script>
+<script>
+    var examsubjectcontainer_count = 0;
+    var examcount = 1;
+    function AddExamSubject(parentid) {
+        if (examcount < 4) {
+            ++examcount;
+            var template = jQuery('#exam-subject-template').text();
+            examsubjectcontainer_count++;
+            template = template.replace('%%container%%', examsubjectcontainer_count);
+            template = template.replace('%%current%%', examsubjectcontainer_count);
+            template = template.replace('%%input%%', examsubjectcontainer_count);
+            template = listyearhtml(parentid, template);
+            jQuery("#" + parentid).before(template);
+            jQuery(".yeartag").yearTagSelect();
+        }
+        else {
+            confirm("单次添加年份上限是3个");
+            return;
+        }
+    }
+    function DelExamSubject(target) {
+        var r = confirm("你确定要删除该项吗?")
+        if (r) {
+            --examcount;
+            var container = jQuery(target).parent().parent().parent();
+            var exam = container.data("primarykey");
+            if (exam) {//旧数据删除
+                listfieldyeartags.push({ id: exam, isvalid: false });
+
+            }
+            container.remove();
+        }
+    }
+    function onExamSubjectSave() {
+        jQuery(".exam-subject-container").each(function myfunction() {
+            var target = jQuery(this);
+            var year = target.find("select").val();
+            var uc = target.find("[name=Year_Subjects_New]");
+            if (uc.length < 1) return;
+            var exam = uc.val() || '[]';
+            //var needadd = target.data("needadd");
+            //if (needadd != undefined) {//旧数据
+            //    if (0 == needadd) {
+            //        exam = target.find("input[name=Subjects]").val();
+            //    }
+            //    else {
+            //        return;
+            //    }
+            //}
+            //if ("" == exam || 0 == exam || undefined == exam) return false;
+            var primaryKey = target.data("primarykey");
+            if (primaryKey) //修改操作
+            {
+                listfieldyeartags.push({ id: primaryKey, year: year, field: "Subjects", content: exam });
+            }
+            else {
+                listfieldyeartags.push({ year: year, field: "Subjects", content: exam });
+            }
+        });
+    }
+</script>
+<!--招生计划，考试科目end-->
+<!--招生计划，往期考试内容start-->
+<script type="text/html" id="old-exampaper-template">
+    <div class="div-addyear" fprop="Pastexam">
+        <div class="form-inline" style="align-items:baseline;margin-right:15px">%%year%%</div>
+        <div class="form-inline"><a href="javascript:void(0)" onclick="DelExamPaper(this)"><i class="fa fa-times-circle text-danger"></i></a></div>
+        <div class="border uecontent" data-idx="%%idx%%" id="Pastexam" name="Pastexam" style="min-height:50px">
+            <div id="editor%%container%%" type="text/plain" style="width:100%;height:200px;"></div>
+        </div>
+
+    </div>
+
+
+
+    @*<div class="border uecontent" data-idx="%%idx%%" id="Pastexam" name="Pastexam" style="min-height:50px">
+            <div class="form-inline" style="align-items:baseline;margin-right:15px">%%year%%</div>
+            <div class="form-inline"><a href="javascript:void(0)" onclick="DelExamPaper(this)"><i class="fa fa-times-circle text-danger"></i></a></div>
+            <div id="editor%%container%%" type="text/plain" style="width:100%;height:200px;">
+            </div>
+        </div>*@
+</script>
+<script>
+    var exampapercontainer_count = 1000;
+    var exampapercount = 1;
+    function AddExamPaper(parentid) {
+        if (exampapercount < 4) {
+            ++exampapercount;
+            var template = jQuery('#old-exampaper-template').text();
+        exampapercontainer_count++;
+        template = template.replace('%%container%%', exampapercontainer_count);
+        template = template.replace('%%idx%%', exampapercontainer_count);
+            template = listyearhtml(parentid, template);
+            jQuery("#" + parentid).before(template);
+        jQuery(".yeartag").yearTagSelect();
+           //ue编辑器
+                     var ue = UE.getEditor('editor'+exampapercontainer_count, {
+                         configPath: 'ueditor/config.json',
+                         initialContent: "",
+                         theme: 'tt',
+                         elementPathEnabled: !1,
+                         imageScaleEnabled: !1,
+                         imagePopup: !1,
+                         tableDragable: !1,
+                         wordCount: !1,
+                         autoHeight: false,
+                         toolbars: [["source", "h2", "bold", "underline", "italic", "strikethrough", "forecolor", "blockquote","horizontal","justifyleft", "justifycenter", "justifyright", "link", "unlink", "|", "insertimage",    "|",   "selectall",        "removeformat", "undo", "redo"]],
+                         removeFormatTags: "b,big,code,del,dfn,em,font,i,ins,kbd,q,samp,small,span,strike,strong,sub,sup,tt,u,var,blockquote,h1,h2,h3, h4,h 5,h6    "  ,
+                         autotypeset: {
+                             mergeEmptyline: !0,
+                             removeClass: !1,
+                             removeEmptyline: !0,
+                             pasteFilter: !0,
+                             clearFontSize: !0,
+                             clearFontFamily: !0
+                         },
+                     });
+
+                     ue.ready(function () {
+                         jQuery(this.container).click(function (e) {
+                             e.stopPropagation()
+                         });
+                         ue.execCommand('serverparam', 'contentID', '@(ViewBag.Sid)');
+                         ue.execCommand('serverparam', 'contentType', 'school_v3');
+                         ue.execCommand('cleardoc');
+                         ue.execCommand("insertHtml", '');
+
+                     });
+
+        } else {
+            confirm("单次添加年份上限是3个");
+            return;
+        }
+    }
+     function onOldExamPaperSave() {
+        jQuery("[fprop=Pastexam] .uecontent").each(function myfunction() {
+            var target = jQuery(this);
+
+            if (target.attr('hidden')) return;
+            var idx = target.data("idx");
+            if (undefined == idx) idx = "";
+            var year = target.parents('[fprop=Pastexam]').eq(0).find("select").val();
+            var ue = UE.getEditor("editor" + idx);
+            var ueContent = ue.getContent();
+           //var needadd = target.data("needadd");
+           // if (needadd != undefined) {//旧数据
+           //     if (0 == needadd) {
+           //        var oldue = UE.getEditor("editor");
+           //        ueContent = oldue.getContent();
+           //     }
+           //     else {
+           //         return;
+           //     }
+           // }
+
+            //if ("" == ueContent || 0 == ueContent || undefined == ueContent) return false;
+            var primaryKey = target.data("primarykey");
+            if (primaryKey) //修改操作
+            {
+                listfieldyeartags.push({ id: primaryKey, year: year, field: "Pastexam", content: ueContent });
+            }
+            else {
+                listfieldyeartags.push({ year: year, field: "Pastexam", content: ueContent });
+            }
+        });
+    }
+     function DelExamPaper(target) {
+        var r = confirm("你确定要删除该项吗?")
+         if (r) {
+             --exampapercount;
+            var container = jQuery(target).parent().parent();
+            var exampaper = container.data("primarykey");
+            if (exampaper) {//旧数据删除
+                listfieldyeartags.push({ id: exampaper, isvalid: false });
+
+            }
+            container.remove();
+        }
+    }
+</script>
+<!--招生计划,往期考试内容end-->
+<!--招生计划，录取分数线--多输入项--start-->
+<script type="text/html" id="point-template">
+    <div class="point_year_tag div-addyear notnull" style="margin-bottom:20px;margin-left:5px">
+        <div class="form-inline" style="margin:10px;margin-left:-5px">
+            <div class="col-md-2">%%year%%</div>
+            <div class="col-md-9"></div>
+            <div class="col-md-1"><a href="javascript:void(0)" onclick="DelPoint(this)"><i class="fa fa-times-circle text-danger ioc-gray"></i></a></div>
+        </div>
+        <div class="form-inline keyandvlue" style="margin:10px;">
+            <input class="form-control c_ignore" placeholder="请输入分数线类型" name="Year_Point_Key_New" checkednull="" required="" data-placement="bottom" value="">
+            <input style="margin-left:10px;" type="number" value="" min="0" placeholder="请输入分数" name="Year_Point_Value_New" checkednull="" required="" data-placement="bottom" class="form-control c_ignore ">
+            <a href="javascript:void(0)" style="margin-left:30px;" onclick="DelAddInputItem(this)"><i class="fa fa-times-circle text-danger"></i></a>
+        </div>
+        <div class="form-inline addhtml">
+            <div class="col-md-3"><button type="button" onclick="AddInputItem(this)" style="margin-left:-5px;margin-bottom:10px;border:1px solid #ced4da;border-radius:0.25rem;" class="btn btn-outline-secondary btn-lg btn-block"><i class="fa fa-plus"></i></button></div>
+            <div class="col-md-9"></div>
+        </div>
+
+    </div>
+</script>
+<script type="text/html" id="point-inputitem-template">
+    <div class="form-inline keyandvlue" style="margin:10px;">
+        <input class="form-control c_ignore" placeholder="请输入分数线类型" name="Year_Point_Key_New" checkednull="" required="" data-placement="bottom" value="">
+        <input style="margin-left:10px;" type="number" value="" min="0" placeholder="请输入分数" name="Year_Point_Value_New" checkednull="" required="" data-placement="bottom" class="form-control c_ignore ">
+        <a href="javascript:void(0)" style="margin-left:30px;" onclick="DelAddInputItem(this)"><i class="fa fa-times-circle text-danger"></i></a>
+    </div>
+</script>
+<script>
+    var pointcount = 1
+    function AddPoint(parentid) {
+
+        if (pointcount < 4) {
+            ++pointcount;
+            var template = jQuery('#point-template').text();
+            template = listyearhtml(parentid, template);
+            jQuery("#" + parentid).before(template);
+        }
+        else {
+            confirm("单次添加年份上限是3个");
+            return;
+        }
+    }
+
+    function AddInputItem(obj) {
+        var template = jQuery('#point-inputitem-template').text();
+        jQuery(obj).parents('.addhtml').before(template);
+    }
+
+    function DelPoint(target) {
+        var r = confirm("你确定要删除该项吗?")
+        if (r) {
+            --pointcount;
+            jQuery(target).parent().parent().parent().remove();
+        }
+    }
+
+    function DelAddInputItem(obj) {
+        var r = confirm("你确定要删除该项吗?")
+        if (r) {
+            jQuery(obj).parents(".keyandvlue").remove();
+        }
+    }
+
+    function onPointSave() {
+        jQuery(".point_year_tag").each(function myfunction() {
+            var target = jQuery(this);
+           
+            var year = target.find("select").val();
+
+            //等待原型，再优化
+            var connent = [];
+            //方案一：每次添加其他年，只有一个输入项并允许同年份多次添加的方案
+            var ismoresameYear = false;
+            var listIndex = null;
+            jQuery.each(listfieldyeartags, function (index, item) {
+                if (item.year == year && item.field == "Point") {
+                    connent = item.connent;
+                    ismoresameYear = true;
+                    listIndex = index;
+                }
+            });
+
+            //方案二： 添加输入项的方案
+            var arrchild = target.children(".keyandvlue");
+            jQuery.each(jQuery(arrchild), function (index, item) {
+                var key = jQuery(item).find("[name=Year_Point_Key_New]").val();
+                var value = jQuery(item).find("[name=Year_Point_Value_New]").val();
+                if (key.length > 0 && value.length > 0) {
+                    connent.push({ Key: key, Value: value });
+                }
+            });
+            if (ismoresameYear) {
+                listfieldyeartags[listIndex].connent = connent;
+            }
+            else {
+                listfieldyeartags.push({ year: year, field: "Point", content: connent });
+            }
+        });
+
+    }
+</script>
+<!--招生计划，录取分数线end-->
+<!--招生计划，招生日期--多输入项--start-->
+<script type="text/html" id="date-template">
+    <div class="date_year_tag div-addyear notnull" style="margin-bottom:20px;margin-left:5px">
+        <div class="form-inline" style="margin:10px;margin-left:-5px">
+            <div class="col-md-2">%%year%%</div>
+            <div class="col-md-9"></div>
+            <div class="col-md-1"><a href="javascript:void(0)" onclick="DelDate(this)"><i class="fa fa-times-circle text-danger ioc-gray"></i></a></div>
+        </div>
+        <div class="form-inline keyandvlue" style="margin:10px;">
+            <input class="form-control c_ignore" placeholder="请输入名称" name="Year_Date_Key_New" checkednull="" required="" data-placement="bottom" value="">
+            <input style="margin-left:10px;" type="text" value=""  placeholder="请输入时间" name="Year_Date_Value_New" checkednull="" required="" data-placement="bottom" class="form-control c_ignore datetimepicker4">
+            <a href="javascript:void(0)" style="margin-left:30px;" onclick="DelDateAddInputItem(this)"><i class="fa fa-times-circle text-danger"></i></a>
+        </div>
+        <div class="form-inline addhtml">
+            <div class="col-md-3"><button type="button" onclick="AddDateInputItem(this)" style="margin-left:-5px;margin-bottom:10px;border:1px solid #ced4da;border-radius:0.25rem;" class="btn btn-outline-secondary btn-lg btn-block"><i class="fa fa-plus"></i></button></div>
+            <div class="col-md-9"></div>
+        </div>
+    </div>
+</script>
+<script type="text/html" id="date-inputitem-template">
+    <div class="form-inline keyandvlue" style="margin:10px;">
+        <input class="form-control c_ignore" placeholder="请输入名称" name="Year_Date_Key_New" checkednull="" required="" data-placement="bottom" value="">
+        <input style="margin-left:10px;" type="text" value=""  placeholder="请输入时间" name="Year_Date_Value_New" checkednull="" required="" data-placement="bottom" class="form-control c_ignore datetimepicker4">
+        <a href="javascript:void(0)" style="margin-left:30px;" onclick="DelDateAddInputItem(this)"><i class="fa fa-times-circle text-danger"></i></a>
+    </div>
+</script>
+<script>
+    var datecount = 1
+    function AddDate(parentid) {
+
+        if (datecount < 4) {
+            ++datecount;
+            var template = jQuery('#date-template').text();
+            template = listyearhtml(parentid, template);
+            jQuery("#" + parentid).before(template);
+            var lastIndex = jQuery("[name=yearlimit]").length - 1;
+            var defaultYear = jQuery(jQuery("[name=yearlimit]")[lastIndex]).val();           
+            var addcurrent = jQuery(jQuery("[name=yearlimit]")[lastIndex]).parents(".date_year_tag").children(".keyandvlue").children(".datetimepicker4");
+            addcurrent.datetimepicker({ format: 'YYYY-MM-DD',locale: moment.locale('zh-cn')})
+                .data("DateTimePicker")
+                .maxDate('' + defaultYear + '-12-31')
+                .minDate('' + defaultYear + '-01-01');
+
+            addcurrent.val('' + defaultYear + '-01-01');
+            
+            //OK
+            jQuery(".yearlimit").on("change", function (op) {
+
+                var year = jQuery(this).val();   
+                var sel= jQuery(this).parents(".date_year_tag").children(".keyandvlue").children(".datetimepicker4")
+                sel.each(function (j, pp) {  
+
+                    jQuery(pp).val('' + year + '-01-01');
+                    jQuery(pp)
+                        .data("DateTimePicker")
+                        .minDate(false);
+                    jQuery(pp)
+                        .data("DateTimePicker")
+                        .maxDate(false);
+                    jQuery(pp)
+                        .data("DateTimePicker")
+                        .minDate(year + '-01-01');
+                    jQuery(pp)
+                        .data("DateTimePicker")
+                        .maxDate(year + '-12-31');
+
+           
+                });
+                
+            });
+        }
+        else {
+            confirm("单次添加年份上限是3个");
+            return;
+        }
+    }
+
+    function AddDateInputItem(obj) {
+        var template = jQuery('#date-inputitem-template').text();
+        jQuery(obj).parents('.addhtml').before(template);
+        jQuery('.datetimepicker4').datetimepicker({
+            format: 'YYYY-MM-DD',
+            locale: moment.locale('zh-cn'),
+        });
+
+        var defaultYear = jQuery(obj).parents(".date_year_tag").children("div").children("div").children("select").val();
+        var addcurrent = jQuery(obj).parents(".date_year_tag").children(".keyandvlue").children(".datetimepicker4").last();        
+        addcurrent.datetimepicker({ format: 'YYYY-MM-DD', locale: moment.locale('zh-cn') })
+            .data("DateTimePicker")
+            .maxDate('' + defaultYear + '-12-31')
+            .minDate('' + defaultYear + '-01-01');
+        addcurrent.val('' + defaultYear + '-01-01');
+
+        
+    }
+
+    function DelDate(target) {
+        var r = confirm("你确定要删除该项吗?")
+        if (r) {
+            --datecount;
+            jQuery(target).parent().parent().parent().remove();
+        }
+    }
+
+    function DelDateAddInputItem(obj) {
+        var r = confirm("你确定要删除该项吗?")
+        if (r) {
+            jQuery(obj).parents(".keyandvlue").remove();
+        }
+    }
+
+    function onDateSave() {
+        jQuery(".date_year_tag").each(function myfunction() {
+            var target = jQuery(this);
+           
+            var year = target.find("select").val();
+
+            //等待原型，再优化
+            var connent = [];
+            //方案一：每次添加其他年，只有一个输入项并允许同年份多次添加的方案
+            var ismoresameYear = false;
+            var listIndex = null;
+            jQuery.each(listfieldyeartags, function (index, item) {
+                if (item.year == year && item.field == "Date") {
+                    connent = item.connent;
+                    ismoresameYear = true;
+                    listIndex = index;
+                }
+            });
+
+            //方案二： 添加输入项的方案
+            var arrchild = target.children(".keyandvlue");
+            jQuery.each(jQuery(arrchild), function (index, item) {
+                var key = jQuery(item).find("[name=Year_Date_Key_New]").val();
+                var value = jQuery(item).find("[name=Year_Date_Value_New]").val();
+                if (key.length > 0 && value.length > 0) {
+                    connent.push({ Key: key, Value: value });
+                }
+            });
+            if (ismoresameYear) {
+                listfieldyeartags[listIndex].connent = connent;
+            }
+            else {
+                listfieldyeartags.push({ year: year, field: "Date", content: connent });
+            }
+        });
+
+    }
+
+    
+</script>
+<!--招生计划，招生日期end-->

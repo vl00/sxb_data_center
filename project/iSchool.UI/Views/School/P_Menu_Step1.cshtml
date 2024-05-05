@@ -1,0 +1,10 @@
+﻿@{
+    var sid = ViewBag.sid;
+    var eid = ViewBag.ExtId != null ? ViewBag.ExtId : ViewBag.eid;
+}
+
+<div class="row form-group">
+    <div class="col-8">
+        <a id="a-step1win" a-href="/school/step1win?sid=@(sid)&extId=@(eid)" style="cursor:pointer;color:red;">基本信息</a>
+    </div>
+</div>

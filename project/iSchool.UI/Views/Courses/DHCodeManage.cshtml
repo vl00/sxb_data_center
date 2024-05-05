@@ -1,0 +1,711 @@
+﻿
+@{
+    ViewData["Title"] = "兑换码管理";
+}
+@section css
+{
+    <style>
+        .data-box {
+            padding: 15px;
+        }
+
+        .flex {
+            display: flex;
+        }
+
+        .flex1 {
+            flex: 1;
+        }
+
+        .flex-auto {
+            flex: auto;
+        }
+
+        .align-center {
+            align-items: center;
+        }
+
+        .justify-center {
+            justify-content: center;
+        }
+
+        .justify-between {
+            flex-direction: row;
+            justify-content: space-between;
+        }
+
+        .bv-form .help-block {
+            margin-bottom: 0;
+        }
+
+        .bv-form .tooltip-inner {
+            text-align: left;
+        }
+
+        .nav-tabs li.bv-tab-success > a {
+            color: #3c763d;
+        }
+
+        .nav-tabs li.bv-tab-error > a {
+            color: #a94442;
+        }
+
+        .form-box {
+            padding: 30px 15px;
+        }
+
+            .form-box .flex .col-sm-12 {
+                padding: 0;
+            }
+
+            .form-box .control-label {
+                white-space: nowrap;
+                margin-bottom: 0;
+            }
+
+            .form-box .code {
+                margin-right: 15px;
+                white-space: nowrap;
+            }
+
+        #demoInfo {
+            margin-left: 30px;
+        }
+
+            #demoInfo .btn {
+                margin: 0 0 15px 15px;
+                display: block;
+            }
+
+        .form-box textarea {
+            height: 92px;
+            resize: none;
+        }
+
+        .form-box .radio,
+        .form-box .radio + .help-block,
+        .form-box .radio label + label {
+            margin-left: 20px;
+        }
+
+            .form-box .radio label + .form-control-feedback {
+                top: 0;
+            }
+
+        .form-box .checkbox label {
+            font-weight: 700;
+        }
+
+        .table-container .table > thead > tr > th,
+        .table-container .table > tbody > tr > th,
+        .table-container .table > tfoot > tr > th,
+        .table-container .table > thead > tr > td,
+        .table-container .table > tbody > tr > td,
+        .table-container .table > tfoot > tr > td {
+            text-align: center;
+            vertical-align: middle;
+            padding: 5px;
+        }
+        .table-container caption {
+            caption-side: top;
+        }
+        .table-container .title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .ant-empty {
+            padding: 30px 0;
+        }
+        /* 复制粘贴提示框 */
+        #copyModal .modal-dialog {
+            width: 200px;
+            margin: 0;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+    </style>
+
+    <link href="~/separate/css/pagination.css" rel="stylesheet" />
+}
+
+
+@*html嵌入此处 @ViewBag.CourseId*@
+<div>
+    <body>
+        <div class="data-box">
+            <form class="form-horizontal form-box" id="codeForm" role="form">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <div class="form-group flex align-center">
+                            <label for="" class="control-label">短信变量1：</label>
+                            <div class="flex1">
+                                <div class="col-sm-12">
+                                    <input type="text"
+                                           class="form-control"
+                                           placeholder="请输入内容"
+                                           name="variable1"
+                                           data-bv-notempty="true"
+                                           data-bv-notempty-message="短信变量1不能为空" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group flex align-center">
+                            <label for="" class="control-label">短信变量2：</label>
+                            <div class="flex1">
+                                <div class="flex justify-center align-center">
+                                    <div class="code">验证码 +</div>
+                                    <div class="col-sm-12" style="flex: auto;">
+                                        <input type="text"
+                                               class="form-control flex1"
+                                               placeholder="请输入内容"
+                                               name="variable2"
+                                               data-bv-notempty="true"
+                                               data-bv-notempty-message="短信变量2不能为空" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group flex align-center">
+                            <label for="" class="control-label">兑换链接：</label>
+
+                            <div class="flex1">
+                                <div class="col-sm-12">
+                                    <input type="text"
+                                           class="form-control"
+                                           placeholder="请输入内容"
+                                           name="url"
+                                           data-bv-notempty="true"
+                                           data-bv-notempty-message="兑换链接不能为空" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div id="demoInfo">
+                            <div class="form-group">
+                                <label for="">短信模板：</label>
+                                <div class="flex align-center">
+                                    <div class="flex1">
+                                        <textarea class="form-control demo-text" readonly>家长您好，您购买的{变量1}试听课，课程兑换码：{变量2}。兑换码链接为:xxxxxx，请尽快关注【上学帮】公众号。</textarea>
+                                    </div>
+                                    @*<div class="btn-box">
+                                            <button type="submit"
+                                                    class="btn btn-primary"
+                                                    id="validateBtn">
+                                                编辑短信模板
+                                            </button>
+                                            <button type="submit"
+                                                    class="btn btn-primary hide"
+                                                    id="submitBtn">
+                                                编辑完成
+                                            </button>
+                                        </div>*@
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group flex align-center">
+                    <label for="" class="control-label">订单复制提示框内容：</label>
+                    <div class="col-sm-6">
+                        <input type="text"
+                               class="form-control"
+                               placeholder="请输入内容"
+                               name="msg"
+                               data-bv-notempty="true"
+                               data-bv-notempty-message="提示框内容不能为空" />
+                    </div>
+                    <div class="flex1">
+                        <div class="col-sm-12">
+                            <div class="radio">
+                                <label>
+                                    <input type="radio" name="isRedirect" value="1" />
+                                    跳转兑换链接
+                                </label>
+                                <label>
+                                    <input type="radio" name="isRedirect" value="2" checked="checked" />
+                                    关闭
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group flex" id="formList">
+                    @*<button type="button" class="btn btn-link"  data-toggle="modal" data-target="#orderModal">可释放数量</button>*@
+                    <input type="file" id="selectFile" hidden="hidden" />
+                    <button id="btn-select" type="button" class="btn btn-link">重新导入兑换码</button>
+                    <!-- 后面注释 -->
+                    @*<button type="button" class="btn btn-link">下载导入模板</button>*@
+                </div>
+                <div class="form-group flex align-center">
+                    <div class="checkbox">
+                        <label>
+                            <input id="isAuto" type="checkbox"  />购买自动发送兑换码
+                        </label>
+                    </div>
+                    <div class="flex1 text-right">
+                        <button id="savemsg" type="button" class="btn btn-primary">提交</button>
+                    </div>
+                </div>
+            </form>
+            <!-- 表格数据 -->
+            <div class="table-container">
+                <table class="table table-bordered">
+                    <caption>
+                        <div class="flex align-center justify-between">
+                            <div class="title">兑换码发送记录</div>
+                            <div class="table-btn">
+                                <button id="export-excel" type="button" class="btn btn-link">
+                                    导出兑换码发送记录
+                                </button>
+                            </div>
+                        </div>
+                    </caption>
+                    <thead>
+                        <tr>
+                            <th>发送时间</th>
+                            <th>兑换码</th>
+                            <th>发送人</th>
+                            <th>订单号</th>
+                            <th>发送状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableData"></tbody>
+                </table>
+            </div>
+
+            <!-- 暂无数据 -->
+            <div class="ant-empty ant-empty-normal text-center hide">
+                <div class="ant-empty-image">
+                    <svg width="64"
+                         height="41"
+                         viewbox="0 0 64 41"
+                         xmlns="http://www.w3.org/2000/svg">
+                        <g transform="translate(0 1)" fill="none" fillrule="evenodd">
+                            <ellipse fill="#F5F5F5" cx="32" cy="33" rx="32" ry="7"></ellipse>
+                            <g fillrule="nonzero" stroke="#D9D9D9">
+                                <path d="M55 12.76L44.854 1.258C44.367.474 43.656 0 42.907 0H21.093c-.749 0-1.46.474-1.947 1.257L9 12.761V22h46v-9.24z"></path>
+                                <path d="M41.613 15.931c0-1.605.994-2.93 2.227-2.931H55v18.137C55 33.26 53.68 35 52.05 35h-40.1C10.32 35 9 33.259 9 31.137V13h11.16c1.233 0 2.227 1.323 2.227 2.928v.022c0 1.605 1.005 2.901 2.237 2.901h14.752c1.232 0 2.237-1.308 2.237-2.913v-.007z"
+                                      fill="#FAFAFA"></path>
+                            </g>
+                        </g>
+                    </svg>
+                </div>
+                <p class="ant-empty-description">暂无数据</p>
+            </div>
+            <!-- 分页 -->
+            <div class="text-center table-navigation">
+                <div id="pager" class="pager clearfix"></div>
+            </div>
+            <!-- 复制提示模态框（Modal） -->
+            <div class="modal fade"
+                 id="copyModal"
+                 tabindex="-1"
+                 role="dialog"
+                 aria-labelledby="copyModalLabel"
+                 aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button"
+                                    class="close"
+                                    data-dismiss="modal"
+                                    aria-hidden="true">
+                                &times;
+                            </button>
+                            <h4 class="modal-title text-center" id="copyModalLabel">提示</h4>
+                        </div>
+                        <div class="modal-body text-center">复制成功</div>
+                    </div>
+                    <!-- /.modal-content -->
+                </div>
+                <!-- /.modal -->
+            </div>
+            <!-- 订单详情模态框（Modal） -->
+            <div class="modal fade"
+                 id="orderModal"
+                 tabindex="-1"
+                 role="dialog"
+                 aria-labelledby="orderModalLabel"
+                 aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button"
+                                    class="close"
+                                    data-dismiss="modal"
+                                    aria-hidden="true">
+                                &times;
+                            </button>
+                            <h4 class="modal-title text-center">订单详情</h4>
+                        </div>
+                        <div class="modal-body">
+                            <div id="orderBox"></div>
+                        </div>
+                    </div>
+                    <!-- /.modal-content -->
+                </div>
+                <!-- /.modal -->
+            </div>
+        </div>
+    </body>
+</div>
+
+
+@section Scripts{
+
+
+    <script src="@(ViewBag.StaticFile)/moment.js/2.18.1/moment-with-locales.min.js"></script>
+    <script src="@(ViewBag.StaticFile)/bootstrap-3-typeahead/4.0.2/bootstrap3-typeahead.min.js"></script>
+    <!-- 分页插件 -->
+    <script src="~/separate/js/jquery.z-pager.js"></script>
+    <!-- 复制粘贴插件 -->
+    <script src="/separate/js/clipboard.min.js"></script>
+    <!-- 表单验证 -->
+    <script src="/separate/js/bootstrapValidator.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/bootstrap-3-typeahead/4.0.2/bootstrap3-typeahead.min.js"></script>
+    
+    <script>
+        var $ = jQuery;
+		var url = "https://orgtest.sxkid.com:22003"
+		var params = {}
+		params.courseId = '@ViewBag.CourseId'
+		params.pageIndex = 1
+		params.pageSize = 10
+        var totalItemCount = 1
+        var isRequest = false
+        var timer = null
+		var orderParams = {}
+		var formParams = {}
+		orderParams.ordId = "F7F763C6-8AAC-445D-AFA8-54A52661CC59"
+        formParams.courseId = '@ViewBag.CourseId'
+        var msgTemplateId = null;//短信模板表的Id
+        var courseId = '@ViewBag.CourseId';
+        // 获取表格数据
+
+        function getData(params) {
+            // 加载数据前先清空
+            $("#tableData").empty()
+            $.get('@Url.Action("ExchangeList", "Courses")', params, function (data, status) {
+                if (status == "success") {
+                    //data.totalItemCount = 50
+                    totalItemCount = data.totalItemCount
+                    isRequest = true
+                    var data = data.currentPageItems
+                    if (data && data.length > 0) {
+                        // 循环插入table数据
+                        $.each(data, function (index, item) {
+                            var tr
+                            tr =
+                                "<td>" +
+                                item.createTime +
+                                "</td>" +
+                                "<td>" +
+                                item.code +
+                                "</td>" +
+                                "<td>" +
+                                item.userName +
+                                "</td>" +
+                                "<td>" +
+                                item.orderCode +
+                            "</td>" +
+                            "<td>" +
+                            item.statusDesc +
+                            "</td>" +
+                                '<td><button type="button" class="btn btn-link" data-toggle="modal" data-target="#copyModal" data-clipboard-text="' +
+                                item.orderCode +
+                                '">复制订单号</button></td>'
+                            $("#tableData").append("<tr>" + tr + "</tr>")
+                        })
+                        $("#tableData").removeClass("hide")
+                        $(".ant-empty").addClass("hide")
+                    } else {
+                        $("#tableData").addClass("hide")
+                        $(".ant-empty").removeClass("hide")
+                    }
+                    // 复制粘贴
+                    var btns = document.querySelectorAll("#tableData .btn")
+                    var clipboard = new Clipboard(btns)
+                    clipboard.on("success", function (e) {
+                        console.log(e)
+                    })
+
+                    clipboard.on("error", function (e) {
+                        console.log(e)
+                    })
+                }
+			})
+		}
+
+        //跳转与关闭
+        $('[name=isRedirect]').on("click", function () {
+            $('[name = isRedirect]').removeAttr("checked");
+            $(this).attr("checked", "checked");
+        });
+
+        //自动发送兑换码，勾选
+        $("#isAuto").on("click", function () {
+            if ($(this).attr("checked"))
+                $(this).removeAttr("checked");
+            else
+                $(this).attr("checked","checked");
+        });
+
+        //保存模板信息
+        $('#savemsg').on('click', function () {
+            debugger;
+            var Variable1 = $('[name=variable1]').val();//变量1
+
+            var Variable2 = $('[name=variable2]').val();//变量2
+
+            var Url = $('[name=url]').val();//兑换链接
+            //if (IsUrl(Url) == false) {
+            //    ShowAlert('网址格式不正确！请重新输入');
+            //    $('[name=url]').focus();
+            //    return 
+            //}
+            var Msg = $('[name=msg]').val();//订单复制提示框内容
+            var IsRedirect = false;//关闭
+            if ($('[name=isRedirect][value=1]').attr("checked")) {//跳转
+                IsRedirect = true;
+            }
+            var IsAuto = false;
+            if ($("#isAuto").attr("checked")) {//自动发送兑换码
+                IsAuto = true;
+            }
+            var postdata = {
+                "Id": msgTemplateId, "Variable1": Variable1, "Variable2": Variable2, "Url": Url, "Msg": Msg, "CourseId": courseId
+                , "GoodId": null, "IsAuto": IsAuto, "IsRedirect": IsRedirect, "Content": "", "Code": ""
+            };
+            $.post('@Url.Action("SaveMsgTemplate", "Courses")', postdata, function (res) {
+                if (res.status == 200) {
+                    ShowAlert('操作成功', 3000, function () {
+
+                    });
+                } else {
+                    ShowAlert('操作失败，请重新提交',3000)
+                }
+            });
+
+        });
+
+    //    function IsUrl(url) {
+    //        //验证url网址
+    //        if (url) {
+    //            var str = url;
+    //            //判断URL地址的正则表达式为:http(s)?://([\w-]+\.)+[\w-]+(/[\w- ./?%&=]*)?
+    //            //下面的代码中应用了转义字符"\"输出一个字符"/"
+    //            var Expression = /http(s)?:\/\/([\w-]+\.)+[\w-]+(\/[\w- .\/?%&=]*)?/;
+    //            var objExp = new RegExp(Expression);
+    //            if (objExp.test(str) != true) {
+    //                //alert("网址格式不正确！请重新输入");
+    //                return false;
+    //            } else {
+    //                //alert("网址正确！");
+    //                return true;
+    //            }
+
+    //        }
+    //}
+
+
+        //选择导入excel
+        $("#btn-select").on("click", function () {
+            $("#selectFile").click();
+        })
+        //导入
+        $('#selectFile').on("change", function () {
+                var fileinput = jQuery(this);//上传文件
+                var videoInput = fileinput.attr('id');
+                var cid =fileinput.attr('data-cid');//课程Id
+                var $videoInput = document.getElementById(videoInput);
+                if ($videoInput.files.length == 0) {
+                    return;
+                }
+                var formData = new FormData();
+                for (var i = 0; i < $videoInput.files.length; i++) {
+                    formData.append(videoInput, $videoInput.files[i]);
+                }
+                Loading("正在导入！");
+                jQuery.post({
+                    url: '@Url.Action("AddRedeemCodeFromExcel", "Courses")' + '?cid=' + courseId,
+                    type: "post",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    cache: false
+                }).done(function (res) {
+                    debugger;
+                    console.log('msgres', res)
+                    if (res.isOk == true) {
+                        ShowAlert('导入成功', 1000, function () {
+                            fileinput.val('');
+                        });
+
+                    } else {
+                        ShowAlert("导入失败:" + res.msg, -1);
+                        CloseLoading();
+                    }
+                    CloseLoading();
+                }).fail(function (res) {
+                    ShowAlert("网络异常:" + res.msg, -1);
+                    CloseLoading();
+                });
+        })
+
+        //导出
+        $('#export-excel').on("click", function () {
+            jQuery.getJSON('/Courses/ExportExchange?cid=@ViewBag.CourseId').then(function (res) {
+        debugger;
+        if (res.status != 200) {
+            return ShowAlert(res.msg, -1);
+        }
+        var id = res.data;
+        window.location.href = '/home/getxlsx?id=' + id;
+    });
+        })
+
+        // 分页操作
+        function currentPage(currentPage) {
+            params.pageIndex = currentPage
+            if (totalItemCount > 1) {
+                getData(params)
+            }
+        }
+		// 表单数据
+		function formData() {
+			$.get('@Url.Action("ShowMsgTemplateAndDHCodeInfo", "Courses")', formParams, function (data) {
+				console.log("data", data)
+				// 判断返回对象是否为空
+				for (var key in data) {
+					if (Object.hasOwnProperty.call(data, key)) {
+						if (data[key] === null || data[key] === "") {
+							data[key] = ""
+						}
+					}
+                }
+                //输入框赋值
+                msgTemplateId = data.id;//
+                $('[name=variable1]').val(data.variable1);//变量1
+                $('[name=variable2]').val(data.variable2);//变量2
+                $('[name=url]').val(data.url);//兑换链接
+                $('[name=msg]').val(data.msg);//订单复制提示框内容
+                if (data.isRedirect == true) {//跳转
+                    $('[name=isRedirect][value=1]').attr("checked","checked")
+
+                } else {//关闭
+                    $('[name=isRedirect][value=2]').attr("checked", "checked")
+                }
+
+                if (data.isAuto == true) {//自动发送兑换码
+                    $("#isAuto").attr("checked", "checked");
+                }
+				var formListData = `
+					<div class="flex-auto">
+						<label class="control-label">兑换码总数：</label>
+						<span>${data.totalNumber}</span>
+					</div>
+					<div class="flex-auto">
+						<label class="control-label">已发送数量：</label>
+						<span>${data.sendNumber}</span>
+					</div>
+					<div class="flex-auto">
+						<label class="control-label">剩余数量：</label>
+						<span>${data.stockNumber}</span>
+					</div>
+					<div class="flex-auto">
+						<label class="control-label">上次导入时间：</label>
+						<span>${data.creatTime}</span>
+					</div>
+				`
+				// 标签内前面插入
+				$("#formList").prepend(formListData)
+				//$("#demoInfo .demo-text").html(data.content)短信展示模板暂时不入库
+			})
+		}
+		// 表单验证
+		function formValid() {
+			$("#codeForm").bootstrapValidator({
+				message: "This value is not valid",
+				feedbackIcons: {
+					valid: "glyphicon glyphicon-ok",
+					invalid: "glyphicon glyphicon-remove",
+					validating: "glyphicon glyphicon-refresh",
+				},
+				fields: {
+					variable1: {
+						validators: {
+							notEmpty: {
+								message: "变量1不能为空",
+							},
+						},
+					},
+					variable2: {
+						validators: {
+							notEmpty: {
+								message: "变量2不能为空",
+							},
+						},
+					},
+					url: {
+						validators: {
+							notEmpty: {
+								message: "兑换链接不能为空",
+							},
+						},
+					},
+					msg: {
+						validators: {
+							notEmpty: {
+								message: "提示框内容不能为空",
+							},
+						},
+					},
+					isRedirect: {
+						validators: {
+							notEmpty: {
+								message: "请选择是否跳转兑换链接",
+							},
+						},
+					},
+				},
+			})
+		}
+        $(function () {
+            getData(params)
+            // 分页
+            // 分页
+            timer = setInterval(() => {
+                if (isRequest) {
+                    console.log("totalItemCount", totalItemCount)
+                    $("#pager").zPager({
+                        totalData: totalItemCount,
+                        htmlBox: $("#wraper"),
+                        btnShow: true,
+                        ajaxSetData: false,
+                    })
+                    clearInterval(timer)
+                }
+            }, 500)
+			formData()
+			formValid()
+
+			$("#validateBtn").click(function () {
+				$("#demoInfo .demo-text").prop("readonly", false)
+				$("#codeForm").bootstrapValidator("validate")
+				$("#submitBtn").removeClass("hide")
+			})
+			$("#submitBtn").click(function () {
+				$(this).addClass("hide")
+				$("#demoInfo .demo-text").prop("readonly", true)
+			})
+		})
+    </script>
+
+
+}

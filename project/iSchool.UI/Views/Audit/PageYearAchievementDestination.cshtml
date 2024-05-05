@@ -1,0 +1,59 @@
+﻿@using iSchool.Domain.Enum;
+@using iSchool.Application.Service.Audit;
+@using iSchool.Infrastructure.Dapper;
+@model PagedList<YearAchievementDestinationQueryResult>
+
+@*<span class="badge">@(ViewBag.Year)年</span>*@
+<div id="div_pageYearAchievement">
+    <table class="table table-striped table-bordered dataTable no-footer" role="grid" aria-describedby="bootstrap-data-table-export_info">
+        <thead class="tbheader">
+            <tr role="row">
+                <th class="sorting_asc" tabindex="0" rowspan="1" colspan="1" aria-sort="ascending" aria-label="Name: activate to sort column descending" style="width: 100px;">
+                    学校名称
+                </th>
+                <th class="sorting_asc" tabindex="0" rowspan="1" colspan="1" aria-sort="ascending" aria-label="Name: activate to sort column descending" style="width: 100px;">
+                    人数
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.CurrentPageItems)
+            {
+                <tr role="row" class="odd">
+                    <td>@item.SchoolName</td>
+                    <td>@item.Count</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <div class="dataTables_paginate paging_simple_numbers">
+        @{ await Html.RenderPartialAsync("Pager0", Model); }
+    </div>
+</div>
+<script type="text/javascript">
+    jQuery(function () {
+        (function () {
+            function init() {
+                console.log('page year');
+                console.log(jQuery('#div_pageYearAchievement a[data-dt-idx]'));
+                jQuery('#div_pageYearAchievement a[data-dt-idx]').click(function () {
+                    var a = jQuery(this);
+                    load(a.attr('data-dt-idx'));
+                });
+            }
+            function load(i) {
+                var o = {};
+                o.pageIndex = i;
+                o.pageSize = 10;
+                o.eid = '@ViewBag.Eid';
+                o.year = '@ViewBag.Year';
+                jQuery.postJSON('/audit/PageYearAchievementDestination', o, function (str) {
+                    jQuery('#div_part_YearAchievementDestination div[ctx]').html(str);
+                    init();
+                });
+            }
+            //load(1);
+            init();
+        })();
+    });
+</script>

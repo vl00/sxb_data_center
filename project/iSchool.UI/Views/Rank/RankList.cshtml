@@ -1,0 +1,140 @@
+﻿@using iSchool.Application.ViewModels
+@model List<RankDetailDto>
+<!-- 模态框头部 -->
+<div class="modal-header">
+    <h5 class="modal-title" id="scrollmodalLabel">@ViewBag.ModalName</h5>
+    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+<!-- 模态框主体 -->
+<div class="modal-body">
+    @if ((int)ViewBag.Type == 1)
+    {
+        <div class="row">
+            <div class="col-md-4 form-group">
+                <input class="form-control" type="text" placeholder="请输入排行榜的名字" id="rankname" />
+            </div>
+            <div class="col-md-8 text-right">
+                <a href="javascript:void(0)" class="btn btn-secondary">下载模板</a>
+                <a href="javascript:void(0)" class="btn btn-secondary">导入</a>
+            </div>
+        </div>
+    }
+    <div class="card">
+        <div class="card-body">
+            <div class="form-group row">
+                <div class="col-md-1 bg-dark text-white  form-control-label">排名</div>
+                <div class="col-md-6  bg-dark text-white  form-control-label">学校名称</div>
+                <div class="col-md-5 bg-dark text-white form-control-label">操作</div>
+            </div>
+            <div id="modal-rank-content">
+                @foreach (var item in Model)
+                {
+                    <div class="form-group row">
+                        <div class="col-md-2  form-control-label">@item.Placing</div>
+                        <div class="col-md-6">
+                            <input type="hidden" id="Placing" name="Placing" value="@item.Placing" />
+                            <input type="text" id="SchoolName" name="SchoolName" class="form-control" value="@item.SchoolName" />
+                            <input type="hidden" id="SchoolId" name="SchoolId" value="@item.SchoolId" />
+                        </div>
+                        <div class="col-md-4">
+                            <input type="checkbox" />并列排名
+                            <a class="mu">上移</a>
+                            <a class="md">下移</a>
+                            移到
+                            <input type="number" min="1" max="@int.MaxValue" />
+                            <a class="mt">确定</a>
+                            ||
+                            <a class="delete">删除</a>
+                        </div>
+                    </div>
+                }
+            </div>
+            @if ((int)ViewBag.Type == 1)
+            {
+                <div class="row">
+                    <div class="col-md-1"></div>
+                    <div class="col-md-11"><a href="javascript:void(0)" id="addschoolrank" class="text-primary">添加学校</a></div>
+                </div>
+            }
+        </div>
+    </div>
+    <div class="modal-footer">
+
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+        @if ((int)ViewBag.Type == 1)
+        {
+            <button type="button" class="btn btn-primary">保存</button>
+        }
+    </div>
+    <div id="hiderankInput" style="display:none">
+        <div class='form-group row'>
+            <div class='col-md-1  form-control-label'>{0}</div>
+            <div class='col-md-6'>
+                <input type="hidden" id="Placing" name="Placing" value="{1}" />
+                <input type="text" id="CollegeName" name="CollegeName" class="form-control" value="{2}" />
+                <input type="hidden" id="CollegeId" name="CollegeId" value="{3}" />
+            </div>
+            <div class='col-md-5'>
+                <input type="checkbox" />并列排名
+                <a class="mu  text-primary" href='javascript:void(0)'>上移</a>&nbsp;
+                <a class="md  text-primary" href='javascript:void(0)'>下移</a>&nbsp;<br />
+                移到&nbsp;
+                <input type="number" min="1" max="@int.MaxValue" />&nbsp;
+                <a class="mt  text-primary" href='javascript:void(0)'>确定</a>&nbsp;
+                ||&nbsp;
+                <a class="delete  text-primary" href='javascript:void(0)'>删除</a>
+            </div>
+        </div>
+    </div>
+    <input type="hidden" id="ranksjson" name="name" value="@ViewBag.RanksJson" />
+</div>
+
+<script type="text/javascript">
+    jQuery(function () {
+        var type =@ViewBag.Type;
+        if (type == 2) {
+            jQuery("#rmodal-rank-content .form-group input").attr("readonly", "readonly");
+        }
+        //添加表单
+        jQuery("#addschoolrank").on("click", function () {
+            var length = jQuery("#modal-rank-content .form-group").length+1;
+            var html = " <div class='form-group row'> <div class='col-md-1  form-control-label'>" + length + "</div><div class='col-md-6'><input type='hidden' id='Placing' name='Placing' value='" + length + "' /><input type='text' id='CollegeName' name='CollegeName' class='form-control' value='' /><input type='hidden' id='CollegeId' name='CollegeId' value='' /></div> <div class='col-md-5'><input type='checkbox' /><small>并列排名</small> &nbsp;<a class='mu text-primary' href='javascript:void(0)'><small>上移</small></a>&nbsp;<a class='md text-primary' href='javascript:void(0)'><small>下移</small></a><br/><small>移到</small><input type='number' min='1' max='" +@int.MaxValue+"' /> <a class='mt text-primary' href='javascript:void(0)' ><small>确定</small></a> &nbsp;||&nbsp; <a class='delete text-primary' href='javascript:void(0)'><small>删除</small></a></div></div>";
+            jQuery("#modal-rank-content").append(html);
+            //var h = jQuery(document).height() - jQuery(window).height();
+            jQuery("#gameModal").scrollTop(9999);
+        });
+        //确定按钮
+        jQuery('body').delegate(".mt","click", function () {
+            
+            //排行榜
+            var placing = jQuery(this).siblings("input[type=number]").val();
+            //是否排行
+            var isJux = jQuery(this).siblings("input:checkbox").prop('checked');
+            //获取学校id
+            var sid = jQuery(this).parent().prev().children("#CollegeId").val();
+            jQuery.post("@Url.Action("SortRank", "Rank")", { "placing": placing, rankId: "@ViewBag.RankId", "sid", sid, "isJux": isJux }, function (data) {
+                if (data == null) {
+                    //修改失败
+                } else {
+                    ShowRankList(data);
+                }
+            });
+
+        });
+
+
+        function ShowRankList(json) {
+
+            var html = jQuery("#hiderankInput").html();
+            var rankList = "";
+            json = JSON.parse(json);
+            jQuery.each(json, function (idx, obj) {
+                rankList += html.format(obj);
+            });
+            jQuery("#modal-rank-content").html(rankList);
+        }
+    });
+</script>
+

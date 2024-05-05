@@ -1,0 +1,55 @@
+﻿@using iSchool.Domain.Enum;
+
+ 
+<script type="text/javascript">
+    var videoOption = {
+        videoPlaceholder: '只允许上传Mp4格式的视频!视频大小不能超过40M',
+        maxItemCount: -1,
+        uploadVideoUrl: '/school/upload?type=@((int)UploadType.Video)&id=@(ViewBag.Eid)',
+        cover: jQuery.extend({}, jQuery.CropAvatarImgWin.getDefaultOption(), {
+            imgWidth: 686,
+            imgHeight: 386,
+            url: '/school/upload?type=@((int)UploadType.Gallery)&id=@(ViewBag.Eid)',
+            placeholder: '',
+            maxImgDescLength: 14,
+        }),
+        canAdd: false,
+        canDel: false,
+        onLoaded: function (data, el) {
+            ReadOnlyInput();
+            el.find('input[name="VideoDescs"]').css({
+                'background-color': '#e9ecef',
+                'border': '1px solid #ced4da',
+            });
+        }
+    };
+    var imgOption = {
+        imgWidth: 218,
+        imgHeight: 218,
+        url: '/school/upload?type=@((int)UploadType.Gallery)&id=@(ViewBag.Eid)',
+        maxItemCount: -1,
+        placeholder: '',
+        maxImgDescLength: 14,
+        canAdd: false,
+        canDel: false,
+        onLoaded: function (data, el) {
+            ReadOnlyInput();
+        }
+    };
+    var brandOption = {
+        imgWidth: 750,
+        imgHeight: 374,
+        url: '/school/upload?type=@((int)UploadType.Gallery)&id=@(ViewBag.Eid)',
+        maxItemCount: 8,
+        placeholder: '',
+        maxImgDescLength: 14,
+        canAdd: false,
+        canDel: false,
+        onLoaded: function (data, el) {
+            ReadOnlyInput();
+        }
+    };
+
+</script>
+
+

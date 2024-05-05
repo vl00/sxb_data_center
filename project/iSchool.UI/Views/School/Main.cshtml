@@ -1,0 +1,1226 @@
+﻿@using iSchool;
+@using iSchool.Application.ViewModels;
+@using iSchool.Domain.Modles;
+@using iSchool.Domain.Enum;
+@using iSchool.Infrastructure;
+
+@model SchoolDto
+@{
+    ViewData["Title"] = "编辑学校";
+    var Sid = ViewBag.Status == 2 ? Model.Sid : (Guid)ViewBag.TempId;
+    var isClaimed = !(Model != null && Model.Status == (byte)SchoolStatus.Initial && Model.Creator == Guid.Empty);
+    var defaultLogo = "https://file.sxkid.com/images/school/default.png";
+    var qqMapKey = @"Z66BZ-BLM3S-BCBOC-66J6X-ZGLRK-SWFVP";
+
+    var edusystype_SelListItems = EnumUtil.GetDescs<EduSysType>().Select(x => new SelectListItem { Text = x.Desc, Value = ((int)x.Value).ToString() })
+        .Prepend(new SelectListItem { Text = "请选择", Value = "" });
+}
+
+@section css
+{
+    <link href="@(ViewBag.StaticFile)/bootstrap-tagsinput/0.8.0/bootstrap-tagsinput.css" rel="stylesheet">
+    <link href="@(ViewBag.StaticFile)/cropper/4.0.0-beta/cropper.min.css" rel="stylesheet">
+
+    <link href="~/lib/cropper/main.css" rel="stylesheet">
+    <link href="https://cdn.bootcss.com/bootstrap-datetimepicker/4.17.47/css/bootstrap-datetimepicker.min.css" rel="stylesheet">
+
+    <link href="https://cdn.bootcss.com/bootstrap-tagsinput/0.8.0/bootstrap-tagsinput.css" rel="stylesheet">
+    @*select2*@
+    <link href="https://cdn.bootcss.com/select2/4.0.6-rc.1/css/select2.min.css" rel="stylesheet">
+    <link href="https://cdn.bootcss.com/select2-bootstrap-css/1.4.6/select2-bootstrap.min.css" rel="stylesheet">
+
+    <style type="text/css">
+        /*tags样式*/
+        .label-info {
+            display: inline-block;
+            padding: 2px 4px;
+            font-size: 11.844px;
+            font-weight: bold;
+            line-height: 14px;
+            text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+            white-space: nowrap;
+            vertical-align: baseline;
+            background-color: #3a87ad;
+            margin-right: 2px;
+            color: white;
+        }
+
+        .bootstrap-tagsinput {
+            background-color: #fff;
+            border: 1px solid #ccc;
+            box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+            /*display: inline-block;*/
+            /*padding: 4px 6px;*/
+            padding: .375rem .75rem;
+            color: #555;
+            vertical-align: middle;
+            border-radius: 4px;
+            max-width: 100%;
+            line-height: 22px;
+            cursor: text;
+            width: 100%;
+        }
+
+        .str {
+            width: 150px;
+            height: 200px;
+            border: solid 1px #e3e3e3;
+            padding: 5px;
+            margin-top: 10px
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            border-radius: 40px;
+            -moz-border-radius: 40px; /* 老的 Firefox */
+        }
+
+        .typeahead {
+            z-index: 1051;
+        }
+
+        .a-href {
+            cursor: pointer;
+        }
+
+        .c_contain {
+        }
+
+        .c_value {
+        }
+
+        .select2-dropdown, .select2 {
+            width: 200px !important;
+        }
+
+        .counterpart-content select, .ach-panel-content select {
+            width: 200px !important;
+        }
+
+        .deletebutten {
+            position: absolute;
+            display: block;
+            width: 5px;
+            height: -6px;
+            top: 0px;
+            right: 88px;
+        }
+
+        .side-bar {
+            position: fixed;
+            bottom: 100px;
+            right: 25px;
+            font-size: 0;
+            line-height: 0;
+            z-index: 100;
+        }
+
+            .side-bar a {
+                width: 66px;
+                height: 66px;
+                display: inline-block;
+                margin-bottom: 2px;
+            }
+
+
+            .side-bar .icon-right {
+                background-position: 0 -62px;
+            }
+
+        #auditcard {
+            width: 500px;
+        }
+
+        @if (!Context.HasCtrlActQyx("school", "ExtFieldsSync", ".sync"))
+        {
+            <text >
+        .sync {
+            display: none;
+        }
+
+            </text>
+        }
+    </style>
+}
+
+<div class="card">
+    <div class="card-header">新建</div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <input type="hidden" name="_tnow" />
+                <input type="hidden" id="status" name="status" value="@ViewBag.Status" />
+                <input type="hidden" name="sid" id="sid" value="@(ViewBag.Status==2?Model.Sid:ViewBag.TempId)" />
+
+
+                <div class="form-group">
+                    <label class="control-label mb-1">学校LOGO</label>
+                    <div class="uploadlogo" id="crop-avatar">
+                        <img class="logo" title="" data-original-title="上传学校" src="@(ViewBag.Status==2?Model.Logo:defaultLogo)" alt="Avatar">
+                        <input id="logo" name="Schoollogo" value="@(ViewBag.Status==2?Model.Logo:defaultLogo)" type="hidden" />
+                    </div>
+
+                    @*<div>
+                            <span class="avatar-view" data-original-title="上传新logo">
+                                <img src="~/images/schooldefaultlogo.png" />
+                            </span>
+                            <label class="btn btn-secondary btn-sm l-btn choose-btn">上传新LOGO</label>
+                        </div>*@
+                </div>
+                <div class="form-group">
+                    <label class="control-label mb-1">学校名称</label>
+                    <input type="text" name="name" id="name" class="form-control" value="@(ViewBag.Status==2?Model.Name:string.Empty)" />
+                </div>
+                <div class="form-group">
+                    <label class="control-label mb-1">学校英文名称</label>
+                    <input type="text" id="ename" name="ename" class="form-control" value="@(ViewBag.Status==2?Model.EName:string.Empty)" />
+                </div>
+                <div class="form-group">
+                    <label class="control-label mb-1">学校官网</label>
+                    <input type="text" name="website" id="website" class="form-control" value="@(ViewBag.Status==2?Model.WebSite:string.Empty)" />
+                </div>
+                <div class="form-group">
+                    <label class="control-label mb-1">学校学制</label>                    
+                    <select asp-for="EduSysType" asp-items="edusystype_SelListItems" class="form-control"></select>
+                </div>
+                <div class="form-group">
+                    <label class="control-label mb-1">查看学部/分校</label>
+                    <div class="text-left">
+                        <span class="extbtn" style="position:relative;">
+                            @if (ViewBag.Status == 2)
+                            {
+                                foreach (var item in (List<ExtItem>)Model.ExtList)
+                                {
+                                    <text>
+                                        <a class="btn btn-secondary sext a-href" data-extid="1" style="position:relative;color:#fff;" a-href="@Url.Action("Step1",new {Sid=Model.Sid,ExtId =item.ExtId })">
+                                            @item.ExtName  @(string.Format("{0:F}", item.Completion * 100))%
+                                        </a>
+                                    </text>
+                                }
+                            }
+                        </span>
+
+                        @*<span class="extbtn" style="position:relative;">
+                                <button class="btn  btn-secondary sext" data-extid="1" style="position:relative; ">
+                                    校本部  80%
+                                </button>
+                                <button class="btn  btn-secondary sext" data-extid="1">
+                                    校本部  80%
+                                </button>
+                            </span>*@
+                        <button class="btn btn-outline-primary" id="addext">添加</button>
+                        <a id="delext" class="a-href text-danger"><i class="fa fa-times-circle"></i>删除学部</a>
+                    </div>
+                </div>
+                @if (Context.HasCurrQyx(".syncfield") && Model.ExtList?.Count() > 1)
+                {
+                    <div class="form-group">
+                        <label class="control-label mb-1">批量操作</label>
+                        <div class="text-left">
+                            <button id="btn_syncfield" class="btn btn-secondary syncfield">同步字段</button>
+                        </div>
+                    </div>
+                }
+            </div>
+            <div class="col-md-6">
+                <br />
+                <div class="text-center" style="vertical-align:middle"><h2>完成度：@(ViewBag.Status == 2 ? Model.Completion : 0)%</h2></div>
+                <br />
+                <div class="form-group">
+                    <label class="control-label mb-1">学校简介</label>
+                    <textarea name="intro" id="textarea-input" rows="4" placeholder="" class="form-control">@(ViewBag.Status==2?Model.Intro:string.Empty)</textarea>
+                </div>
+                <div class="form-group">
+                    <label class="control-label mb-1">学校标签</label><br />
+                    <input id="tags" name="tags" type="text" class="form-control" value="@(ViewBag.Status==2?Model.Tags:string.Empty)">
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <label class="control-label mb-1">当前审核状态：</label>
+                    </div>
+                    <div class="col-md-9">
+                        <strong>
+                            @*需修改*@
+                            @(ViewBag.Status == 2 ? iSchool.Infrastructure.EnumUtil.GetDesc((iSchool.Domain.Enum.SchoolStatus)Model.Status) : "编辑中")
+                        </strong>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="control-label mb-1">审核意见：</label>
+                    @Html.TextArea("textarea-CurrAuditMessage", (ViewBag.Status == 2 ? Model.AuditMessage : string.Empty), 4, 4, new { @class = "form-control", @readonly = "readonly" })
+                    @*<div class="col-md-3">
+                            <label class="control-label mb-1">审核意见：</label>
+                        </div>
+                        <div class="col-md-9">
+                            @(ViewBag.Status == 2 ? Model.AuditMessage : string.Empty)
+                        </div>*@
+                    <div class="form-group">
+                        <a href="javascript:void(0);" id="history" class="text-primary" data-id="@Model.Sid">审核历史 >></a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-12">
+                <div class="col-md-2">
+                    @if (!isClaimed)
+                    {
+                        <button id="btnClaim" class="btn btn-danger" title="认领学校" type="button" data-id="@(Model.Sid)">认领学校</button>
+                    }
+                    else
+                    {
+                        @Html.Raw("编辑人员：") @(ViewBag.Status == 2 ? ViewBag.UserName : string.Empty)
+                    }
+                </div>
+                <div class="col-md-10 text-right">
+                    <button id="pulish" class="btn btn-success btn-sm" type="button">提交审核</button>
+                    &nbsp;&nbsp;
+                    <button id="save" class="btn btn-primary btn-sm" type="button">保存</button>
+                    &nbsp;&nbsp;
+                    <button class="btn btn-danger btn-sm" onclick="javascript:window.location.replace('/school');">取消</button>
+                </div>
+            </div>
+
+            @*需要同步字段的分部  迁移到分部头*@
+            @*<div class="col-md-12 div-sync" style="display:none;">
+                    <span style="position:relative;">
+                        @if (null != Model.ExtList)
+                        {
+                            @foreach (var ext in Model.ExtList)
+                            {
+
+                                    <a class="btn btn-secondary sync a-href" data-extid="1" style="position:relative;color:#fff;" a-href="@Url.Action("ExtFieldsSync",new {Sid=Model.Sid,ExtId =ext.ExtId })">
+                                        @ext.ExtName
+                                    </a>
+
+                                <button class="btn btn-secondary syncField" data-extid="@ext.ExtId">@ext.ExtName @Math.Round(ext.Completion * 100, 2, MidpointRounding.AwayFromZero)%</button>
+                                 <button class="btn btn-secondary sync" data-extid="@ext.ExtId" href="@Url.Action("ExtFieldsSync", new { Sid = Model.Sid, ExtId = ext.ExtId })">@ext.ExtName</button>
+                            }
+
+                        }
+                    </span>
+                </div>*@
+        </div>
+    </div>
+</div>
+
+<!--  删除学部 模态框 -->
+<div class="modal fade" id="delModel">
+    <form id="delext-form" action="@Url.Action("DelExtension")" method="post">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <!-- 模态框头部 -->
+                <div class="modal-header">
+                    <h4 class="modal-title">删除学部</h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <!-- 模态框主体 -->
+                <div class="modal-body">
+                    @*删除学部的内容*@
+                    <div class="row">
+                        @if (ViewBag.Status == 2)
+                        {
+                            foreach (var item in (List<ExtItem>)Model.ExtList)
+                            {
+                                <div class="col-md-6">@item.ExtName</div>
+                                <div class="col-md-6">
+                                    <input type="checkbox" name="ExtensionIds" value="@item.ExtId" />
+                                </div>
+                            }
+                        }
+                        <input type="hidden" name="Sid" value="@Sid" />
+                    </div>
+                </div>
+
+                <!-- 模态框底部 -->
+                <div class="modal-footer">
+                    <button type="button" id="delext-btn" class="btn btn-secondary">确定</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+
+
+<!--  上传logo 模态框 -->
+<div class="modal fade" id="avatar-uploadlogo" aria-hidden="true" aria-labelledby="avatar-modal-label" role="dialog">
+    <div class="modal-dialog modal-lg avatar-modal">
+        <div class="modal-content">
+            <!-- 模态框头部 -->
+            <form class="avatar-form" action="" enctype="multipart/form-data" method="post">
+                <div class="modal-header">
+                    <h4 class="modal-title">上传图片</h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <!-- 模态框主体 -->
+                <div class="modal-body">
+                    <div class='avatar-body'>
+                        <div class='avatar-upload'>
+                            <input class='avatar-src' name='avatar_src' type='hidden'>
+                            <input class='avatar-data' name='avatar_data' type='hidden'>
+                            <label for='avatarInput'>Local upload</label>
+                            <input class='avatar-input' id='avatarInput' accept='image/*' name='avatar_file' type='file'>
+                        </div>
+                        <div class='row'>
+                            <div class='col-md-8'>
+                                <div class='avatar-wrapper'></div>
+                            </div>
+                            <div class='col-md-4 card-body nav flex-column justify-content-center bg-light text-center' style='margin-top:15px;'>
+                                <div>
+                                    <span class='text-body'>预览略缩图</span>
+                                </div>
+                                <div class="avatar-preview preview-lg"><img src="~/images/schooldefaultlogo.png" /></div>
+                                <div class="avatar-preview preview-md"><img src="~/images/schooldefaultlogo.png" /></div>
+                                <div class="avatar-preview preview-sm"><img src="~/images/schooldefaultlogo.png" /></div>
+                            </div>
+                        </div>
+                        <div>
+                        </div>
+                        <div class="loading" aria-label="Loading" role="img" tabindex="-1"></div>
+                    </div>
+                </div>
+                <!-- 模态框底部 -->
+                <div class="modal-footer">
+                    <button class="btn btn-secondary logo-reset" type="reset">重置</button>
+                    &nbsp;&nbsp;&nbsp;&nbsp;
+                    <button class="btn btn-secondary avatar-save" type="submit">提交</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+
+@*加载同步字段分部视图*@
+<div>
+    @*同步字段的分部按钮*@
+    <div class="col-md-12 div-sync text-left" style="display:none; margin-left:-15px;">
+        @if (null != Model.ExtList)
+        {
+            @foreach (var ext in Model.ExtList)
+            {
+                <button style="position:relative;" class="btn btn-secondary syncField" data-extid="@ext.ExtId">
+                    @ext.ExtName @Math.Round(ext.Completion * 100, 2, MidpointRounding.AwayFromZero)%
+                </button>
+            }
+        }
+    </div>
+    <div>
+        &nbsp;&nbsp;&nbsp;&nbsp;
+    </div>
+    @*分部视图内容*@
+    <div ext="1" id="extContent_ext">
+        @*动态加载*@
+    </div>
+</div>
+
+@*需要预定义ue编辑器*@
+<div class="border uecontent" id="preUE" hidden="hidden" placeholder="(提示:请录入图片和文字材料)" style="min-height:50px">
+    <script id="editor1" type="text/plain" style="width:100%;height:200px;">
+    </script>
+</div>
+
+@section Scripts{
+    @*数据补全*@
+    <script src="@(ViewBag.StaticFile)/bootstrap-3-typeahead/4.0.2/bootstrap3-typeahead.min.js"></script>
+    @*taginput*@
+    <script src="@(ViewBag.StaticFile)/bootstrap-tagsinput/0.8.0/bootstrap-tagsinput.min.js"></script>
+    @*截图工具*@
+    <script src="@(ViewBag.StaticFile)/cropper/4.0.0-beta/cropper.min.js"></script>
+    <script src="~/lib/cropper/cropper.cut.js"></script>
+    @*同步字段部分视图*@
+    <script type="text/javascript" src="https://map.qq.com/api/js?v=2.exp&key=@(qqMapKey)&libraries=convertor"></script>
+    <script src="https://cdn.bootcss.com/linq.js/2.2.0.2/jquery.linq.min.js"></script>
+    <script src="https://cdn.bootcss.com/moment.js/2.18.1/moment-with-locales.min.js"></script>
+    <script src="https://cdn.bootcss.com/bootstrap-datetimepicker/4.17.47/js/bootstrap-datetimepicker.min.js"></script>
+    <script src="https://cdn.bootcss.com/bootstrap-tagsinput/0.8.0/bootstrap-tagsinput.min.js"></script>
+    @*editor 富文本编辑器*@
+    <script type="text/javascript" charset="utf-8" src="~/ueditor/ueditor.config.nostyle4cccv1.js"></script>
+    <script type="text/javascript" charset="utf-8" src="~/ueditor/editor_api.js"></script>
+    @*select2*@
+    <script src="https://cdn.bootcss.com/select2/4.0.6-rc.1/js/select2.min.js"></script>
+    <script src="https://cdn.bootcss.com/select2/4.0.6-rc.1/js/i18n/zh-CN.js"></script>
+    @*linq js*@
+    <script src="https://cdn.bootcss.com/linq.js/2.2.0.2/linq.min.js"></script>
+    @*jquery-validation*@
+    <environment include="Development">
+        <script src="https://cdn.bootcss.com/jquery-validate/1.19.0/jquery.validate.js"></script>
+        <script src="https://cdn.bootcss.com/jquery-validate/1.19.0/localization/messages_zh.js"></script>
+        <script src="https://cdn.bootcss.com/jquery.form/4.2.2/jquery.form.js"></script>
+    </environment>
+    <environment exclude="Development">
+        <script src="https://cdn.bootcss.com/jquery-validate/1.19.0/jquery.validate.min.js"></script>
+        <script src="https://cdn.bootcss.com/jquery-validate/1.19.0/localization/messages_zh.min.js"></script>
+        <script src="https://cdn.bootcss.com/jquery.form/4.2.2/jquery.form.min.js"></script>
+    </environment>
+    <script src="~/js/jquery-validate.bootstrap-tooltip.min.js"></script>
+    <script src="~/assets/js/GetFormJson.js"></script>
+    <script src="~/assets/js/Completion.js"></script>
+    <script src="~/js/schoolDataEnter.js?@(DateTime.Now.Ticks)"></script>
+    <script src="~/js/jq.postJSON.js"></script>
+    <script type="text/javascript">
+        if (typeof String.prototype.trim === 'undefined') {
+            String.prototype.trim = function () {
+                return this.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, '');
+            };
+        }
+    </script>
+    <script type="text/javascript">
+        var now, isOk = true;
+        //声明并初始化容器并渲染第一个文本框
+        var ue; initUE();
+
+        function checkStatus1() {
+            var v = localStorage.getItem('addschool01_' + jQuery('[name=sid]').val());
+            if (v == null) localStorage.setItem('addschool01_' + jQuery('[name=sid]').val(), now);
+            return v == null || v == now;
+        }
+
+        function clearStatus1() {
+            if (jQuery('[name=status]').val() != '1') return;
+            var v = localStorage.getItem('addschool01_' + jQuery('[name=sid]').val());
+            if (v == now) localStorage.removeItem('addschool01_' + jQuery('[name=sid]').val());
+        }
+
+        window.onbeforeunload = function () {
+            clearStatus1();
+        };
+
+        jQuery(function () {
+            //上传logo
+            jQuery(".logo").on("click",function () {
+                console.log("click");
+                jQuery("#avatar-uploadlogo").modal("show");
+                new CropAvatar(jQuery("#avatar-uploadlogo"), this, "上传logo", null, null, "@(Url.Action("upload","School",new {Type=1,Id=ViewBag.TempId }))", uploadlogoCallback);
+            });
+            //上传logo callback
+            function uploadlogoCallback(res, arr, $element) {
+                jQuery(".card-body input[name='Schoollogo']").val(res.result);
+                jQuery(".logo").attr("src", res.result);
+            }
+            //logo reset
+            jQuery('#avatar-uploadlogo .logo-reset').on('click', function () {
+                jQuery(".uploadlogo input[name='Schoollogo']").val('@defaultLogo');
+                jQuery('#crop-avatar img.logo').attr('src', '@defaultLogo');
+                jQuery('#avatar-uploadlogo .avatar-preview img').attr('src', '/images/schooldefaultlogo.png');
+                jQuery('#avatar-uploadlogo .modal-header button.close').trigger('click');
+            });
+
+
+            now = (+new Date()), (!jQuery('[name=_tnow]').val() && jQuery('[name=_tnow]').val(now));
+
+        @* 防止新建学校时, 通过浏览器右键复制页面, 后退, 后进行addschool操作 *@
+            if (jQuery('[name=status]').val() == '1' && (jQuery('[name=name]').val().trim() != '' || !checkStatus1())) {
+                // && /\?(.+&)?sid=.+$/gi.test(window.location.search)
+                jQuery('#save,#pulish').disable();
+                window.location.replace('/school/main?sid=' + jQuery('[name=sid]').val());
+                return;
+            }
+        @* 防后退
+        if ((now - parseFloat('@((DateTime.UtcNow - DateTime.UnixEpoch).Ticks / 10000)', 10)) / 1000 > 20) {
+            if (!/&_t=.+/gi.test(location.search)) {
+                window.location.replace('/school/main?sid=' + jQuery('[name=sid]').val() + '&_t=' + now);
+                return;
+            } else {
+                window.history.replaceState(null, '', '/school/main?sid=@(Sid)');
+            }
+        }*@
+            if (/&_t=.+/gi.test(location.search)) window.history.replaceState(null, '', '/school/main?sid=@(Sid)');
+
+            //审批历史
+            jQuery("#history").on("click", function () {
+                var id = jQuery(this).attr("data-id");
+                var o = { SchoolId: id, PageIndex: 1, PageSize: 10 };
+
+                jQuery('#gameContainer').html('获取数据中...');
+                jQuery('#gameModal').on('shown.bs.modal', function () {
+                    on_load();
+                }).modal('show');
+
+                function on_load() {
+                    jQuery.get("/audit/AuditHistorys", o, function (data) {
+                        jQuery('#gameContainer').html(data);
+                        //jQuery('#gameModal').attr('aria-hidden') == 'true' && jQuery('#gameModal').modal('show');
+                        jQuery('#gameContainer').find('a[data-dt-idx]').on('click', function () {
+                            var a = jQuery(this), pi = parseInt(a.attr('data-dt-idx'), 10);
+                            if (a.parent('li').hasClass('active')) return;
+                            if (a.parent('li').hasClass('disabled')) return;
+                            o.PageIndex = pi;
+                            on_load();
+                        });
+                    });
+                }
+
+                on_load();
+            });
+
+            //自动填充
+            //tags input
+            jQuery("#tags").tagsinput({
+                tagClass: "label-info", //设置样式
+                trimValue: true,//去空格
+                confirmKeys: [13, 32, 44, 59],
+                typeahead: {
+                    afterSelect: function (val) { this.$element.val(""); },
+                    source: function (query) {
+                        var json = jQuery.getJSON("@Url.Action("Autocomplete","Tag")" + "?top=10&&term=" + query);
+                        console.log(json);
+                        return json;
+                    }
+                }
+            });
+            //typehead 选中问题
+            jQuery("body").delegate(".typeahead li", "click", function () {
+                var $input = jQuery(this).parent(".typeahead").prev("input");
+                $input.val("");
+                $input.removeAttr("size");
+            });
+
+            onready_btn();
+
+            //name失去焦点时判断
+            jQuery("#name").blur(function () {
+                console.log("失去焦点");
+                var name = jQuery("#name").val();
+                var sid = jQuery("input[name='Sid']").val();
+                if ((name.trim())) {
+                    jQuery.getJSON("@Url.Action("CheckSchoolName")", { "name": name, "sid": sid }
+                        , function (data) {
+                            if (data.state != 200) {
+                                isOk = false;
+                                ShowAlert("该学校已经存在！", -1);
+                            } else {
+                                isOk = true;
+                            }
+                        });
+                }
+            });
+
+
+            //加载同步字段部分视图
+            (function (f1, extId, index, loadFlag) {
+                jQuery(".syncField").on("click", function () {
+                    jQuery('#extContent_ext').html("");
+                    var _extId = jQuery(this).attr("data-extid");
+                    extId = _extId;
+                    index = 1, jQuery('div[ext]').html('').attr('eid', extId), jQuery('#end_ext').hide();
+                    getData();
+
+                    history.replaceState(null, '', '?sid=@(Sid)#extId=' + extId);
+                });
+                function getData() {
+                    var divs = jQuery('div[ext=' + index + ']'), m = new Array(divs.length);
+                    if (!m.length) {
+                        jQuery('#end_ext').show();
+                        return ok();
+                    }
+                    divs.html('').each(function (idx) {
+                        var div = jQuery(this), id = div.attr('id');
+                        var sid = jQuery("#sid").val();
+                        jQuery.get('/school/ExtFieldsSync', { sid: sid, extId: extId }, function (data) {
+                            jQuery('#extContent_ext').html(data);
+                            syncFieldsView();
+                        });
+                    });
+                }
+                function ok() {
+                    loadFlag = false;
+                }
+            })(1);
+
+            jQuery('#btn_syncfield').on('click', function () {
+                jQuery('.div-sync').show();
+            });
+        });
+
+        function onready_btn() {
+        @if (isClaimed)
+        {
+            <Text>
+            //进入学部stepXX
+            jQuery('a[a-href]').on('click', function () {
+                window.location.href = jQuery(this).attr('a-href');
+                return false;
+            });
+            // post /school/addschool
+            function saveSchool(cb) {
+                var data = GetFormData();
+                if (!(data.Name.trim())) {
+                    ShowAlert("学校名字不能为空");
+                    return;
+                }
+                if (!isOk) {
+                    ShowAlert("该学校已经存在", -1);
+                    return;
+                }
+                var btn = jQuery('#save,#pulish');
+                if (btn.isDisabled()) return;
+                //post提交
+                btn.disable();
+
+                jQuery.post("@Url.Action("AddSchool")", data, function (result) {
+                    var ok = function (b) {
+                        if (b === false) return btn.enable();
+                        clearStatus1();
+                    };
+                    if (result.state == 200) {
+                        cb || ShowAlert("保存成功！", 1000, function () {
+                            ok(), window.location.replace('/school/main?sid=@Sid');
+                        });
+                        cb && cb(ok, result);
+                    } else if (result.state == 1111) { //重复id录入
+                        ShowAlert(result.message, 1000, function () {
+                            ok(), window.location.replace('/school/index');
+                        });
+                    } else if (result.state == 4000) { //已提交审核
+                        ShowAlert(result.message, 1000, function () {
+                            ok(), window.location.replace('/school/index');
+                        });
+                    } else {
+                        btn.enable();
+                        ShowAlert(result.message, -1);
+                    }
+                });
+            }
+            //添加学部
+            jQuery("#addext").on("click", function () {
+                saveSchool(function (ok) {
+                    ok();
+                    window.location.replace('@Url.Action("Step1", new { Sid })');
+                });
+            });
+            //保存学校
+            jQuery("#save").on("click", function () {
+                saveSchool();
+            });
+            //提交审核
+            jQuery("#pulish").on("click", function () {
+                saveSchool(function (ok, result) {
+
+                    jQuery.post("@Url.Action("Examination")", { sid: result.result }, function (data) {
+                        if (data.state == 200) {
+                            ShowAlert("提交审核成功！", 1000, function () {
+                                ok(), window.location.replace('/school/index');
+                            });
+                        } else {
+                            ShowAlert(data.message, -1);
+                            ok(!1);
+                        }
+                    });
+                });
+            });
+            //删除学部
+            jQuery("#delext").on("click", function () {
+                jQuery("#delModel").modal('show');
+            });
+            //删除学部
+            jQuery("#delext-btn").on("click", function () {
+
+                //
+                var length = jQuery("#delModel input[name='ExtensionIds']:checked").length;
+                if (length == 0) {
+                    ShowAlert("请选择要删除的学部！", -1);
+                    return;
+                }
+                var json = jQuery("#delext-form").serialize();
+                jQuery.post("@Url.Action("DelExtension")", json, function (data) {
+                    if (data.state != 200) { ShowAlert(data.message, -1); } else {
+                        window.location.reload();
+                    }
+                });
+            });
+            </Text>
+        }
+        else
+        {
+            <Text>
+            jQuery('a[a-href], #addext, #save, #pulish, #delext, #delext-btn').on('click', function () {
+                ShowAlert('请先认领学校，再进行操作', -1);
+                return false;
+            });
+            //认领学校
+            jQuery('#btnClaim').on('click', function () {
+                var sid = jQuery(this).attr("data-id");
+                jQuery.post('@Url.Action("Claim")', { "sid": sid }, function (data) {
+                    if (data.state == 200) {
+                        window.location.replace('/school/main?sid=@(Sid)');
+                    } else {
+                        ShowAlert("认领失败！");
+                    }
+                });
+            });
+            </Text>
+        }
+        }
+
+        //初始化ue编辑器
+        function initUE() {
+
+            ue = UE.getEditor('editor1', {
+                configPath: 'ueditor/config.json',
+                initialContent: "",
+                theme: 'tt',
+                elementPathEnabled: !1,
+                imageScaleEnabled: !1,
+                imagePopup: !1,
+                tableDragable: !1,
+                wordCount: !1,
+                autoHeight: false,
+                toolbars: [["source", "h2", "bold", "underline", "italic", "strikethrough", "forecolor", "blockquote", "horizontal", "justifyleft", "justifycenter", "justifyright", "link", "unlink", "|", "insertimage", "|", "selectall", "removeformat", "undo", "redo"]],
+                removeFormatTags: "b,big,code,del,dfn,em,font,i,ins,kbd,q,samp,small,span,strike,strong,sub,sup,tt,u,var,blockquote,h1,h2,h3,h4,h5,h6",
+                autotypeset:
+                {
+                    mergeEmptyline: !0,
+                    removeClass: !1,
+                    removeEmptyline: !0,
+                    pasteFilter: !0,
+                    clearFontSize: !0,
+                    clearFontFamily: !0
+                }
+
+            });
+        }
+
+        //获取表单数据
+        function GetFormData() {
+            var logo = jQuery(".card-body input[name='Schoollogo']").val();
+            var sid = jQuery(".card-body input[name='sid']").val();
+            var status = jQuery(".card-body input[name='status']").val();
+            var name = jQuery(".card-body input[name='name']").val();
+            var ename = jQuery(".card-body input[name='ename']").val();
+            var website = jQuery(".card-body input[name='website']").val();
+            var intro = jQuery(".card-body textarea[name='intro']").val();
+            var tags = jQuery(".card-body input[name='tags']").val();
+            var eduSysType = jQuery('[name=EduSysType]').val() || null;
+
+            //进行判断
+            var data = { "Logo": logo, "Name": name, "EName": ename, "WebSite": website, "Intro": intro, "Tags": tags, "Sid": sid, "Status": status, 'EduSysType': eduSysType };
+            data._tnow = jQuery('.card-body [name=_tnow]').val();
+            return data;
+        }
+
+        //同步字段部分视图
+        function syncFieldsView() {
+
+            //同步按钮样式变更
+            jQuery("select,input").on("change", function () {
+                //选视频的input不触发同步按钮样式
+                if (jQuery(this).attr("type") == "file") {
+                    return;
+                }
+
+                RemoveSyncBtnNextAll(jQuery(this));
+            });
+
+
+            //日历
+            jQuery('.datetimepicker4').datetimepicker({
+                format: 'YYYY-MM-DD',
+                locale: moment.locale('zh-cn'),
+            }).on("dp.change", function (e) {
+                RemoveSyncBtnNextAll(this);
+            });
+
+
+            //ue编辑器
+            ue.ready(function () {
+
+                jQuery(this.container).click(function (e) {
+                    e.stopPropagation()
+                });
+                ue.execCommand('serverparam', 'contentID', '@(ViewBag.Sid)');
+                ue.execCommand('serverparam', 'contentType', 'school_v3');
+                ue.execCommand('cleardoc');
+                ue.execCommand("insertHtml", '');
+                //ue.execCommand("contentChange", '');
+
+                //把ue编辑器绑定到第一个富文本框
+                var firstcurrentParnet = ue.container.parentNode.parentNode;
+                var firstcurrentContent = ue.getContent();
+                jQuery("div.uecontent:first").append(ue.container.parentNode);
+                setTimeout(function () {
+                    ue.setContent(jQuery('#firstEditor').html());
+                }, 200)
+                jQuery(firstcurrentParnet).html(firstcurrentContent);
+
+            });
+            jQuery('.uecontent').click(function (e) {
+
+                e.stopPropagation();
+                var jQuerytarget = jQuery(this);
+                //解决多个ueditor切换后工具栏和输入框分离
+                jQuery('.edui-editor-toolbarbox').attr('style', '');
+                var content = jQuerytarget.html();
+                var currentParnet = ue.container.parentNode.parentNode;
+                var currentContent = ue.getContent();
+                jQuerytarget.html('');
+                jQuerytarget.append(ue.container.parentNode);
+                //TODO  会闪一下 调试一下
+                ue.reset();
+                setTimeout(function () {
+                    ue.setContent(content);
+                }, 200)
+                jQuery(currentParnet).html(currentContent);
+                return false;
+            });
+            (function (b) {
+
+                ue.ready(function () {
+
+                    if (b) return;
+                    b = true, bind_toolbar_event();
+                });
+                function bind_toolbar_event() {
+
+                    //ue 清除格式事件
+                    jQuery('.edui-editor').on('click', '.edui-for-removeformat', function () {
+                        ue.setContent(rmStyle(ue.getContent()));
+                        console.log('ueeditor rm style');
+                    });
+                }
+            })();
+
+            //ue编辑器内容发生改变时会触发该事件
+            UE.getEditor('editor1').addListener('contentChange', function (editor) {
+
+                RemoveSyncBtnNextAll(jQuery("#editor1"));
+            });
+
+            //上传视频
+            jQuery(".uploadvideo-btn").on("click", function () {
+                var $Input = jQuery(this);
+                var videoInput = $Input.attr("data-video");
+                var $videoInput = document.getElementById(videoInput);
+                if ($videoInput.files.length == 0) {
+                    return;
+                }
+                var formData = new FormData();
+                for (var i = 0; i < $videoInput.files.length; i++) {
+                    formData.append(videoInput, $videoInput.files[i]);
+                }
+                Loading("正在上传视频！");
+                jQuery.ajax({
+                    url: "@Url.Action("Upload",new { type=3,id= ViewBag.TempId })",
+                    type: "post",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    cache: false
+                }).done(function (res) {
+                    //上传成功
+                    if (res.state == 200) {
+
+                        var Input = $Input.attr("data-input");
+                        var Video = $Input.attr("data-video");
+                        var html = "";
+                        jQuery.each(res.result, function (index, item) {
+                            html += '<div class="col-md-4"> <video width="250" controls data-id="' + item.key + '"><source src="' + item.value + '" type=video/mp4 /></video><a class="delrankbtn fa fa-minus-circle deletebutten  text-danger" data-input="' + Video + Input + '"  data-id="' + item.key + '"></a></div>';
+                        });
+                        jQuery("#" + Video + Input + "List").append(html);
+                        var $hide = jQuery("#" + Video + Input);
+                        var old = $hide.val();
+                        var json = JSON.parse(old);
+                        jQuery.each(res.result, function (index, item) {
+
+                            json.push(item.value);
+                        });
+                        $hide.val(JSON.stringify(json));
+                        RemoveSyncBtnNextAll($Input);
+                        //清空file值
+                        $videoInput.outerHTML = $videoInput.outerHTML;
+
+                    }
+                    //上传失败
+                    else {
+                        ShowAlert(res.Message, -1);
+                    }
+                    CloseLoading();
+                }).fail(function (res) {
+                    ShowAlert(res.Message, -1);
+                    CloseLoading();
+                });
+            });
+
+            //删除视频
+            jQuery("body").delegate(".deletebutten", "click", function () {
+                var $input = jQuery(this);
+                var input = $input.attr("data-input");
+                var json = JSON.parse(jQuery("#" + input).val());
+                var value = $input.attr("data-id");
+                var jsonResult = [];
+                jQuery.each(json, function () {
+                    if (this != value) {
+                        jsonResult.push(this);
+                    }
+                });
+                jQuery("#" + input).val(JSON.stringify(jsonResult.length > 0 ? jsonResult : "[]"));
+                RemoveSyncBtnNextAll($input);
+                $input.parent().remove();
+            });
+
+            //【使用中】添加开放日/行事历
+            jQuery(".btn-add-textdatetime").on("click", function () {
+
+                var $Input = jQuery(this);
+                var arrValues = $Input.attr("data-input").split('|');
+                var html = '<div class="form-group" ><div class="col-md-5"><input class="form-control c_ignore" name="' + arrValues[1] + '" placeholder="请输入' + arrValues[3] + '的名字" value="" /></div><div class="col-md-4"><div class="col-md-4 form-inline"> <div style="position:relative"><input type="text"  value="" placeholder="请输入时间" name="' + arrValues[2] + '" class="form-control datetimepicker4 c_ignore"></div></div></div><div class="col-md-3"><a href= "javascript:void(0)" onclick="DelLine(this)" ><i class="fa fa-times-circle text-danger"></i></a></div><br><br><hr style="width:850PX;height:20px;" /></div>';
+                jQuery("#" + arrValues[0]).append(html);
+                jQuery('.datetimepicker4').datetimepicker({
+                    format: 'YYYY-MM-DD',
+                    locale: moment.locale('zh-cn'),
+                }).on("dp.change", function (e) {
+                    RemoveSyncBtnNextAll($Input);
+                });
+                jQuery("select,input").on("change", function () {
+                    RemoveSyncBtnNextAll($Input);
+                });
+
+            });
+
+            jQuery(function () {
+
+                //省市区旧值
+                var istrue = jQuery("#istrue").val();
+                var strarr = istrue.split(',');
+                if (strarr[0] == 1) {
+                    jQuery("#province").val(strarr[1]);
+                    jQuery("#city").val(strarr[2]);
+                    jQuery("#area").val(strarr[3]);
+                }
+
+                //添加标签
+                jQuery(".createtag").on("click", function () {
+
+                    var tagId = jQuery(this).attr("data-tag");
+                    var input = jQuery(this).attr("data-input");
+                    //拿到选中的值
+                    var value = jQuery("#" + input).val();
+
+                    var json = { "tagId": tagId, "input": input, "isSync": true, "selectIds": value };
+                    jQuery.get("@Url.Action("TagPanel", "Tag")", json, function (data) {
+
+                        jQuery('#gameContainer').html(data);
+                        //初始化时加载标签页面
+                        var json = JSON.parse(jQuery("#hideTags").val());
+
+                        ShowTagContent(json);
+                        jQuery('#gameModal').modal('show');
+                    });
+
+                })
+                //保存标签时候
+                jQuery("body").delegate("#tagpanel_save", "click", function () {
+
+                    var data = [];
+                    var $selctA = jQuery("#selectTags a");
+                    var html = "";
+                    jQuery.each($selctA, function (index, item) {
+                        data.push({ "Key": jQuery(this).attr("data-name"), "Value": jQuery(this).attr("data-id"), "Message": "" });
+                        html += '<div class="col-md-auto"><section class="card  float-left " ><div class="card-body text-secondary" data-tagid="' + jQuery(this).attr("data-id") + '">' + jQuery(this).attr("data-name") + '</div></section ></div >';
+                    });
+                    var input = jQuery("#modal-input").val();
+                    var tagType = jQuery("#tagType").val();
+                    //如果是招生对象
+                    var temp = input.split("_");
+                    if (temp[1]) {
+                        jQuery("#tag-list-" + tagType + "-" + temp[1]).html(html);
+                    }
+                    else {
+                        jQuery("#tag-list-" + tagType).html(html);
+                    }
+                    jQuery("#" + input).val(JSON.stringify(data));
+                    RemoveSyncBtnNextAll(jQuery("#" + input));
+                    console.log('savegetValue', jQuery("#" + input).val());
+                });
+
+                //删除标签
+                jQuery("body").delegate(".SelectTag", "click", function () {
+
+                    var id = jQuery(this).attr("data-id");
+                    jQuery(this).parents(".selecttagitem-div").remove();
+                    var indexof = taglist.indexOf(id);
+                    taglist.splice(indexof, 1);
+                });
+
+                //提示框
+                jQuery('[data-toggle="tooltip"]').tooltip();
+
+                //同步修改
+                jQuery(".sync").on("click", function () {
+                    var text = jQuery(this).attr("data-text")
+                    var $button = jQuery(this);
+                    showConfirm("是否要同步" + text + "信息？", function () {
+
+                        $button.nextAll(".badge").remove();
+
+                        //获取同步下的内容
+                        //学校id
+                        var sid = jQuery($button).attr("schsid");
+                        //获取分部id
+                        var eid = jQuery($button).attr("data-eid");
+
+                        //获取字段的名字
+                        var name = jQuery($button).attr("field-Name");
+
+                        //字段的中文信息
+                        var text = jQuery($button).attr("data-text")
+                        var jsonObj = {};
+                        jsonObj["sid"] = sid;
+                        jsonObj["eid"] = eid;
+                        jsonObj["name"] = name;
+
+                        //获取ue编辑器的内容
+                        var ueCount = jQuery("#" + name + "-form  .uecontent").length;
+                        if (ueCount > 0) {
+                            var c_name = jQuery(ue.container).parents('div.uecontent').get(0).getAttribute('name');
+                            jQuery("#" + name + "-form  " + ".uecontent").each(function () {
+                                var it = jQuery(this), n = it.attr('name');
+                                var value = n == c_name ? ue.getContent() : it.html();
+                                jsonObj[n] = value;
+                            });
+                        }
+
+                        Loading("正在同步" + text + "信息！");
+                        jQuery("#" + name + "-form").ajaxSubmit({
+
+                            data: jsonObj,
+                            success: function (data) {
+
+                                if (data.result.state == 200) {
+                                    //取消loading
+                                    CloseLoading();
+                                    ShowAlert("同步" + text + "信息成功！");
+                                    //移除提示
+                                    $button.nextAll(".badge").remove();
+                                    $button.after('<span class="badge badgesync badge-success"><i class="fa fa-check"></i></span>');
+
+
+                                } else {
+                                    //取消loading
+                                    CloseLoading();
+                                    ShowAlert(data.result.message || '操作失败');
+                                    $button.nextAll(".badge").remove();
+                                    $button.after('<span class="badge badgesync badge-danger"><i class="fa fa-times"></i></span>');
+                                }
+                            }
+                        });
+
+                    });
+                });
+
+                //腾讯地图
+                var md = jQuery('#map').data();
+                var center = new qq.maps.LatLng(md.latitude, md.longitude);
+                var map = new qq.maps.Map(document.getElementById("map"), {
+                    center: center, zoom: 16
+                });
+                var marker = new qq.maps.Marker({ map: map, position: center });
+                //调用地址解析类
+                var geocoder = new qq.maps.Geocoder({
+                    complete: function (result) {
+                        marker.setMap(null);
+                        map.setCenter(result.detail.location);
+                        marker = new qq.maps.Marker({
+                            map: map,
+                            position: result.detail.location
+                        });
+                    }
+                });
+                var listener = qq.maps.event.addListener(map, 'click', function (event) {
+                    jQuery('input[name="Latitude"]').val(event.latLng.getLat());
+                    jQuery('input[name="Longitude"]').val(event.latLng.getLng());
+                    RemoveSyncBtnNextAll(jQuery("#map"));
+                    marker.setMap(null);
+                    marker = new qq.maps.Marker({
+                        map: map, position: new qq.maps.LatLng(event.latLng.getLat(), event.latLng.getLng())
+
+                    });
+                });
+
+                //城市联动
+                jQuery("#province").on("change", function () {
+                    var value = jQuery(this).val();
+                    var $select = jQuery("#city");
+                    SetCityData(value, $select);
+                    $select.change();
+                });
+                jQuery("#city").on("change", function () {
+                    var value = jQuery(this).val();
+                    var $select = jQuery("#area");
+                    SetCityData(value, $select);
+                });
+                function SetCityData(cityId, $select) {
+                    $select.html('<option value="0">所有</option>');
+                    if (cityId == 0) {
+                        return;
+                    }
+                    jQuery.getJSON("@Url.Action("ChangeCityData")", { parentId: cityId }, function (data) {
+                        jQuery.each(data, function (index, item) {
+                            $select.append('<option value="' + item.value + '">' + item.text + '</option>')
+                        });
+                        $select.val("0");
+                    });
+                }
+
+                //省市区下拉框发生变化时
+                jQuery("#locality select").on("change", function () {
+                    var cityData = "";
+                    if (jQuery("#Province").val() != "0") {
+                        cityData += jQuery("#Province option:selected").html() + "省";
+                        if (jQuery("#City").val() != "0") {
+                            cityData += jQuery("#City option:selected").html() + "市";
+                            if (jQuery("#Area").val() != "0") {
+                                cityData += jQuery("#Area option:selected").html() + "区政府";
+                            }
+                        }
+                    }
+                    if (cityData) {
+                        geocoder.getLocation(cityData);
+                    }
+                });
+
+            });
+
+            function renderHtml_videos(items) {
+                var html = '';
+                jQuery.each(items, function (_, item) {
+                    html += '<div class="col-md-4"> ';
+                    html += '   <video width="250" controls data-id="' + item.key + '"> ';
+                    html += '       <source src="' + item.value + '" type="video/mp4" />';
+                    html += '   </video> ';
+                    html += '   <a class="delrankbtn fa fa-minus-circle deletebutten text-danger" data-id="' + item.key + '"></a>';
+                    html += '</div>';
+                });
+                var div = jQuery(html).appendTo('#div_vdo');
+                //只播放一个视频
+                div.find('video').on('playing', function () {
+                    var self = this;
+                    jQuery('video').each(function () {
+                        self !== this && this.pause();
+                    });
+                });
+            }
+
+            function tryv(func, defv) {
+                try { return func(); }
+                catch { return defv; }
+            }
+
+            window.onbeforeunload = undefined;
+        }
+
+        //同步按钮 移除提示
+        function RemoveSyncBtnNextAll(obj) {
+            jQuery(obj).parents("form").find(".badgesync").remove();
+        }
+
+        //删除分数线
+        function DelLine(obj) {
+            RemoveSyncBtnNextAll(obj);
+            jQuery(obj).parent().parent().remove();
+        }
+
+    </script>
+}

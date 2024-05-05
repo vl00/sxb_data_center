@@ -1,0 +1,210 @@
+﻿<div class="modal-header">
+    <h5 class="modal-title" id="scrollmodalLabel">添加标签</h5>
+    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+
+<!-- 模态框主体 -->
+<div class="modal-body" id="TagPanel-Modal">
+    <div class="form-group">
+        <div class="input-group">
+            <input type="text" id="input_search" name="input2-group1" placeholder="搜索标签" class="form-control">
+            <button class="input-group-addon" id="btn_tagsearch">
+                <i class="fa fa-search"></i>
+            </button>
+        </div>
+    </div>
+    <div class="form-group row">
+        <div class="col-md-2">已选：</div>
+        <div class="col-md-10" id="selectTags">
+            @foreach (var item in (iSchool.Application.ViewModels.KeyValueDto<string>[])ViewBag.SelectIds)
+            {
+                <div class="col-auto selecttagitem-div">
+                    <h5>
+                        <span class="badge badge-light">
+                            <a href="javascript:void(0)" class="SelectTag" data-id="@item.Value" data-name="@item.Key">@item.Key</a>
+                        </span>
+                    </h5>
+                </div>
+            }
+        </div>
+    </div>
+    <div class="form-group row">
+        <div class="col-md-2">搜索结果：</div>
+        <div class="col-md-10" id="SearchTags">
+        </div>
+    </div>
+    @*标签列表*@
+    <div class="row" id="taglist">
+    </div>
+    <div class="modal-footer">
+        <div class="col-8">
+            @*<a class="text-muted" id="panel-createtag" style="display:block;cursor:pointer;">
+                    <i class="fa fa-plus-circle"></i>新建自定义标签
+                </a>
+                <div class="form-group form-inline" id="create-form" style="display:none">
+                    <input type="text" class="form-control" id="input_addtag" placeholder="添加标签" />&nbsp;
+                    <button class="btn btn-dark" onclick="CreateTag()">添加</button>&nbsp;
+                    <button class="btn btn-secondary " id="Cannel">取消</button>
+                </div>*@
+        </div>
+        <div class="col-4 text-right">
+            <button type="button" id="tagpanel_save" class="btn btn-secondary " data-dismiss="modal">确定</button>
+        </div>
+    </div>
+</div>
+<input type="hidden" id="hideTags" value="@ViewBag.TagsJson" />
+<input type="hidden" id="modal-input" value="@(ViewBag.Input)" />
+<input type="hidden" id="tagType" value="@(ViewBag.TagId)">
+<input type="hidden" id="currentBtnId" value="@(ViewBag.Field_Year)">
+
+<script type="text/javascript">
+    var taglist = @Html.Raw(ViewBag.SelectIdsJson);
+    jQuery(function () {
+        jQuery("body").delegate("#panel-createtag","click", function () {
+            CreateControl(true);
+        });
+        jQuery("body").delegate("#Cannel","click", function () {
+            CreateControl(false);
+        });
+        //搜索标签
+        jQuery("body").delegate("#btn_tagsearch", "click", function () {
+            var text = jQuery.trim(jQuery("#input_search").val());
+            if (text != null || text != "") {
+                var json = JSON.parse(jQuery("#hideTags").val());
+                var jsonResult = Enumerable.From(json)
+                    .SelectMany("$.Tags")
+                    .Where(function (x) { return x.Name.indexOf(text.toUpperCase()) != -1 || x.Name.indexOf(text.toLowerCase()) != -1 })
+                    .ToArray();
+                var html = "";
+                jQuery.each(jsonResult, function (idx, obj) {
+                    html += '<div class="col-auto"><h5><span class="badge badge-light"><a class="tagitem"  data-id="' + obj.Id + '" href="javascript:void(0)"  data-name="' + obj.Name + '" >' + obj.Name + '</a></span></h5></div>';
+                });
+                jQuery("#SearchTags").html(html);
+            }
+
+        });
+
+        //点击标签的时候
+        jQuery("body").delegate(".tagitem", "click", function () {
+          
+            var id = jQuery(this).attr("data-id");
+            var name = jQuery(this).attr("data-name");
+            if (taglist.indexOf(id) != -1) { return; }
+            var html = '<div class="col-md-2 selecttagitem-div" ><h5><span class="badge badge-light"><a href="javascript:void(0)" data-id="' + id + '" data-name="' + name + '"  class="SelectTag">' + name + '</a></span></h5 ></div >';
+            jQuery("#selectTags").append(html);
+            taglist.push(id);
+        });
+        //保存时候
+        jQuery("body").delegate("#tagpanel_save", "click", function () {
+            
+            var data = [];
+            var $selctA = jQuery("#selectTags a");
+            var html = "";
+            jQuery.each($selctA, function (index, item) {
+                data.push({ "Key": jQuery(this).attr("data-name"), "Value": jQuery(this).attr("data-id"), "Message": "" });
+                 html += '<div class="col-md-auto"><section class="card  float-left " ><div class="card-body text-secondary" data-tagid="' + jQuery(this).attr("data-id")+'">' + jQuery(this).attr("data-name")+'</div></section ></div >';
+            });
+            var input = jQuery("#modal-input").val();
+            var tagType = jQuery("#tagType").val();
+            //如果是招生对象
+            var temp = input.split("_");
+            if (temp[1]) {
+                jQuery("#tag-list-" +tagType+"-"+temp[1]).html(html);
+            }
+            else
+                jQuery("#tag-list-" + tagType).html(html);
+           
+            console.log('input', input);
+            jQuery("#" + input).val(JSON.stringify(data));
+
+            
+            //多年份标签编辑隐藏json专用
+            //1、获取预存json文本框的值，判断追加项，还是新增项
+            var currentBtnId = jQuery("#currentBtnId").val();
+            if (currentBtnId == "") return;
+            var strArr = currentBtnId.split('_');
+            var isNew = true;
+            var field = strArr[0];
+            var year = strArr[1];
+            var preHidJson = jQuery("#jsonhid_Year_" + field).val();
+            var preJson = JSON.parse(preHidJson);
+            
+            var content = JSON.stringify(data);
+            jQuery.each(preJson, function (index, item1) {
+                    //isNew = true;
+                    //如果已经存在key,则遍历，把最新的标签内容更新到value的content中
+                    if (item1.key == currentBtnId) {
+                        isNew = false;
+                        jQuery.each(item1.value, function (i, item2) {
+                            item2.content = content;
+                            item2.act = 1;
+                        });
+                    }                    
+                });
+            //如果key不存在追加一条记录
+            if (isNew) {
+                var item = { key: currentBtnId, value: [{year: year,content: content,field: field,act:1 }]};
+                preJson.push(item);
+            }
+            //2、更新预存json文本框的值
+            jQuery("#jsonhid_Year_" + field).val(JSON.stringify(preJson).replace("\"[", "[").replace("]\"","]").replace("\"{", "{").replace("}\"", "}").replace(/\\/g, ""));
+
+            //3、更改年份按钮的data-input 为1
+            jQuery("#" + currentBtnId).attr("data-input", 1);
+        });
+        //删除标签
+        jQuery("body").delegate(".SelectTag", "click", function () {
+           
+            var id = jQuery(this).attr("data-id");
+            jQuery(this).parents(".selecttagitem-div").remove();
+            var indexof = taglist.indexOf(id);
+            taglist.splice(indexof, 1);
+        });
+
+
+
+    });
+
+    //展示tag内容
+    function ShowTagContent(jsonResult) {
+       
+        var html = "";
+        jQuery.each(jsonResult, function (idx, obj) {
+            //遍历json
+            html += '<div class="col-md-1"><strong><a name=Code_' + obj.SpellCode + '>' + obj.SpellCode + '</a></strong></div>';
+            html += ' <div class="col-md-11">';
+            jQuery.each(obj.Tags, function (index, object) {
+                html += '<div class="col-auto" style="position:relative;"><h5><span class="badge badge-light"><a class="tagitem" href="javascript:void(0)" data-id="' + object.Id + '"  data-name="' + object.Name + '" > ' + object.Name + '</a></span></h5></div>';
+            });
+            html += '</div><div class="col-md-12 col-12"><hr style="width:100%;height:20px;"></div>';
+        });
+        jQuery("#taglist").html(html);
+    }
+    @*
+    //添加标签的隐藏方法
+    function CreateControl(isTrue) {
+        if (isTrue) {
+            jQuery("#panel-createtag").css("display", "none");
+            jQuery("#create-form").css("display", "block");
+        } else {
+            jQuery("#panel-createtag").css("display", "block");
+            jQuery("#create-form").css("display", "none");
+        }
+        jQuery("#input_addtag").val("");
+    }
+    function CreateTag() {
+       var text = jQuery.trim(jQuery("#input_addtag").val  ());
+       if (text != null || text != "") {
+           jQuery.post("@Url.Action("AddTagsAjax","Tag")", { "type": @(ViewBag.TagId), "name": text }, function (result) {
+               result = JSON.parse(result);
+               if (result.State == 200) {
+                   jQuery("#hideTags").val(JSON.stringify(result.result));
+                   ShowTagContent(result.Result);
+               }
+           });
+       }
+    }*@
+
+</script>

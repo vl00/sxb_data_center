@@ -1,0 +1,863 @@
+﻿@using iSchool
+@using iSchool.Infrastructure
+@using iSchool.Application.ViewModels
+@using iSchool.Domain.Enum
+@using System.Reflection;
+
+@model IDictionary<string, object>
+@{
+    var SchoolExtFieldSyncConfigDto = ViewBag.SchoolExtFieldSyncConfigDto as iSchool.Application.ViewModels.SchoolExtFieldSyncConfigDto;
+    var IsTrue = ViewBag.IsTrue + "," + Model["province"] + "," + Model["city"] + "," + Model["area"];
+    var firstEditorField = SchoolExtFieldSyncConfigDto.Fields
+     .Where(p => p.TextFormat.ToLower().Equals("editor"))
+     .OrderBy(p => p.TabIndex).ThenBy(p => p.Sort)
+     .FirstOrDefault().DBfield[0];
+
+    ViewData["Title"] = "学校字段同步";
+    var qqMapKey = @"Z66BZ-BLM3S-BCBOC-66J6X-ZGLRK-SWFVP";
+
+    //用于判断显示字段的参数 跟json和execl表对于起来
+    var schtype = new SchFType0(Model["schftype"].ToString());
+    }
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, iSchool.UI
+
+@section css{
+    <link href="https://cdn.bootcss.com/bootstrap-datetimepicker/4.17.47/css/bootstrap-datetimepicker.min.css" rel="stylesheet">
+
+    <link href="https://cdn.bootcss.com/bootstrap-tagsinput/0.8.0/bootstrap-tagsinput.css" rel="stylesheet">
+    @*select2*@
+    <link href="https://cdn.bootcss.com/select2/4.0.6-rc.1/css/select2.min.css" rel="stylesheet">
+    <link href="https://cdn.bootcss.com/select2-bootstrap-css/1.4.6/select2-bootstrap.min.css" rel="stylesheet">
+    <style type="text/css">
+        /*tags样式*/
+        .label-info {
+            display: inline-block;
+            padding: 2px 4px;
+            font-size: 11.844px;
+            font-weight: bold;
+            line-height: 14px;
+            text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+            white-space: nowrap;
+            vertical-align: baseline;
+            background-color: #3a87ad;
+            margin-right: 2px;
+            color: white;
+        }
+
+        .bootstrap-tagsinput {
+            background-color: #fff;
+            border: 1px solid #ccc;
+            box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+            /*display: inline-block;*/
+            /*padding: 4px 6px;*/
+            padding: .375rem .75rem;
+            color: #555;
+            vertical-align: middle;
+            border-radius: 4px;
+            max-width: 100%;
+            line-height: 22px;
+            cursor: text;
+            width: 100%;
+        }
+
+        .c_contain {
+        }
+
+        .c_value {
+        }
+
+        .select2-dropdown, .select2 {
+            width: 200px !important;
+        }
+
+        .counterpart-content select, .ach-panel-content select {
+            width: 200px !important;
+        }
+
+
+        .deletebutten {
+            position: absolute;
+            display: block;
+            width: 5px;
+            height: -6px;
+            top: 0px;
+            right: 88px;
+        }
+
+        .side-bar {
+            position: fixed;
+            bottom: 100px;
+            right: 25px;
+            font-size: 0;
+            line-height: 0;
+            z-index: 100;
+        }
+
+            .side-bar a {
+                width: 66px;
+                height: 66px;
+                display: inline-block;
+                margin-bottom: 2px;
+            }
+
+
+            .side-bar .icon-right {
+                background-position: 0 -62px;
+            }
+
+        #auditcard {
+            width: 500px;
+        }
+
+    </style>
+}
+
+<div class="card">
+    <div class="card-header">
+        <div class="row">
+            @*<div class="col-auto">
+                <a href="@Url.Action("Main",new {sid=ViewBag.Sid })"><i class="ti-angle-left"></i></a>
+            </div>*@
+            <div class="col-auto">
+                <h4>将（@(Model["schoolname"])-@(Model["extname"])）的信息同步到其他分部</h4>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="card-body">
+    <input type="hidden" id="istrue" value="@IsTrue">
+    <div class="custom-tab">
+        <nav>
+            <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                @foreach (var tab in SchoolExtFieldSyncConfigDto.Tab)
+                {
+                    if (tab.Index == 1)
+                    {
+                        <a class="nav-item nav-link active show" id="@(tab.Id)-tab" data-toggle="tab" href="#@tab.Id" role="tab" aria-controls="@tab.Id" aria-selected="true">@tab.Name</a>
+                    }
+                    else
+                    {
+                        <a class="nav-item nav-link " id="@(tab.Id)-tab" data-toggle="tab" href="#@tab.Id" role="tab" aria-controls="@tab.Id" aria-selected="false">@tab.Name</a>
+                    }
+                }
+            </div>
+        </nav>
+        <div class="tab-content pl-3 pt-2" id="nav-tabContent">
+            @*遍历tab的内容*@
+            @foreach (var tab in SchoolExtFieldSyncConfigDto.Tab)
+            {
+            <div class="tab-pane fade  @(tab.Index==1?"active  show":"")" id="@tab.Id" role="tabpanel" aria-labelledby="@(tab.Id)-tab">
+                @foreach (var content in SchoolExtFieldSyncConfigDto.Fields.Where(p => p.TabIndex == tab.Index).OrderBy(p => p.Sort))
+                {
+                    var textFormat = content.TextFormat.ToLower();
+                    //省市区联动控件
+                    @if (textFormat.Equals(EnumUtil.GetDesc(TextFormat.ReginClickOn)))
+                    {
+                        <form method="post" id="@(content.Name)-form" action="@Url.Action("ExtFieldsSync")" name="@(content.Name)-form">
+                            <div class="form-group" id="locality">
+                                <div class="form-inline">
+                                    <label class="form-control-label">@content.Text</label>&nbsp;&nbsp;
+                                    <button type="button" class="btn btn-outline-primary btn-sm sync" schsid="@ViewBag.Sid" data-eid="@ViewBag.Eid" field-Name="@content.Name" data-text="@content.Text" style="margin-right:5px">同步</button>
+                                </div>
+                                <div class="form-inline">
+                                    <select id="province" name="province" class="form-control" asp-items="@ViewBag.ProvinceSelect">
+                                        <option value="0">所有</option>
+                                    </select>
+                                    <select id="city" name="city" class="form-control" asp-items="@ViewBag.CitySelect">
+                                        <option value="0">所有</option>
+                                    </select>
+                                    <select id="area" name="area" class="form-control" asp-items="@ViewBag.AreaSelect">
+                                        <option value="0">所有</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </form>
+                    }
+                    //经纬度控件
+                    else if (textFormat.Equals(EnumUtil.GetDesc(TextFormat.LatLongDigital)))
+                    {
+                        <form method="post" id="@(content.Name)-form" action="@Url.Action("ExtFieldsSync")" name="@(content.Name)-form">
+                            <div class="form-group">
+                                @*<pre style="display:none;">@(Model.LatLong.ToJsonString(true))</pre>*@
+                                <div class="form-inline">
+                                    <label class="form-control-label">@content.Text</label>&nbsp;&nbsp;
+                                    <button type="button" class="btn btn-outline-primary btn-sm sync" schsid="@ViewBag.Sid" data-eid="@ViewBag.Eid" field-Name="@content.Name" data-text="@content.Text" style="margin-right:5px">同步</button>
+                                </div>
+                                <div class="map" id="map" data-latitude="@(Model["latitude"] == null ? 39.90 : Model["latitude"])" data-longitude="@(Model["longitude"] == null ? 116.38 : Model["longitude"])"></div>
+                                <span class="badge">经度：</span>
+                                <span class="longitude badge badge-warning">
+                                    <input type="text" id="Longitude" name="Longitude" value="@Model["longitude"]?.ToString()" />
+                                </span>
+                                <span class="badge">纬度：</span>
+                                <span class="longitude badge badge-warning">
+                                    <input type="text" id="Latitude" name="Latitude" value="@Model["latitude"]?.ToString()" />
+                                </span>
+                            </div>
+                        </form>
+                    }
+                    //text输入框控件
+                    else if (textFormat.Equals(EnumUtil.GetDesc(TextFormat.Text)))
+                    {
+                        <form method="post" id="@(content.Name)-form" action="@Url.Action("ExtFieldsSync")" name="@(content.Name)-form">
+                            <div class="form-group">
+                                <div class="form-inline">
+                                    <label class="form-control-label">@content.Text</label>&nbsp;&nbsp;
+                                    <button type="button" class="btn btn-outline-primary btn-sm sync " schsid="@ViewBag.Sid" data-eid="@ViewBag.Eid" field-Name="@content.Name" data-text="@content.Text" style="margin-right:5px">同步</button>
+                                </div>
+                                <input class="form-control" type="text" name="@content.DBfield[0]" id="@content.DBfield[0]" value="@(Model[content.DBfield[0].ToLower()] ?? "")" />
+                            </div>
+                        </form>
+                    }
+                    //数字输入框控件
+                    else if (textFormat == EnumUtil.GetDesc(TextFormat.Digital))
+                    {
+                        @if (SchUtils.Canshow2("e2." + content.DBfield[0].ToLower(), schtype))
+                        {
+                            <form method="post" id="@(content.Name)-form" action="@Url.Action("ExtFieldsSync")" name="@(content.Name)-form">
+                                <div class="form-group">
+                                    <div class="form-inline">
+                                        <label class="form-control-label">@content.Text</label>&nbsp;&nbsp;
+                                        <button type="button" class="btn btn-outline-primary btn-sm sync" schsid="@ViewBag.Sid" data-eid="@ViewBag.Eid" field-Name="@content.Name" data-text="@content.Text" style="margin-right:5px">同步</button>
+                                    </div>
+                                    <div class="form-inline">
+                                        <input type="number" min="0" class="form-control" id="@content.DBfield[0]" name="@content.DBfield[0]" value="@(Model[content.DBfield[0].ToLower()] ?? "")">
+                                        <label class="pr-1  form-control-label">@content.Unit</label>
+                                    </div>
+                                </div>
+                            </form>
+
+                        }
+
+                    }
+                    //下拉框控件
+                    else if (textFormat == EnumUtil.GetDesc(TextFormat.ClickOn))
+                    {
+                        <form method="post" id="@(content.Name)-form" action="@Url.Action("ExtFieldsSync")" name="@(content.Name)-form">
+                            <div class="form-group">
+                                <div class="form-inline">
+                                    <label class="form-control-label">@content.Text</label>&nbsp;&nbsp;
+                                    <button type="button" class="btn btn-outline-primary btn-sm sync" schsid="@ViewBag.Sid" data-eid="@ViewBag.Eid" field-Name="@content.Name" data-text="@content.Text" style="margin-right:5px">同步</button>
+                                </div>
+                                <CustomSelect data=@(content.Data) name=@(content.Name) type=@(content.DataType) set-value=@Model[content.DBfield[0]]></CustomSelect>
+                            </div>
+                        </form>
+                    }
+                    //tag标签选择器
+                    else if (textFormat == EnumUtil.GetDesc(TextFormat.TagCheckOn))
+                    {
+                        @if (SchUtils.Canshow2("e2." + content.DBfield[0].ToLower(), schtype))
+                        {
+                            <form method="post" id="@(content.Name)-form" action="@Url.Action("ExtFieldsSync")" name="@(content.Name)-form">
+
+                                <div class="form-group">
+                                    <div class="form-inline">
+                                        <label class="form-control-label">@content.Text</label>&nbsp;&nbsp;
+                                        <button type="button"  class="btn btn-outline-primary btn-sm sync" schsid="@ViewBag.Sid" data-eid="@ViewBag.Eid" field-Name="@content.Name" data-text="@content.Text" style="margin-right:5px">同步</button>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-auto " id="tag-list-@content.TagType">
+                                            <div class="col-md-auto">
+                                                @if (Model[content.DBfield[0]] != null && Model[content.DBfield[0]].ToString() != "\"[]\"" && Model[content.DBfield[0]].ToString() != "\" []\"" && Model[content.DBfield[0]].ToString() != "[]")
+                                                {
+                                                    @foreach (var item in JsonSerializationHelper.JSONToObjectOfExtFieldsSync<List<KeyValueDto<string>>>(Model[content.DBfield[0]].ToString()))
+                                                    {
+                                                        <div class="col-md-auto">
+                                                            <section class="card  float-left ">
+                                                                <div class="card-body text-secondary" data-TagId="@item.Value">
+                                                                    @item.Key
+                                                                </div>
+                                                            </section>
+                                                        </div>
+                                                    }
+                                                }
+                                            </div>
+                                        </div>
+                                        <input name="@content.DBfield[0]" id="@content.DBfield[0]" type="hidden" class=" JsonData" value="@((Model[content.DBfield[0]] == null || Model[content.DBfield[0]].ToString() == "\" []\"" )?"[]" : JsonSerializationHelper.Serialize(Model[content.DBfield[0]]))" />
+                                        <div class="col-md-4">
+                                            <button type="button" class="btn btn-outline-secondary btn-lg createtag" data-input="@content.DBfield[0]" data-tag="@content.TagType">  +&nbsp;&nbsp;立即创建</button>
+                                            <input type="hidden" class="tag-@content.TagType" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        }
+
+                    }
+                    //富文本编辑器
+                    else if (textFormat == EnumUtil.GetDesc(TextFormat.Editor))
+                    {
+                        @if (SchUtils.Canshow2(content.Text, schtype))
+                        {
+                            <form method="post" id="@(content.Name)-form" action="@Url.Action("ExtFieldsSync")" name="@(content.Name)-form">
+                                <div class="form-group">
+                                    <div class="form-inline">
+                                        <label class="form-control-label">@content.Text<i class="fa fa-star"></i></label>&nbsp;&nbsp;
+                                        <button type="button"  class="btn btn-outline-primary btn-sm sync" schsid="@ViewBag.Sid" data-eid="@ViewBag.Eid" field-Name="@content.Name" data-text="@content.Text" style="margin-right:5px">同步</button>
+                                    </div>
+                                    @if (content.DBfield[0] == firstEditorField)
+                                    {
+                                        <div class="border uecontent" id="@content.DBfield[0]" name="@content.DBfield[0]" style="min-height:50px">
+                                            <script id="editor1" type="text/plain" style="width:100%;height:200px;">
+                                            </script>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="border uecontent" name="@content.DBfield[0]" id="@content.DBfield[0]" style="min-height:50px">
+                                            @Html.Raw((Model == null || string.IsNullOrEmpty((string)Model[content.DBfield[0]]) ? "" : (string)Model[content.DBfield[0]]))
+                                        </div>
+                                    }
+                                </div>
+                            </form>
+                        }
+                    }
+                    //视频控件
+                    else if (textFormat == EnumUtil.GetDesc(TextFormat.Video))
+                    {
+                        @if (SchUtils.Canshow2("vdo.type=" + content.VideoType, schtype))
+                        {
+                            <form method="post" id="@(content.Name)-form" action="@Url.Action("ExtFieldsSync")" name="@(content.Name)-form">
+                                <div class="form-group">
+                                    <div class="form-inline">
+                                        <label class="form-control-label">@content.Text</label>&nbsp;&nbsp;                                        
+                                        <button type="button" class="btn btn-outline-primary btn-sm sync" schsid="@ViewBag.Sid" data-eid="@ViewBag.Eid" field-Name="@content.Name" data-text="@content.Text" style="margin-right:5px">同步</button>
+                                    </div>
+                                    <div class="row" id="@(content.Name)@(content.DBfield[0])List">
+                                        @foreach (var item in (Model[content.Name] == null ? new List<string>() : (List<string>)Model[content.Name]))
+                                        {
+                                        <div class="col-md-4">
+                                            <video width="250" controls data-id="@item">
+                                                <source src="@item" type=video/mp4 />
+                                            </video>                                            
+                                            <a class="fa fa-minus-circle deletebutten  text-danger" href="javascript:void(0)" data-input="@(content.Name)@(content.DBfield[0])" data-id="@item"></a>
+                                        </div>
+                                        }
+                                    </div>
+                                    <input type="hidden" id="@(content.Name)@(content.DBfield[0])" name="@(content.DBfield[0])" class=" JsonData" value="@(Model[content.Name] == null ? "[]" : JsonSerializationHelper.Serialize(Model[content.Name]))" />
+                                    <div class="row">
+                                        <div class="col-4">
+                                            <input type="file" id="@(content.Name)" class="c_ignore" name="files" multiple accept="audio/mp4,video/mp4" title="只允许上传Mp4格式的视频!视频大小不能超过40M" />
+                                        </div>
+                                        <div class="col-2">
+                                            <input type="button" class="uploadvideo-btn btn  btn-info btn-block c_ignore" data-video="@(content.Name)" data-input="@(content.DBfield[0])" value="上传" />
+                                        </div>
+                                        <div class="col-6">
+                                            <a href="#" data-toggle="tooltip" data-placement="bottom" title="只允许上传Mp4格式的视频!视频大小不能超过40M">
+                                                <i class="fa fa-question-circle"></i>视频格式
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        }
+                    }
+                    //特色项目组合控件（tag选择器+富文本）
+                    else if (textFormat == EnumUtil.GetDesc(TextFormat.CharacteristicEditor))
+                    {
+                        @if (SchUtils.Canshow2("e2." + content.DBfield[0].ToLower() + ",e2." + content.DBfield[1].ToLower(), schtype))
+                        {
+                            <form method="post" id="@(content.Name)-form" action="@Url.Action("ExtFieldsSync")" name="@(content.Name)-form">
+                                <div class="form-group">
+                                    <div class="form-inline">
+                                        <label class="form-control-label">@content.Text</label>&nbsp;&nbsp;                                        
+                                        <button type="button" class="btn btn-outline-primary btn-sm sync" schsid="@ViewBag.Sid" data-eid="@ViewBag.Eid" field-Name="@content.Name" data-text="@content.Text" style="margin-right:5px">同步</button>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-auto " id="tag-list-@content.TagType">
+                                            @if (Model[content.DBfield[0]] != null && Model[content.DBfield[0]].ToString() != "\" []\"" && Model[content.DBfield[0]].ToString() != "[]")
+                                            {
+
+                                                @foreach (var item in JsonSerializationHelper.JSONToObjectOfExtFieldsSync<List<KeyValueDto<string>>>(Model[content.DBfield[0]].ToString()))
+                                                {
+                                                    <div class="col-md-auto">
+                                                        <section class="card  float-left ">
+                                                            <div class="card-body text-secondary" data-tagid="@item.Value">
+                                                                @item.Key
+                                                            </div>
+                                                        </section>
+                                                    </div>
+                                                }
+                                            }
+                                        </div>
+                                        <input name="@content.DBfield[0]" id="@content.DBfield[0]" type="hidden" class=" JsonData" value="@((Model[content.DBfield[0]] == null ||  Model[content.DBfield[0]].ToString() == "\" []\"") ?"[]" : JsonSerializationHelper.Serialize(Model[content.DBfield[0]]))" />
+                                        <div class="col-md-4">
+                                            <button type="button" class="btn btn-outline-secondary btn-lg createtag" data-input="@content.DBfield[0]" data-tag="@content.TagType">  +&nbsp;&nbsp;立即创建</button>
+                                            <input type="hidden" class="tag-@content.TagType" />
+                                        </div>
+                                    </div>
+                                    <br />
+                                    @if (content.DBfield[1] == firstEditorField)
+                                    {
+                                        <div class="border uecontent" id="@content.DBfield[0]" name="@content.DBfield[0]" style="min-height:50px">
+                                            <script id="editor1" type="text/plain" style="width:100%;height:200px;">
+                                            </script>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="border uecontent" name="@content.DBfield[1]" id="@content.DBfield[1]" style="min-height:50px">
+                                            @Html.Raw((Model == null || string.IsNullOrEmpty((string)Model[content.DBfield[1]]) ? "" : (string)Model[content.DBfield[1]]))
+                                        </div>
+                                    }
+                                </div>
+                            </form>
+                        }
+
+                    }
+                    //校长风采组合控件（富文本+视频上传）
+                    else if (textFormat == EnumUtil.GetDesc(TextFormat.EditorVideo))
+                    {
+                        <form method="post" id="@(content.Name)-form" action="@Url.Action("ExtFieldsSync")" name="@(content.Name)-form">
+                            <div class="form-group" ac="1">
+                                <div class="form-inline">
+                                    <label class="form-control-label">@content.Text</label>&nbsp;&nbsp;
+                                    <button type="button" class="btn btn-outline-primary btn-sm sync" schsid="@ViewBag.Sid" data-eid="@ViewBag.Eid" field-Name="@content.Name" data-text="@content.Text" style="margin-right:5px">同步</button>
+                                </div>
+                                @if (content.DBfield[0] == firstEditorField)
+                                {
+                                    <div class="border uecontent rich" id="@content.DBfield[0]" name="@content.DBfield[0]" placeholder="(提示:请录入图片和文字材料)" style="min-height:50px">
+                                        <script id="editorPrincipal" type="text/template" style="width:100%;height:200px;">
+                                        </script>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="border uecontent" name="@content.DBfield[0]" id="@content.DBfield[0]" style="min-height:50px">
+                                        @Html.Raw((Model == null || string.IsNullOrEmpty((string)Model[content.DBfield[0]]) ? "" : (string)Model[content.DBfield[0]]))
+                                    </div>
+                                }
+                                <br />
+                                <div class="row" id="@(content.Name)@content.DBfield[1]List">
+                                    @foreach (var item in (Model[content.DBfield[1]] == null ? new List<string>() : (List<string>)Model[content.DBfield[1]]))
+                                    {
+                                        <div class="col-md-4">
+                                            <video width="250" controls data-id="@item">
+                                                <source src="@item" type=video/mp4 />
+                                            </video>
+                                            <a class="fa fa-minus-circle deletebutten  text-danger" href="javascript:void(0)" data-input="@(content.Name)@(content.DBfield[1])" data-id="@item"></a>
+                                        </div>
+                                    }
+                                </div>
+                                <input type="hidden" id="@(content.Name)@(content.DBfield[1])" name="@(content.DBfield[1])" class=" JsonData" value="@(Model[content.DBfield[1]] == null ? "[]" : JsonSerializationHelper.Serialize(Model[content.DBfield[1]]))" />
+                                <div class="row">
+                                    <div class="col-4">
+                                        <input type="file" id="@(content.Name)" class="c_ignore" name="files" multiple accept="audio/mp4,video/mp4" title="只允许上传Mp4格式的视频!视频大小不能超过40M" />
+                                    </div>
+                                    <div class="col-2">
+                                        <input type="button" class="uploadvideo-btn btn  btn-info btn-block c_ignore" data-video="@(content.Name)" data-input="@(content.DBfield[1])" value="上传" />
+                                    </div>
+                                    <div class="col-6">
+                                        <a href="#" data-toggle="tooltip" data-placement="bottom" title="只允许上传Mp4格式的视频!视频大小不能超过40M">
+                                            <i class="fa fa-question-circle"></i>视频格式
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    }
+                    //时间控件
+                    else if (textFormat == EnumUtil.GetDesc(TextFormat.DateTime))
+                    {
+                        <form method="post" id="@(content.Name)-form" action="@Url.Action("ExtFieldsSync")" name="@(content.Name)-form">
+                            <div class="form-group">
+                                <div class="form-inline">
+                                    <label class="form-control-label">@content.Text</label>&nbsp;&nbsp;
+                                    <button type="button" class="btn btn-outline-primary btn-sm sync" schsid="@ViewBag.Sid" data-eid="@ViewBag.Eid" field-Name="@content.Name" data-text="@content.Text" style="margin-right:5px">同步</button>
+                                </div>
+                                <div class="form-inline">
+                                    <div style="position:relative">
+                                        <input type="text"  class="form-control datetimepicker4" id="@content.DBfield[0]" name="@content.DBfield[0]" value="@(Model[content.DBfield[0].ToLower()] ?? "")">
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    }
+                    //开放日及行事历组合控件（文字+时间）
+                    else if (textFormat == EnumUtil.GetDesc(TextFormat.TextDateTime))
+                    {
+                        <form method="post" id="@(content.Name)-form" action="@Url.Action("ExtFieldsSync")" name="@(content.Name)-form">
+                            
+                            <div class="form-group">
+                                @if (SchUtils.Canshow2("e2." + content.DBfield[0].ToLower(), schtype))
+                                {
+                                    @*有权限则显示*@
+                                    <div class="form-inline">
+                                        <label class="form-control-label">@content.Text</label>&nbsp;&nbsp;
+                                        <button type="button" class="btn btn-outline-primary btn-sm sync" schsid="@ViewBag.Sid" data-eid="@ViewBag.Eid" field-Name="@content.Name" data-text="@content.Text" style="margin-right:5px">同步</button>
+                                    </div>
+                                    <div class="row" id="@(content.Name)Content">
+                                        @if (Model[content.DBfield[0]] != null && Model[content.DBfield[0]].ToString() != "[]")
+                                        {
+                                            @foreach (var item in JsonSerializationHelper.JSONToObjectOfExtFieldsSync<List<KeyValueDto<string>>>(Model[content.DBfield[0]].ToString()))
+                                            {
+                                                <div class="form-group">
+                                                    <div class="col-md-5">
+                                                        <input class="form-control c_ignore" id="@(content.DBfield[0])" name="@(content.DBfield[0])1" placeholder="请输入@(content.Text)的名字" value="@item.Key">
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <div class="col-md-4 form-inline">
+                                                            <div style="position:relative">
+                                                                <input type="text" value="@item.Value" placeholder="请输入时间" name="@(content.DBfield[0])2" class="form-control datetimepicker4 c_ignore">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <a href="javascript:void(0)" onclick="DelLine(this)">
+                                                            <i class="fa fa-times-circle text-danger"></i>
+                                                        </a>
+                                                    </div>
+                                                    <br>
+                                                    <br>
+                                                    <hr style="width:850PX;height:20px;">
+                                                </div>
+                                            }
+                                        }
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6 form-inline">                                           
+                                            <button type="button" data-input="@(content.Name)Content|@(content.DBfield[0])1|@(content.DBfield[0])2|@(content.Text)" class="btn btn-info btn-add-textdatetime">添加</button>
+                                        </div>
+                                    </div>
+                                }
+                                @*否则显示该字段跟学校无关*@
+                                else
+                                {
+
+                                    <div class="form-inline">
+                                        <label class="form-control-label">@content.Text</label>&nbsp; &nbsp;
+                                    </div>
+                                    <div class="form-inline">
+                                        <span style="color:red;display:block;">该字段与所选学校类型无关</span>
+                                    </div>
+                                        
+                                        }
+                                    </div>
+                         </form >
+                    }
+            }
+        </div>
+    }
+        </div>
+    </div>    
+</div>
+
+<pre style="display:none;" id="firstEditor">@Html.Raw(Model == null||Model[firstEditorField]==null ? "" : Model[firstEditorField].ToString())</pre>
+
+@section Scripts{
+    <script type="text/javascript" src="https://map.qq.com/api/js?v=2.exp&key=@(qqMapKey)&libraries=convertor"></script>
+    <script src="https://cdn.bootcss.com/linq.js/2.2.0.2/jquery.linq.min.js"></script>
+    <script src="https://cdn.bootcss.com/moment.js/2.18.1/moment-with-locales.min.js"></script>
+    <script src="https://cdn.bootcss.com/bootstrap-datetimepicker/4.17.47/js/bootstrap-datetimepicker.min.js"></script>
+    <script src="https://cdn.bootcss.com/bootstrap-tagsinput/0.8.0/bootstrap-tagsinput.min.js"></script>
+    @*editor 富文本编辑器*@
+    <script type="text/javascript" charset="utf-8" src="~/ueditor/ueditor.config.nostyle4cccv1.js"></script>
+    <script type="text/javascript" charset="utf-8" src="~/ueditor/editor_api.js"></script>
+    @*select2*@
+    <script src="https://cdn.bootcss.com/select2/4.0.6-rc.1/js/select2.min.js"></script>
+    <script src="https://cdn.bootcss.com/select2/4.0.6-rc.1/js/i18n/zh-CN.js"></script>
+    @*linq js*@
+    <script src="https://cdn.bootcss.com/linq.js/2.2.0.2/linq.min.js"></script>
+    @*jquery-validation*@
+    <environment include="Development">
+        <script src="https://cdn.bootcss.com/jquery-validate/1.19.0/jquery.validate.js"></script>
+        <script src="https://cdn.bootcss.com/jquery-validate/1.19.0/localization/messages_zh.js"></script>
+        <script src="https://cdn.bootcss.com/jquery.form/4.2.2/jquery.form.js"></script>
+    </environment>
+    <environment exclude="Development">
+        <script src="https://cdn.bootcss.com/jquery-validate/1.19.0/jquery.validate.min.js"></script>
+        <script src="https://cdn.bootcss.com/jquery-validate/1.19.0/localization/messages_zh.min.js"></script>
+        <script src="https://cdn.bootcss.com/jquery.form/4.2.2/jquery.form.min.js"></script>
+    </environment>
+    <script src="~/js/jquery-validate.bootstrap-tooltip.min.js"></script>
+    <script src="~/assets/js/GetFormJson.js"></script>
+    <script src="~/assets/js/Completion.js"></script>
+    <script src="~/js/schoolDataEnter.js?@(DateTime.Now.Ticks)"></script>
+    <script src="~/js/jq.postJSON.js"></script>
+    <script type="text/javascript">
+        var showAch = false;
+        var counterPartSelect = 0;
+        var achFn = {};
+
+         //ue编辑器
+        var ue = UE.getEditor('editor1', {
+            configPath: 'ueditor/config.json',
+            initialContent: "",
+            theme: 'tt',
+            elementPathEnabled: !1,
+            imageScaleEnabled: !1,
+            imagePopup: !1,
+            tableDragable: !1,
+            wordCount: !1,
+            autoHeight: false,
+            toolbars: [["source", "h2", "bold", "underline", "italic", "strikethrough", "forecolor", "blockquote", "horizontal", "justifyleft", "justifycenter", "justifyright", "link", "unlink", "|", "insertimage", "|", "selectall", "removeformat", "undo", "redo"]],
+            removeFormatTags: "b,big,code,del,dfn,em,font,i,ins,kbd,q,samp,small,span,strike,strong,sub,sup,tt,u,var,blockquote,h1,h2,h3,h4,h5,h6",
+            autotypeset:
+            {
+                mergeEmptyline: !0,
+                removeClass: !1,
+                removeEmptyline: !0,
+                pasteFilter: !0,
+                clearFontSize: !0,
+                clearFontFamily: !0
+            }
+        });
+
+        ue.ready(function () {
+            jQuery(this.container).click(function (e) {
+                e.stopPropagation()
+            });
+            ue.execCommand('serverparam', 'contentID', '@(ViewBag.Sid)');
+            ue.execCommand('serverparam', 'contentType', 'school_v3');
+            ue.execCommand('cleardoc');
+            ue.execCommand("insertHtml", '');
+            ue.setContent(jQuery('#firstEditor').html());
+        });
+        jQuery('.uecontent').click(function (e) {
+            e.stopPropagation();
+            var jQuerytarget = jQuery(this);
+            //解决多个ueditor切换后工具栏和输入框分离
+            jQuery('.edui-editor-toolbarbox').attr('style', '');
+            var content = jQuerytarget.html();
+            var currentParnet = ue.container.parentNode.parentNode;
+            var currentContent = ue.getContent();
+            jQuerytarget.html('');
+            jQuerytarget.append(ue.container.parentNode);
+            ue.reset();
+            setTimeout(function () {
+                ue.setContent(content);
+            }, 200)
+            jQuery(currentParnet).html(currentContent);
+            return false;
+        });
+        (function (b) {
+            ue.ready(function () {
+                if (b) return;
+                b = true, bind_toolbar_event();
+            });
+            function bind_toolbar_event() {
+                //ue 清除格式事件
+                jQuery('.edui-editor').on('click', '.edui-for-removeformat', function () {
+                    ue.setContent(rmStyle(ue.getContent()));
+                    console.log('ueeditor rm style');
+                });
+            }
+        })();
+
+        jQuery(function () {
+
+
+
+            jQuery('@Context.GetCurrQyxStr()').show();
+
+               //省市区赋值
+            @if (SchoolExtFieldSyncConfigDto.Fields.Count(p => p.TextFormat == "reginclickon") > 0)
+            {
+                    <Text>
+                     jQuery("#province").val(@(Model["province"]));
+                     jQuery("#city").val(@(Model["city"]));
+                     jQuery("#area").val(@(Model["area"]));
+                    </Text>
+            }
+
+            //日历
+            jQuery('.datetimepicker4').datetimepicker({
+
+                format: 'YYYY-MM-DD',
+                locale: moment.locale('zh-cn'),
+            }).on('changeDate', function (ev) { console.log("111111") });
+            jQuery(".datetimepicker4-year").datetimepicker({
+
+                format: 'YYYY',
+                locale: moment.locale('zh-cn'),
+            }).on('changeDate', function (ev) { console.log("111111") });
+
+
+
+            //同步学部信息
+            jQuery(".sync").on("click", function () {
+                var text = jQuery(this).attr("data-text")
+                var $button = jQuery(this);
+                showConfirm("是否要同步" + text + "信息？", function () {
+                     $button.nextAll(".badge").remove();
+
+                //获取同步下的内容
+               //学校id
+                var sid = jQuery($button).attr("schsid");
+                //获取分部id
+                var eid = jQuery($button).attr("data-eid");
+                //获取字段的名字
+                var name = jQuery($button).attr("field-Name");
+                //字段的中文信息
+                var text = jQuery($button).attr("data-text")
+                    var jsonObj = {};
+                    jsonObj["sid"] = sid;
+                    jsonObj["eid"] = eid;
+                    jsonObj["name"] = name;
+                //获取ue编辑器的内容
+                    var ueCount = jQuery("#" + name + "-form  .uecontent").length;
+                    if (ueCount > 0) {
+                        var c_name = jQuery(ue.container).parents('div.uecontent').get(0).getAttribute('name');
+                        jQuery("#" + name + "-form  "+".uecontent").each(function () {
+                        var it = jQuery(this), n = it.attr('name');
+                        var value = n == c_name ? ue.getContent() : it.html();
+                            jsonObj[n] = value;
+                        });
+                    }
+             Loading("正在同步" + text + "信息！");
+             jQuery("#" + name + "-form").ajaxSubmit({
+                        data: jsonObj,
+                        success: function (data) {
+                            if (data.result.state==200) {
+                                //取消loading
+                                CloseLoading();
+                                ShowAlert("同步" + text + "信息成功！");
+                                //移除提示
+                                $button.nextAll(".badge").remove();
+                                $button.after('<span class="badge badge-success"><i class="fa fa-check"></i></span>');
+
+                            } else {
+                                //取消loading
+                                CloseLoading();
+                                ShowAlert(data.result.message || '操作失败');
+                                $button.nextAll(".badge").remove();
+                                $button.after('<span class="badge badge-danger"><i class="fa fa-times"></i></span>');
+                            }
+                        }
+                    });
+                });
+            });
+
+
+
+            //腾讯地图
+            //var center = new qq.maps.LatLng(39.90, 116.38);
+            var md = jQuery('#map').data();
+            var center = new qq.maps.LatLng(md.latitude, md.longitude);
+            var map = new qq.maps.Map(document.getElementById("map"), {
+                center: center, zoom: 16
+            });
+            var marker = new qq.maps.Marker({ map: map, position: center });
+            //调用地址解析类
+            var geocoder = new qq.maps.Geocoder({
+                complete: function (result) {
+                    marker.setMap(null);
+                    map.setCenter(result.detail.location);
+                    marker = new qq.maps.Marker({
+                        map: map,
+                        position: result.detail.location
+                    });
+                }
+            });
+            var listener = qq.maps.event.addListener(map, 'click', function (event) {
+                
+                //jQuery('#map').siblings('.latitude').text(event.latLng.getLat());
+                //jQuery('#map').siblings('.longitude').text(event.latLng.getLng());
+                jQuery('input[name="Latitude"]').val(event.latLng.getLat());
+                jQuery('input[name="Longitude"]').val(event.latLng.getLng());
+                marker.setMap(null);
+                marker = new qq.maps.Marker({
+                    map: map, position: new qq.maps.LatLng(event.latLng.getLat(), event.latLng.getLng())
+
+                });
+            });
+
+            //添加标签
+            jQuery(".createtag").on("click", function () {
+                var tagId = jQuery(this).attr("data-tag");
+                var input = jQuery(this).attr("data-input");
+
+                var value = jQuery("#" + input).val();
+                var json = { "tagId": tagId, "input": input, "selectIds": value };
+                alert('json' + json);
+                jQuery.get("@Url.Action("TagPanel", "Tag")", json, function (data) {
+                    jQuery('#gameContainer').html(data);
+                    //初始化时加载标签页面
+                    var json = JSON.parse(jQuery("#hideTags").val());
+                    ShowTagContent(json);
+                    jQuery('#gameModal').modal('show');
+                });
+            })
+            //提示框
+            jQuery('[data-toggle="tooltip"]').tooltip();
+
+
+            //城市联动
+            jQuery("#province").on("change", function () {
+                var value = jQuery(this).val();
+                var $select = jQuery("#city");
+                SetCityData(value, $select);
+                $select.change();
+            });
+            jQuery("#city").on("change", function () {
+                var value = jQuery(this).val();
+                var $select = jQuery("#area");
+                SetCityData(value, $select);
+            });
+            function SetCityData(cityId, $select) {
+                $select.html('<option value="0">所有</option>');
+                if (cityId == 0) {
+                    return;
+                }
+                jQuery.getJSON("@Url.Action("ChangeCityData")", { parentId: cityId }, function (data) {
+                    jQuery.each(data, function (index, item) {
+                        $select.append('<option value="' + item.value + '">' + item.text + '</option>')
+                    });
+                    $select.val("0");
+                });
+            }
+            jQuery("#locality select").on("change", function () {
+                
+                var cityData = "";
+                if (jQuery("#Province").val() != "0") {
+                    cityData += jQuery("#Province option:selected").html() +"省";
+                    if (jQuery("#City").val() != "0") {
+                        cityData += jQuery("#City option:selected").html() + "市";
+                        if (jQuery("#Area").val() != "0") {
+                            cityData += jQuery("#Area option:selected").html() + "区政府";
+                        }
+                    }
+                }
+                if (cityData) {
+                    geocoder.getLocation(cityData);
+                }
+
+            });
+
+        });
+
+        function renderHtml_videos(items) {
+            var html = '';
+            jQuery.each(items, function (_, item) {
+                html += '<div class="col-md-4"> ';
+                html += '   <video width="250" controls data-id="' + item.key + '"> ';
+                html += '       <source src="' + item.value + '" type="video/mp4" />';
+                html += '   </video> ';
+                html += '   <a class="delrankbtn fa fa-minus-circle deletebutten text-danger" data-id="' + item.key + '"></a>';
+                html += '</div>';
+            });
+            var div = jQuery(html).appendTo('#div_vdo');
+            //只播放一个视频
+            div.find('video').on('playing', function () {
+                var self = this;
+                jQuery('video').each(function () {
+                    self !== this && this.pause();
+                });
+            });
+        }
+
+        function tryv(func, defv) {
+            try { return func(); }
+            catch { return defv; }
+        }
+
+        //删除分数线
+        function DelLine(obj) {
+            jQuery(obj).parent().parent().remove();
+        }
+
+       
+         window.onbeforeunload = undefined;
+
+    </script>
+}

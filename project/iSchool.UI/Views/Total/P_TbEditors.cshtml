@@ -1,0 +1,69 @@
+﻿@using iSchool.Application.Service.Totals;
+@using iSchool.Infrastructure.Dapper;
+@model PagedList<PageEditorsQueryResult>
+@{
+
+}
+
+@*编辑人员列表*@
+<div class="row">
+    <div class="col-sm-12">
+        <table id="tb_editors" class="table table-striped table-bordered dataTable no-footer" role="grid" aria-describedby="bootstrap-data-table-export_info">
+            <thead>
+                <tr role="row">
+                    <th class="sorting @*sorting_asc*@" orderby="Username" @*@*Account orderby_sc="desc"*@ tabindex="0" aria-controls="tb_editors" rowspan="1" colspan="1" aria-label="Name: activate to sort column descending" style="width: 100px;">
+                        账号
+                    </th>
+                    <th class="sorting" orderby="Username" tabindex="0" aria-controls="tb_editors" rowspan="1" colspan="1" aria-label="Position: activate to sort column ascending" style="width: 100px;">
+                        昵称
+                    </th>
+                    <th class="sorting sorting_desc" orderby="SchoolEntryCount" orderby_sc="desc" tabindex="0" aria-controls="tb_editors" rowspan="1" colspan="1" aria-label="Office: activate to sort column ascending" style="width: 100px;">
+                        录入数
+                    </th>
+                    <th class="sorting" orderby="SchoolExtEntryCount" orderby_sc="desc" tabindex="0" aria-controls="tb_editors" rowspan="1" colspan="1" aria-label="Office: activate to sort column ascending" style="width: 150px;">
+                        录入数(学部)
+                    </th>
+                    <th class="sorting" orderby="AuditSuccessCount" orderby_sc="desc" tabindex="0" aria-controls="tb_editors" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" style="width: 100px;">
+                        已发布
+                    </th>
+                    <th class="sorting" orderby="UnAuditCount" orderby_sc="desc" tabindex="0" aria-controls="tb_editors" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" style="width: 100px;">
+                        待审核
+                    </th>
+                    <th class="sorting" orderby="AuditFailCount" orderby_sc="desc" tabindex="0" aria-controls="tb_editors" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" style="width: 100px;">
+                        需修改
+                    </th>
+                    <th class="" tabindex="0" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" style="width: 100px;">
+                        操作
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.CurrentPageItems)
+                {
+                <tr role="row" class="odd">
+                    <td>@(item.Account)</td>
+                    <td>@(item.Username)</td>
+                    <td>@(item.SchoolEntryCount)</td>
+                    <td>@(item.SchoolExtEntryCount)</td>
+                    <td>@(item.AuditSuccessCount)</td>
+                    <td>@(item.UnAuditCount)</td>
+                    <td>@(item.AuditFailCount)</td>
+                    <td><a href="/total/UserWorkInfo?uid=@(item.UserId)&type=1" class="text-info">详细  </a></td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+<div class="row">
+    <div class="col-sm-12 col-md-3">
+        <div class="dataTables_info" id="bootstrap-data-table-export_info" role="status" aria-live="polite">
+            总共 @(Model.TotalItemCount) 条
+        </div>
+    </div>
+    <div class="col-sm-12 col-md-9">
+        <div class="dataTables_paginate paging_simple_numbers" id="bootstrap-data-table-export_paginate">
+            @{ await Html.RenderPartialAsync("Pager1", Model); }
+        </div>
+    </div>
+</div>

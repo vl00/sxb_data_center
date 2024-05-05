@@ -1,0 +1,155 @@
+﻿@using iSchool.Application.Service.Audit;
+@using iSchool.Infrastructure;
+@model iSchool.Infrastructure.Dapper.PagedList<iSchool.Application.Service.Audit.DpwdRecorrQueryResult>
+@{
+    ViewBag.Title = "删除学部点评重关联";
+
+    var req = ViewBag.req is DpwdRecorrQuery _req ? _req : new DpwdRecorrQuery();
+}
+@section css
+{
+    <link href="@(ViewBag.StaticFile)/bootstrap-datetimepicker/4.17.47/css/bootstrap-datetimepicker.min.css" rel="stylesheet">
+    <style type="text/css">
+        
+    </style>
+}
+
+<div class="card">
+    <div class="card-body">
+        <div class="row form-group">
+            <div class="col-md-4">
+                <div class="form-inline">
+                    <select f-name="sty" class="form-control">
+                        <option value="">所有</option>
+                        @Html.Raw($"<option value=\"1\" {(req.Sty == 1 ? "selected" : "")}>学校ID</option>")
+                        @Html.Raw($"<option value=\"2\" {(req.Sty == 2 ? "selected" : "")}>学部ID</option>")
+                    </select>
+                    &nbsp;&nbsp;
+                    <input type="text" placeholder="请输入" class="form-control" f-name="txt" data-provide="typeahead" autocomplete="off" value="@(req.Txt)" />
+                </div>                
+            </div>
+            <div class="col-md-5">
+                <div class="row">
+                    <div class="col-md-3 form-inline">删除时间</div>
+                    <div class="col-md-4">
+                        <input type="text" value="@(req.DelTime1?.ToString("yyyy-MM-dd"))" class="form-control datetimepicker4" f-name="deltime1">
+                    </div>
+                    <label class="form-control-label">-</label>
+                    <div class="col-md-4">
+                        <input type="text" value="@(req.DelTime2?.ToString("yyyy-MM-dd"))" class="form-control datetimepicker4" f-name="deltime2">
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <button id="btn_search" class="btn btn-primary btn-sm" type="button">筛选</button>
+                &nbsp;&nbsp;&nbsp;&nbsp;
+                @if (Context.HasCtrlActQyx("Audit", "ExportDpwdRecorr"))
+                {
+                <button id="btn_export" class="btn btn-primary btn-sm" type="button">导出</button>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+<div class="card">
+    <div class="card-body">
+        <div id="div_tb" class="row">
+            <div class="col-12">
+                <table class="table table-striped table-bordered dataTable no-footer" role="grid" aria-describedby="bootstrap-data-table-export_info">
+                    <thead>
+                        <tr role="row">
+                            <th class="" orderby="Sid" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Name: activate to sort column" style="width: 100px;">
+                                学校ID
+                            </th>
+                            <th class="" orderby="Eid" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Position: activate to sort column" style="width: 100px;">
+                                学部ID
+                            </th>
+                            <th class="" orderby="" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Office: activate to sort column" style="width: 100px;">
+                                学部全称
+                            </th>
+                            <th class="" orderby="Dwid" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Office: activate to sort column" style="width: 100px;">
+                                关联点评ID
+                            </th>
+                            <th class="" orderby="Content" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column" style="width: 100px;">
+                                点评内容
+                            </th>
+                            <th class="" orderby="Dtype" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column" style="width: 100px;">
+                                类型
+                            </th>
+                            <th class="" orderby="DelTime" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column" style="width: 100px;">
+                                删除时间
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.CurrentPageItems)
+                        {
+                            <tr role="row" class="odd" style="max-height:50px;">
+                                <td>@(item.Sid)</td>
+                                <td>@(item.Eid)</td>
+                                <td>@(item.Sname + (string.IsNullOrEmpty(item.Ename) ? "" : "-" + item.Ename))</td>
+                                <td>@(item.Dwid)</td>
+                                <td><a title="@(item.Content)">@(item.Content.Length > 30 ? item.Content.Substring(0, 27) + "..." : item.Content)</a></td>
+                                <td>@(item.Dtype == 1 ? "点评" : item.Dtype == 2 ? "问答" : "")</td>
+                                <td>@(item.DelTime.ToString("yyyy-MM-dd HH:mm:ss"))</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div id="div_tb_pager" class="row">
+            <div class="col-sm-12 col-md-3">
+                <div class="dataTables_info" id="bootstrap-data-table-export_info" role="status" aria-live="polite">
+                    总共 @(Model.TotalItemCount) 条
+                </div>
+            </div>
+            <div class="col-sm-12 col-md-9">
+                <div class="dataTables_paginate paging_simple_numbers" id="bootstrap-data-table-export_paginate">
+                    @{ await Html.RenderPartialAsync("Pager1", Model); }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+    <script src="@(ViewBag.StaticFile)/moment.js/2.18.1/moment-with-locales.min.js"></script>
+    <script src="@(ViewBag.StaticFile)/bootstrap-datetimepicker/4.17.47/js/bootstrap-datetimepicker.min.js"></script>
+    <script src="~/js/Liejia.js"></script>
+    <script type="text/javascript">
+        jQuery(function () {
+            jQuery('.datetimepicker4').datetimepicker({
+                format: 'YYYY-MM-DD',
+                locale: moment.locale('zh-cn')
+            });
+
+            function get_search_o (o) {
+                o = o || {};
+                jQuery('[f-name]').each(function () {
+                    var f = jQuery(this), v = f.val();
+                    if (v) o[f.attr('f-name')] = v;
+                });
+                return o;
+            }
+
+            jQuery('#btn_search').on('click', function () {
+                var o = get_search_o({ pageIndex: 1, pageSize: 10 });
+                window.location.href = '/audit/DpwdRecorrelate?' + jQuery.param(o);
+            });
+            jQuery('#btn_export').on('click', function () {
+                var o = get_search_o({ pageIndex: -1, pageSize: -1 });
+                window.location.href = '/audit/ExportDpwdRecorr?' + jQuery.param(o);
+            });
+
+            (function (o) {
+                LiejiaJS.slimPager(jQuery('#div_tb_pager'), function (pi, reinit) {
+                    o.pageIndex = pi;
+                    o = get_search_o(o);
+                    window.location.href = '/audit/DpwdRecorrelate?' + jQuery.param(o);
+                });
+            })({ pageSize:'@req.PageSize' });
+        });
+    </script>
+}
+

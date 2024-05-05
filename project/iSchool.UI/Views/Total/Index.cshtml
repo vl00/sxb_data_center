@@ -1,0 +1,353 @@
+﻿@{
+    ViewData["Title"] = "人员管理";
+}
+
+@section css{
+    <link rel="stylesheet" href="~/lib/datatables.net-bs4/css/dataTables.bootstrap4.min.css" />
+    <link href="@(ViewBag.StaticFile)/bootstrap-datetimepicker/4.17.47/css/bootstrap-datetimepicker.min.css" rel="stylesheet">
+    <style>
+        .ifa {
+            font-size: 25px;
+        }
+    </style>
+}
+
+@*数据概况*@
+<div class="col-sm-12">
+    <div class="card">
+        <div class="card-header">
+            <h6>
+                数据概况<br />
+                <small>显示当前系统中数据情况看板，每天3：00更新</small>
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="col-md-6  col-lg-3">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="stat-widget-one">
+                            <div class="stat-icon dib">
+                                <i class="fa  fa-user text-primary border-primary ifa"></i>
+                            </div>
+                            <div class="stat-content dib">
+                                <div class="stat-text">编辑人数</div>
+                                <div class="stat-digit">@(ViewBag.TotalDataboard.EditorCount)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6  col-lg-3">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="stat-widget-one">
+                            <div class="stat-icon dib">
+                                <i class="ti-user text-success border-success"></i>
+                            </div>
+                            <div class="stat-content dib">
+                                <div class="stat-text">审核人数</div>
+                                <div class="stat-digit">@(ViewBag.TotalDataboard.AuditorCount)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6  col-lg-3">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="stat-widget-one">
+                            <div class="stat-icon dib">
+                                <i class="fa fa-laptop text-warning border-warning ifa"></i>
+                            </div>
+                            <div class="stat-content dib">
+                                <div class="stat-text">总待审核数</div>
+                                <div class="stat-digit">@(ViewBag.TotalDataboard.UnAuditCount)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6  col-lg-3">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="stat-widget-one">
+                            <div class="stat-icon dib">
+                                <i class="ti-slice  text-info border-info"></i>
+                            </div>
+                            <div class="stat-content dib">
+                                <div class="stat-text">总需修改数</div>
+                                <div class="stat-digit">@(ViewBag.TotalDataboard.AuditFailedCount)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6  col-lg-3">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="stat-widget-one">
+                            <div class="stat-icon dib">
+                                <i class="ti-pencil-alt2 text-danger border-danger"></i>
+                            </div>
+                            <div class="stat-content dib">
+                                <div class="stat-text">总录入学校数</div>
+                                <div class="stat-digit">@(ViewBag.TotalDataboard.SchoolCount)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6  col-lg-3">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="stat-widget-one">
+                            <div class="stat-icon dib">
+                                <i class="ifa fa fa-pencil text-warning border-warning "></i>
+                            </div>
+                            <div class="stat-content dib">
+                                <div class="stat-text">总录入学部数</div>
+                                <div class="stat-digit">@(ViewBag.TotalDataboard.SchoolExtCount)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6  col-lg-3">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="stat-widget-one">
+                            <div class="stat-icon dib">
+                                <i class="ifa ti-upload ifa" style="color:#63c2de;border-color:#63c2de"></i>
+                            </div>
+                            <div class="stat-content dib">
+                                <div class="stat-text">总已发布学校数</div>
+                                <div class="stat-digit">@(ViewBag.TotalDataboard.AuditSuccessCount)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6  col-lg-3">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="stat-widget-one">
+                            <div class="stat-icon dib">
+                                <i class="ifa fa fa-cloud-upload text-primary border-primary "></i>
+                            </div>
+                            <div class="stat-content dib">
+                                <div class="stat-text">总已发布学部数</div>
+                                <div class="stat-digit">@(ViewBag.TotalDataboard.SchoolExtAuditSuccessCount)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="col-sm-12">
+    <div class="card">
+        <div class="card-header">
+            <h6>
+                人员管理<br />
+                <small>显示当前系统中的人员工作情况，每天3：00更新</small>
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="custom-tab">
+                <nav>
+                    <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                        <a class="nav-item nav-link active show" id="custom-nav-contact-tab" data-toggle="tab" href="#custom-nav-contact" role="tab" aria-controls="custom-nav-contact" aria-selected="true">编辑管理</a>
+                        <a class="nav-item nav-link " id="custom-nav-home-tab" data-toggle="tab" href="#custom-nav-home" role="tab" aria-controls="custom-nav-home" aria-selected="false">审核管理</a>
+                    </div>
+                </nav>
+                <div class="tab-content pl-3 pt-2" id="nav-tabContent">
+                    @*第一个tab*@
+                    <div class="tab-pane fade active show" id="custom-nav-contact" role="tabpanel" aria-labelledby="custom-nav-contact-tab">
+                        <br />
+                        <h6 class="text-secondary">编辑人员列表</h6>
+                        <br />
+                        @*编辑人员列表*@
+                        <div id="div_tb_editors">@{ await Html.RenderPartialAsync("P_TbEditors", (object)ViewBag.Editors); }</div>
+                        <br />
+                        <br />
+                        <h6 class="text-secondary">
+                            录入数据记录<br />
+                            <small>显示当前系统中的人员工作情况，每天3：00更新</small>
+                        </h6>
+                        <br />
+                        @*录入数据记录*@
+                        <div id="div_search_schooledit" class="row">
+                            <div class="col-md-3">
+                                <label class=" form-control-label">记录时间</label>
+                                <input type="text" value="" class="form-control datetimepicker4" prop="Date">
+                            </div>
+                            <div class="col-md-9 text-right" style="padding-top:35px">
+                                <button class="btn btn-danger btn-sm btn2c" type="reset">取消筛选</button>
+                                &nbsp;&nbsp;
+                                <button class="btn btn-primary btn-sm btn2" type="button">筛选</button>
+                            </div>
+                        </div>
+                        <br />
+                        <div id="div_tb_schooledit">@{ await Html.RenderPartialAsync("P_TbSchoolEdit", (object)ViewBag.SchoolEdit); }</div>
+                    </div>
+                    @*第二个tab*@
+                    <div class="tab-pane fade" id="custom-nav-home" role="tabpanel" aria-labelledby="custom-nav-home-tab">
+                        @*审核管理内容*@
+                        <br />
+                        <h6 class="text-secondary">审核人员列表</h6>
+                        <br />
+                        @*审核人员列表*@
+                        <div id="div_tb_auditors">@{ await Html.RenderPartialAsync("P_TbAuditors", (object)ViewBag.Auditors); }</div>
+                        @*分割线*@
+                        <br />
+                        <br />
+                        <h6 class="text-secondary">
+                            审核数据记录<br />
+                            <small>显示当前系统中的数据审核情况，每天3：00更新</small>
+                        </h6>
+                        <br />
+                        @*审核数据记录*@
+                        <div id="div_search_schoolaudit" class="row">
+                            <div class="col-md-3">
+                                <label class=" form-control-label">记录时间</label>
+                                <input type="text" value="" class="form-control datetimepicker4" prop="Date">
+                            </div>
+                            <div class="col-md-9 text-right" style="padding-top:35px">
+                                <button class="btn btn-danger btn-sm btn2c" type="reset">取消筛选</button>
+                                &nbsp;&nbsp;
+                                <button class="btn btn-primary btn-sm btn2" type="button">筛选</button>
+                            </div>
+                        </div>
+                        <br />
+                        <div id="div_tb_schoolaudit">@{ await Html.RenderPartialAsync("P_TbSchoolAudit", (object)ViewBag.SchoolAudit); }</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+    <script src="@(ViewBag.StaticFile)/moment.js/2.18.1/moment-with-locales.min.js"></script>
+    <script src="@(ViewBag.StaticFile)/bootstrap-datetimepicker/4.17.47/js/bootstrap-datetimepicker.min.js"></script>
+    <script>
+        (function (fn) {
+            jQuery(function () { fn(jQuery) });
+        })(function ($) {
+            $('.ifa').css('font-size', '25px');
+
+            $('.datetimepicker4').datetimepicker({
+                format: 'YYYY-MM-DD',
+                locale: moment.locale('zh-cn')
+            });
+
+            //列表
+            (function () {
+                var tbs = [
+                    {
+                        id: '#div_tb_editors',
+                        url: '/total/PageEditors'
+                    },
+                    {
+                        id: '#div_tb_auditors',
+                        url: '/total/PageAuditors'
+                    }
+                ];
+                for (var i = 0, len = tbs.length; i < len; i++) {
+                    (function (tb, o) {
+                        o.pageIndex = 1;
+                        o.pageSize = 10;
+                        function init() {
+                            $(tb.id).find('a[data-dt-idx]').on('click', function () {
+                                var a = $(this), i = a.attr('data-dt-idx');
+                                if (o.pageIndex == i) return;
+                                load(i);
+                            });
+                            $(tb.id).find('.btn-skip').on('click', function () {
+                                var pi = parseInt($(tb.id).find('.span-skip input').val(), 10), maxi = parseInt($(tb.id).find('.span-skip').attr('data-totalPageCount'), 10);
+                                pi = pi < 1 ? 1 : pi > maxi ? maxi : pi;
+                                if (o.pageIndex == pi) return;
+                                load(pi);
+                            });
+                            $(tb.id).find('th.sorting').on('click', function () {
+                                var a = $(this), sc = a.attr('orderby_sc');
+                                o.orderBy = a.attr('orderby'), o.orderBy_sc = !sc ? 'asc' : sc != 'asc' ? 'asc' : 'desc';
+                                load(o.pageIndex);
+                            });
+                            if (o.orderBy) {
+                                var th = $(tb.id).find('th.sorting').removeClass('sorting_desc').removeClass('sorting_asc')
+                                    .filter('[orderby=' + o.orderBy + ']');
+                                o.orderBy_sc && th.attr('orderby_sc', o.orderBy_sc) && th.addClass('sorting_' + o.orderBy_sc);
+                            }
+                        }
+                        function load(pi) {
+                            o.pageIndex = pi;
+                            $.post(tb.url, o, function (str) {
+                                $(tb.id).html(str);
+                                init();
+                            });
+                        }
+                        init();
+                    })(tbs[i], {});
+                }
+            })();
+
+            //总数据记录列表
+            (function () {
+                var tbs = [
+                    {
+                        searchEle: '#div_search_schooledit',
+                        id: '#div_tb_schooledit',
+                        url: '/total/PageSchoolEdit'
+                    },
+                    {
+                        searchEle: '#div_search_schoolaudit',
+                        id: '#div_tb_schoolaudit',
+                        url: '/total/PageSchoolAudit'
+                    }
+                ];
+                for (var i = 0, len = tbs.length; i < len; i++) {
+                    (function (tb, o) {
+                        o.pageIndex = 1;
+                        o.pageSize = 10;
+                        function init() {
+                            $(tb.id).find('a[data-dt-idx]').on('click', function () {
+                                var a = $(this), i = a.attr('data-dt-idx');
+                                if (o.pageIndex == i) return;
+                                load(i);
+                            });
+                            $(tb.id).find('.btn-skip').on('click', function () {
+                                var pi = parseInt($(tb.id).find('.span-skip input').val(), 10), maxi = parseInt($(tb.id).find('.span-skip').attr('data-totalPageCount'), 10);
+                                pi = pi < 1 ? 1 : pi > maxi ? maxi : pi;
+                                if (o.pageIndex == pi) return;
+                                load(pi);
+                            });
+                        }
+                        function ui2o() {
+                            $(tb.searchEle).find('[prop]').each(function (t, n, v) {
+                                t = $(this), n = t.attr('prop-val-default-to-null'), v = t.val();
+                                o[t.attr('prop')] = n == v ? null : v;
+                            });
+                        }
+                        function load(pi) {
+                            o.pageIndex = pi;
+                            $.post(tb.url, o, function (str) {
+                                $(tb.id).html(str);
+                                init();
+                            });
+                        }
+                        $(tb.searchEle).find('.btn2c').click(function () {
+                            $(tb.searchEle).find('[prop]').each(function () { $(this).val('') });
+                        });
+                        $(tb.searchEle).find('.btn2').click(function () {
+                            ui2o(), load(1);
+                        });
+                        init();
+                    })(tbs[i], {});
+                }
+            })();
+        });
+    </script>
+}

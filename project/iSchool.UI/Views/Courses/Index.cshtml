@@ -1,0 +1,605 @@
+﻿@using iSchool.Organization.Appliaction.ViewModels.Courses;
+@using iSchool.Infrastructure.Dapper;
+@using iSchool.Organization.Appliaction.Service.Organization;
+@using iSchool.Infrastructure;
+@using iSchool.Organization.Domain.Enum;
+@model PagedList<CoursesItem>
+@{
+    ViewData["Title"] = "商品管理";
+    var listOrg = ViewBag.OrgList;
+    var listSupplier = ViewBag.SupplierList;
+    var listSubject = EnumUtil.GetSelectItems<SubjectEnum>();
+    listSubject.Insert(0, new SelectListItem() { Value = "", Text = "所有" });
+
+    var listCourseType = EnumUtil.GetSelectItems<CourseTypeEnum>();//商品分类
+}
+@section css{
+    <style>
+        .dataTables_paginate .pagination li.active span {
+            background: #272c33;
+            border-color: #272c33;
+            color: #fff;
+        }
+
+        .typeahead {
+            z-index: 8000;
+        }
+
+        .inline-form-control {
+            display: inline-block;
+            width: 100%;
+            height: calc(1.5em + .75rem + 2px);
+            padding: .375rem .75rem;
+            font-size: 1rem;
+            font-weight: 400;
+            line-height: 1.5;
+            color: #495057;
+            background-color: #fff;
+            background-clip: padding-box;
+            border: 1px solid #ced4da;
+            border-radius: .25rem;
+            transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+        }
+
+        .a-href {
+            cursor: pointer;
+        }
+
+        .sorting, .td-text-center {
+            text-align: center;
+        }
+
+        .scale-img {
+            overflow: hidden;
+        }
+
+        .scale-img img {
+            width: 100%;
+            height: 100%;
+            -webkit-object-fit: cover;
+            object-fit: cover;
+            transition: .5s all linear;
+            -ms-transition: .5s all linear; /* IE 9 */
+            -moz-transition: .5s all linear; /* Firefox */
+            -webkit-transition: .5s all linear; /* Safari 和 Chrome */
+            -o-transition: .5s all linear; /* Opera */
+            border: none;
+        }
+
+        .scale-img:hover img {
+            transform: scale3d(1.1,1.1,1.1);
+            -ms-transform: scale3d(1.1,1.1,1.1);
+            -moz-transform: scale3d(1.1,1.1,1.1);
+            -webkit-transform: scale3d(1.1,1.1,1.1);
+            -o-transform: scale3d(1.1,1.1,1.1);
+            border: none;
+        }
+
+        /*表格内容垂直居中*/
+        .table td, .table th {
+            vertical-align: middle;
+        }
+    </style>
+    @*可搜索复选下拉框*@
+    <link href="~/css/jsselect/select.css" rel="stylesheet" />
+}
+
+@*分页数据预加载*@
+<pre id="pgjson1" style="display:none;">@(Model.ToJsonString(true))</pre>
+
+<form>
+    @*条件搜索*@
+    <div class="card">
+        <div class="card-body">
+            <div class="row form-group">
+
+                @*供应商*@
+                <div class="col-md-2">
+                    <label class="form-control-label" style="margin-left:5%;">供应商</label>
+                    <div id="div_Supplier" class="selectPickerWrapper">
+                        <select id="div_Supplier_select" class="hidden">
+                            @foreach (var item in listSupplier)
+                            {
+                                <option value="@item.Value">@item.Text</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+
+                @*机构*@
+                <div class="col-md-2">
+                    <label class="form-control-label" style="margin-left:5%;">机构</label>
+                    <div id="div_Org" class="selectPickerWrapper">
+                        <select id="div_Org_select" class="hidden">
+                            @foreach (var item in listOrg)
+                            {
+                                <option value="@item.Value">@item.Text</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+
+                @*科目*@
+                <div class="col-md-2" style="margin-left:1%;">
+                    <label class="form-control-label" style="margin-left:5%;">科目</label>
+                    <div id="div_Subject" class="selectPickerWrapper">
+                        <select id="div_Subject_select" class="hidden">
+                            @foreach (var item in listSubject)
+                            {
+                                <option value="@item.Value">@item.Text</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+
+                @*状态*@
+                <div class="col-md-2" style="margin-left:1.5%;">
+                    <label class="form-control-label">状态</label>
+                    <select name="Status" id="Status" asp-items="@ViewBag.CourseStatusList" class="form-control">
+                        <option value="" disabled selected hidden>请选择</option>
+                        <option value="-1">所有</option>
+                    </select>
+                </div>
+
+                @*商品分类*@
+                <div class="col-md-2" style="margin-left:1.5%;">
+                    <label class="form-control-label">商品分类</label>
+                    <select name="Type" id="Type" asp-items="@listCourseType" class="form-control">
+                        <option value="" disabled selected hidden>请选择</option>
+                        <option value="-1">所有</option>
+                    </select>
+                </div>
+
+                @*课程标题*@
+                <div class="col-md-2">
+                    <label class="form-control-label">课程名称：</label>
+                    <input class="form-control" type="text" id="Title" name="Title" property="请输入课程名称" />
+                </div>
+
+                @*查询按钮*@
+                <div class="col-md-1" style="padding-top:33px">
+                    <button class="btn btn-primary btn-sm" style="width:100%" id="searchBtn" type="button">查询</button>
+                </div>
+
+                @*新增*@
+                <div class="col-md-1" style="padding-top:33px">
+                    <a class="btn btn-primary btn-sm" style="color: #fff;width:100%" href="@Url.Action("AddUpdateShow")" target="_blank">新增(旧界面)</a>
+                </div>
+
+                <div class="col-md-1" style="padding-top:33px">
+                    <a class="btn btn-primary btn-sm" style="color: #fff;width:100%" href="@ViewBag.BgDataUrl/#/goods/edit" target="_blank">新增</a>
+                </div>
+
+                @*导出所有SKU明细*@
+                <div class="col-md-2" style="padding-top:33px">
+                    <a class="btn btn-primary btn-sm" style="color: #fff;width:100%" href="@Url.Action("ExportSKUData")" target="_blank">导出所有SKU明细</a>
+                </div>
+                @*<div class="col-md-4">
+            <a class="btn btn-primary download" style="color: #fff;width:100%" href="@Url.Action("GetTemplate","CollegeDirectory")">下载</a>
+        </div>
+        <div class="col-md-4">
+            <input type="file"  hidden="hidden" id="selectFile" class="c_ignore updateFile" name="files" multiple accept="jpg,png" title="只允许上传Mp4格式的视频!视频大小不能超过40M" />
+            <input type="button" id="uploadlogo" style="width: 100px; height: 100px; font-size: 50px;" class="uploadvideo-btn btn  btn-info btn-block c_ignore updateBtn" data-video="" data-input="InterviewVideos" value="导入" />
+
+
+        </div>*@
+            </div>
+        </div>
+    </div>
+</form>
+<div class="card">
+    <div class="card-header">课程列表</div>
+    <div class="card-body">
+        @*课程列表*@
+        <div id="tb"></div>
+    </div>
+</div>
+
+@*商品二维码模态窗体*@
+<div class="modal fade" id="mySendModal" tabindex="-1" role="dialog" data-backdrop="static" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">        
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"aria-hidden="true">×</button>
+            </div>
+            <img class="mqimg" src="" /> 
+            <label id="mqurl" style="text-align:center;"></label>
+        </div>
+        
+    </div>
+</div>
+
+
+@*课程列表模板*@
+<script id="tmp_tb" type="text/template">
+    <%
+    var pages = data.currentPageItems;
+    %>
+    <div class="row">
+        <div class="col-sm-12">
+            <table id="bootstrap-data-table-export" class="table table-striped table-bordered dataTable no-footer" role="grid" aria-describedby="bootstrap-data-table-export_info">
+                <thead class="tbheader">
+                    <tr role="row">
+                        <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Position: activate to sort column ascending" style="width: 5%;">
+                            序号
+                        </th>
+                        <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Position: activate to sort column ascending" style="width: 5%;">
+                            短Id
+                        </th>
+                        <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Office: activate to sort column ascending" style="width: 8%;">
+                            供应商
+                        </th>
+                        <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Office: activate to sort column ascending" style="width: 8%;">
+                            机构
+                        </th>
+                        <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Office: activate to sort column ascending" style="width: 13%;">
+                            课程名称
+                        </th>
+                        <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Office: activate to sort column ascending" style="width: 13%;">
+                            副标题
+                        </th>
+                        <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" style="width: 5%;">
+                            商品分类
+                        </th>
+                        <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" style="width: 5%;">
+                            价格
+                        </th>
+                        <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" style="width: 5%;">
+                            库存
+                        </th>
+                        @*<th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" style="width: 5%;">
+            销量
+        </th>*@
+                        <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" style="width: 5%;">
+                            总量
+                        </th>
+                        @*<th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" style="width: 6%;">
+            退单数
+        </th>*@
+                        <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" style="width: 5%;">
+                            状态
+                        </th>
+                        <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" style="width: 8%;">
+                            上架时间
+                        </th>
+                        <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" style="width: 8%;">
+                            下架时间
+                        </th>
+                        <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" style="width: 13%;">
+                            操作
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% for (var i = 0, c = pages.length; i < c; i++) { %>
+                    <tr role="row" class="odd" style="text-align:center">
+                        <td><label><%= pages[i].rowNum %></label></td>
+                        <td><label><%= pages[i].id_s %></label></td>
+                        <td><label><%= pages[i].supplierNames %></label></td>
+                        <td><label><%= pages[i].orgName %></label></td>
+                        <td><label><%= pages[i].title %></label></td>
+                        <td><label><%= pages[i].subTitle %></label></td>
+                        <td><label><%= pages[i].subjectsOrGoodthingTypes %></label></td>
+                        <td><label><%= pages[i].price %></label></td>
+                        <td>
+                            <a href="javascript:void(0)" data-id="<%= pages[i].id %>" class="text-info show-coursegoodsinfo-details"><%= pages[i].stock %></a>
+                        </td>
+                        @*<td><label><%= pages[i].sellCount %></label></td>*@
+                        <td>
+                            <a href="javascript:void(0)" data-id="<%= pages[i].id %>" class="text-info show-coursegoodsinfo-details"><%= pages[i].count %></a>
+                        </td>
+                        @*<td><label><%= pages[i].chargebackCount %></label></td>*@
+                        <td><label><%= pages[i].status==1?"上架":"下架" %></label></td>
+                        <td><label><%= pages[i].lastOnShelfTime %></label></td>
+                        <td><label><%= pages[i].lastOffShelfTime %></label></td>
+                        <td class="td-text-center" style="white-space: nowrap;">
+                            <% if(pages[i].type==1){ %>
+                            <a href="/Courses/DHCodeManage?id=<%= pages[i].id %>" target="_blank" data-id="<%= pages[i].id %>" class="text-info dhcode-manager-Btn">兑换码管理</a>
+                            <a> | </a>
+                            <%}%>
+                            <a href="javascript:void(0)" data-id="<%= pages[i].id %>" data-orgid="<%= pages[i].orgId %>" data-subject="<%= pages[i].subjectId %>" class="text-info" onclick="OffTheShelf(this)"><%= pages[i].status==1?"下架":"上架" %></a>
+                            <a> | </a>
+                            <a href="/Courses/AddUpdateShow?id=<%= pages[i].id %>" target="_blank" data-id="<%= pages[i].id %>" data-orgid="<%= pages[i].orgId %>" data-no="<%= pages[i].no %>" class="text-info add-update-Btn">编辑(旧)</a>
+                            <a> | </a>
+                            <a href="@(ViewBag.BgDataUrl)/#/goods/edit?id=<%= pages[i].id %>" target="_blank"  class="text-info add-update-Btn">编辑</a>
+                            <% if(pages[i].isInvisibleOnline==true){ %>
+                            <a> | </a>
+                            <a href="javascript:void(0)" data-id="<%= pages[i].id %>" data-id_s="<%= pages[i].id_s %>" class="text-info add-update-Btn" onclick="ShowMinAppQRCode(this)">商品二维码</a>
+                            <%}%>
+                        </td>
+                    </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-12 col-md-3">
+            <div class="dataTables_info" id="bootstrap-data-table-export_info" role="status" aria-live="polite">
+                总共 <%=data.totalItemCount %> 条
+            </div>
+        </div>
+        <div class="col-sm-12 col-md-9">
+            <div class="dataTables_paginate paging_simple_numbers" id="div_pager">
+            </div>
+        </div>
+    </div>
+</script>
+
+
+@section Scripts{
+
+    @*可搜索复选下拉框*@
+    <script src="~/js/jqselect/select.js"></script>
+
+    <script src="@(ViewBag.StaticFile)/moment.js/2.18.1/moment-with-locales.min.js"></script>
+    <script src="@(ViewBag.StaticFile)/bootstrap-3-typeahead/4.0.2/bootstrap3-typeahead.min.js"></script>
+
+    @*异步分页*@
+    <script src="~/js/bootstrap-pager.js"></script>
+    <script src="~/js/jq.postJSON.js"></script>
+    <script src="~/js/microTemplate.js"></script>
+
+
+    <script type="text/javascript">
+        jQuery(function () {
+            //列表+查询
+            var reload = (function ($, render) {
+
+                //查询条件
+                var o = {};
+                o.pageSize = 10;
+                o.pageIndex = 1;
+                o.searchType = 0;
+                o.orgId = null;         //机构
+                o.supplierId = null;    //供应商
+                o.subjectId = null      //科目
+                o.status = null;        //状态
+                o.title = "";           //课程标题
+                o.type = null;
+
+                var bus = new LiejiaJS.event();
+                var msgType = {
+                    relist: 're-list',
+                };
+
+
+
+                var tmp = $('#tmp_tb').html();
+
+                function ui2o() {
+                    o.orgId = $("#div_Org_hidden").val();           //机构
+                    o.supplierId = $("#div_Supplier_hidden").val();   //科目
+                    o.subjectId = $("#div_Subject_hidden").val();   //科目
+                    o.status = $("#Status").val();                  //状态
+                    o.title = $("#Title").val();                    //课程标题
+                    o.type = $('#Type').val();//商品分类
+
+                }
+
+                function init(data) {
+                    debugger;
+                    console.log('init and rendering tb with str ...');
+                    var str = render(tmp, data);
+                    console.log('render tb str ok');
+                    $('#tb').html(str);
+
+                    $('#div_pager').page({
+                        count: data.totalItemCount,
+                        pageNum: o.pageIndex,
+                        pageSize: o.pageSize,
+                        canSkip: true,
+                    }).$element.on('pageChanged', function (e, p) {
+                        o.pageIndex = p.pageNum;
+                        ui2o(), ajax();
+                    });
+                    bus.emit(msgType.relist, 1);
+
+                    //弹框-库存销量查看
+                    $(".show-coursegoodsinfo-details").on("click", function () {
+                debugger;
+                var courseid = jQuery(this).attr('data-id');
+                var json = { "courseid": courseid};
+
+                        $.get("@Url.Action("CourseGoodsInfo")", json, function (data) {
+                    //初始化时加载标签页面
+                    debugger;
+                    jQuery('#gameContainer').html(data);
+                    jQuery('#gameModal').modal('show');
+                });
+            })
+
+                }
+
+                function ajax() {
+                    $.getJSON('/Courses/Index', o, function (res) {
+                        debugger;
+                        if (!res.isOk) {
+                            ShowAlert('网络异常');
+                            return console.log(res);
+                        } else {
+                            init(res.data);
+                        }
+                    });
+                }
+
+                //查询确定按钮
+                $('#searchBtn').click(function () {
+                    o.pageIndex = 1, o.searchType = 0, ui2o(), ajax();
+                });
+
+                var dt1 = JSON.parse($('#pgjson1').html()); //初始化分页数据
+                $('#pgjson1').remove();
+                if (dt1) {
+                    debugger;
+                    init(dt1);
+                } else {
+                    debugger;
+                    init({
+                        currentPageIndex: o.pageIndex,
+                        pageSize: o.pageSize,
+                        totalItemCount: 0,
+                        totalPageCount: 0,
+                        currentPageItems: [],
+                    });
+                    ajax();
+                }
+
+                return function () { ui2o(), ajax() };
+            })(jQuery, microTemplate);
+
+            //机构、科目下拉框
+            var singlesearchselect = (function ($) {
+
+                //初始化
+                jQuery("#div_Org").mySelect();//机构
+                jQuery("#div_Supplier").mySelect();//机构
+                jQuery("#div_Subject").mySelect();//科目
+
+            })(jQuery)
+
+
+
+        });
+
+
+         //导入
+        jQuery(function () {
+            //1、选择文件
+        jQuery('.updateBtn').click(function () {
+            return jQuery("#selectFile").click(); //注意这句，主要是需要return点击事件返回值
+            });
+        //2、上传文件
+            jQuery('#selectFile').on("change", function () {
+
+                var fileinput = jQuery(this);//上传文件
+                var videoInput = fileinput.attr('id');
+                var $videoInput = document.getElementById(videoInput);
+                if ($videoInput.files.length == 0) {
+                    return;
+                }
+                var formData = new FormData();
+                for (var i = 0; i < $videoInput.files.length; i++) {
+                    formData.append(videoInput, $videoInput.files[i]);
+                }
+                Loading("正在导入！");
+                jQuery.post({
+                    url: '@Url.Action("AddSchoolFromExcel", "CollegeDirectory")',
+                    type: "post",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    cache: false
+                }).done(function (res) {
+                    debugger;
+                    if (res.status == 200) {
+                        ShowAlert('导入成功', 1000, function () {
+                            fileinput.val('');
+                        });
+
+                    } else {
+                        ShowAlert("导入失败:"+res.msg, -1);
+                        CloseLoading();
+                    }
+                    CloseLoading();
+                }).fail(function (res) {
+                    ShowAlert("网络异常:"+res.msg, -1);
+                    CloseLoading();
+                });
+        })
+
+            //最小年龄-控制为正整数
+            HuLyegaJS.decimalInput({
+                ele: '[name="MinAge"]',
+                decimalPlaces: 0
+            });
+            //最大年龄-控制为正整数
+            HuLyegaJS.decimalInput({
+                ele: '[name="MaxAge"]',
+                decimalPlaces: 0
+            });
+
+            //最大年龄大于或者等于最小年龄
+            jQuery("#MaxAge,#MinAge").on("blur", function () {
+                var $maxage = jQuery("#MaxAge");
+                var $minage = jQuery("#MinAge");
+                var maxage = parseInt($maxage.val());
+                var minage = parseInt($minage.val());
+                if (maxage < minage) {
+                    ShowAlert("最大年龄不能小于最小年龄，请重新填写！", 3000);
+                    jQuery(this).focus();
+                    return;
+                }
+            });
+        });
+
+
+
+        //上下架
+        function OffTheShelf(obj) {
+            var $this = jQuery(obj);
+            var id = $this.attr("data-id");
+            var orgId = $this.attr("data-orgid");
+            var status = $this.text();
+            var subject = $this.attr("data-subject");
+            showConfirm('确定要' + status+'此课程？', function () {
+                Loading("正在更新数据！");
+                jQuery.post("@Url.Action("OffOrOnTheShelf")", { "id": id, "orgId": orgId, "status": status, "subject": subject }, function (data) {
+                    if (data.status == 200) {
+                        ShowAlert('操作成功', 1000, function () {
+                            jQuery("#searchBtn").click();
+                            CloseLoading();
+                        });
+                    } else {
+                        ShowAlert(data.msg);
+                        CloseLoading();
+                    }
+                });
+            });
+        }
+
+        //商品二维码
+        function ShowMinAppQRCode(obj) {
+            var $this = jQuery(obj);
+            var id_s = $this.attr("data-id_s");
+            jQuery(".mqimg").attr("src","");
+            jQuery.get("@Url.Action("CreateMpQrcode")", { "id_s": id_s }, function (data) {
+                
+                jQuery(".mqimg").attr("src", data.mpQrcode)
+                jQuery("#mqurl").html(data.mpQrUrl);
+                jQuery("#mySendModal").modal('show');
+                });
+        }
+        //跳转到编辑页面
+        function AddOrUpdate(obj) {
+            debugger;
+            var id = jQuery(obj).attr("data-id");
+            window.location.href = "/Courses/AddUpdateShow?id=" + id;
+        }
+
+        //跳到兑换码管理界面
+        function DHCodeManager(obj) {
+            debugger;
+            var id = jQuery(obj).attr("data-id");
+            window.location.href = "/Courses/DHCodeManage?id=" + id;
+        }
+
+        //鼠标移上去放大图片
+        function moveover(obj) {
+            debugger;
+            var id = jQuery(obj).attr('id');
+            document.getElementById(id).width = "300"
+        }
+        //鼠标离开恢复图片大小
+        function moveback(obj) {
+            debugger;
+            var id = jQuery(obj).attr('id');
+            document.getElementById(id).width = "150";
+    }
+
+        jQuery('#exportBtn').on('click', function () {
+
+        })
+
+    </script>
+}

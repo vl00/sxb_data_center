@@ -1,0 +1,1668 @@
+﻿@using iSchool.Organization.Appliaction.ViewModels.Courses;
+@using iSchool.Infrastructure.Dapper;
+@using iSchool.Organization.Appliaction.Service.Organization;
+@using iSchool.Infrastructure;
+@using iSchool.Organization.Domain.Enum;
+@model PagedList<CoursesOrderItem>
+@{
+    ViewData["Title"] = "商品订单列表";
+    var listSupplier = ViewBag.SupplierList;//供应商
+    var listOrg = ViewBag.OrgList;//品牌
+    var listSubject = ViewBag.SubjectList;//科目
+    var listOrgType = ViewBag.listOrgType;//品牌类型
+    var listCompanys = ViewBag.Companys;//快递公司
+    var appointmentStatusList = ViewBag.BookingCourse; //约课状态列表
+}
+@section css{
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <style>
+        .dataTables_paginate .pagination li.active span {
+            background: #272c33;
+            border-color: #272c33;
+            color: #fff;
+        }
+
+        .typeahead {
+            z-index: 8000;
+        }
+
+        .inline-form-control {
+            display: inline-block;
+            width: 100%;
+            height: calc(1.5em + .75rem + 2px);
+            padding: .375rem .75rem;
+            font-size: 1rem;
+            font-weight: 400;
+            line-height: 1.5;
+            color: #495057;
+            background-color: #fff;
+            background-clip: padding-box;
+            border: 1px solid #ced4da;
+            border-radius: .25rem;
+            transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+        }
+
+        .a-href {
+            cursor: pointer;
+        }
+
+        .sorting, .td-text-center {
+            text-align: center;
+        }
+
+        .scale-img {
+            overflow: hidden;
+        }
+
+            .scale-img img {
+                width: 100%;
+                height: 100%;
+                -webkit-object-fit: cover;
+                object-fit: cover;
+                transition: .5s all linear;
+                -ms-transition: .5s all linear; /* IE 9 */
+                -moz-transition: .5s all linear; /* Firefox */
+                -webkit-transition: .5s all linear; /* Safari 和 Chrome */
+                -o-transition: .5s all linear; /* Opera */
+                border: none;
+            }
+
+            .scale-img:hover img {
+                transform: scale3d(1.1,1.1,1.1);
+                -ms-transform: scale3d(1.1,1.1,1.1);
+                -moz-transform: scale3d(1.1,1.1,1.1);
+                -webkit-transform: scale3d(1.1,1.1,1.1);
+                -o-transform: scale3d(1.1,1.1,1.1);
+                border: none;
+            }
+
+        /* 订单详情模态框 */
+        #orderModal .ordermodal-dialog {
+            width: 750px;
+            max-width: 750px;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        #orderModal .modal-header {
+            display: block;
+        }
+
+        .order-info img {
+            width: 80px;
+            height: 80px;
+            margin-right: 15px;
+        }
+
+        .order-info .order-title {
+            font-weight: bold;
+            font-size: 20px;
+            margin-top: 0;
+        }
+
+        .order-info .subtitle {
+            margin-bottom: 10px;
+        }
+
+        .order-info span {
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .order-info .order-price span + span {
+            margin-left: 15px;
+        }
+
+        .order-info .actual-pay {
+            font-size: 18px;
+            color: brown;
+        }
+
+        .order-form {
+            margin-top: 15px;
+        }
+
+        .table-box {
+            width: 100%;
+            overflow-x: scroll;
+            margin-bottom: 15px;
+        }
+
+            .table-box table th {
+                white-space: nowrap;
+            }
+
+        .row td label {
+            white-space: pre-line;
+        }
+    </style>
+    @*可搜索复选下拉框*@
+    <link href="~/css/jsselect/select.css" rel="stylesheet" />
+}
+
+@*分页数据预加载*@
+<pre id="pgjson1" style="display:none;">@(Model.ToJsonString(true))</pre>
+
+<form>
+    @*条件搜索*@
+    <div class="card">
+        <div class="card-body">
+            <div class="row form-group">
+
+
+                @*品牌*@
+                <div class="col-md-2">
+                    <div class="form-inline">
+                        <label class="form-control-label">品牌：</label>
+                        <div id="div_Org" class="selectPickerWrapper">
+                            <select id="div_Org_select" class="hidden">
+                                @foreach (var item in listOrg)
+                                {
+                                    <option value="@item.Value">@item.Text</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                </div>
+
+                @*品牌级联课程*@
+                <div class="col-md-2">
+                    <div class="form-inline">
+                        <label class="form-control-label">课程：</label>
+                        <div id="div_Course" class="selectPickerWrapper">
+                            <select id="div_Course_select" class="hidden">
+                            </select>
+                        </div>
+                    </div>
+
+                </div>
+
+                @*科目*@
+                <div class="col-md-2">
+                    <div class="form-inline" style="margin-left:5px;">
+                        <label class="form-control-label">科目：</label>
+                        <div id="div_Subject" class="selectPickerWrapper">
+                            <select id="div_Subject_select" class="hidden">
+                                @foreach (var item in listSubject)
+                                {
+                                    <option value="@item.Value">@item.Text</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                </div>
+
+
+                @*类型*@
+                <div class="col-md-3">
+                    <div class="form-inline">
+                        <label class="form-control-label">品牌类型：</label>
+                        <div id="div_OrgType" class="selectPickerWrapper">
+                            <select id="div_OrgType_select" class="hidden">
+                                @foreach (var item in listOrgType)
+                                {
+                                    <option value="@item.Value">@item.Text</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <div class="row form-group">
+                @*供应商*@
+                <div class="col-md-2">
+                    <div class="form-inline">
+                        <label class="form-control-label">供应商：</label>
+                        <div id="div_Supplier" class="selectPickerWrapper">
+                            <select id="div_Supplier_select" class="hidden">
+                                @foreach (var item in listSupplier)
+                                {
+                                    <option value="@item.Value">@item.Text</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row form-group">
+
+                @*下单人电话*@
+                <div class="col-md-1">
+                    <label class="form-control-label">下单人电话：</label>
+                    <input class="form-control" type="text" id="Mobile" name="Mobile" value="" property="输入下单人电话" />
+                </div>
+                @*收货人电话*@
+                <div class="col-md-1">
+                    <label class="form-control-label">收货人电话：</label>
+                    <input class="form-control" type="text" id="RecvMobile" name="RecvMobile" value="" property="输入收货人电话" />
+                </div>
+                @*上课电话*@
+                <div class="col-md-1">
+                    <label class="form-control-label">上课电话：</label>
+                    <input class="form-control" type="text" id="BeginClassMobile" name="BeginClassMobile" value="" property="输入上课电话" />
+                </div>
+
+                @*课程名称*@
+                <div class="col-md-2">
+                    <label class="form-control-label">课程名称：</label>
+                    <input class="form-control" type="text" id="Title" name="Title" property="输入课程名称" />
+                </div>
+
+                @*订单号*@
+                <div class="col-md-2">
+                    <label class="form-control-label">订单号：</label>
+                    <input class="form-control" type="text" id="OrdCode" name="OrdCode" property="输入订单号" />
+                </div>
+
+
+            </div>
+            <div class="row form-group">
+                @*订单状态*@
+                <div class="col-md-1">
+                    <label class="form-control-label">订单状态</label>
+                    <select name="Status" id="Status" asp-items="@ViewBag.OrderStatusList" class="form-control">
+                        <option value="" disabled selected hidden>请选择</option>
+                        @*<option value="-1">所有</option>*@
+                    </select>
+                </div>
+                @*商品分类*@
+                <div class="col-md-1">
+                    <label class="form-control-label">商品分类：</label>
+                    <select name="Type" id="Type" asp-items="@ViewBag.CourseTypeList" class="form-control">
+                        <option value="" disabled selected hidden>请选择</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class=" form-control-label">下单日期：</label>
+                    <div class="form-inline">
+                        <input type="text" style="width: 120px;" value="" id="StartTime" name="StartTime" placeholder="请选择时间" class="form-control datetimepicker4">
+                        <label class="form-control-label" style="margin-top:2%;">至</label>
+                        <input type="text" style="width: 120px;" value="" id="EndTime" name="EndTime" placeholder="请选择时间" class="form-control datetimepicker4">
+                    </div>
+                </div>
+            </div>
+            <div class="row form-group">
+                <div class="col-md-1">
+                    <a class="btn btn-link" href="@Url.Action("GetTemplate", "Order")">下载物流模板</a>
+                </div>
+                <div class="col-md-1">
+                    <button id="importWLBtn" class="btn btn-primary btn-sm" type="button">导入物流</button>
+                    <input type="file" id="selectWLFile" hidden="hidden" />
+                </div>
+                @*批量发货*@
+                <div class="col-md-1">
+                    <button class="btn btn-primary btn-sm" data-batch="[]" id="batchsendedgoods_Btn" type="button">一键发货</button>
+                </div>
+                <div class="col-md-1">
+                    <button id="exportBtn" class="btn btn-primary btn-sm" type="button">导出</button>
+                </div>
+                <div class="col-md-1">
+                    <button id="importBtn" class="btn btn-primary btn-sm" type="button">导入</button>
+                    <input type="file" id="selectFile" hidden="hidden" />
+
+                </div>
+                <div class="col-md-1">
+                    <button class="btn btn-primary btn-sm" id="searchBtn" type="button">搜索</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</form>
+<div class="card">
+    @*<div class="card-header">课程列表</div>*@
+    <div class="card-body">
+        @*课程列表*@
+        <div id="tb"></div>
+    </div>
+</div>
+
+
+@*发货模态窗体*@
+<div class="modal fade" id="mySendModal" tabindex="-1" role="dialog" data-backdrop="static" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" v-on:click="checkSendBtnCanEnable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="myModalLabel">
+                    发货
+                </h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="wuliuitem row" v-for="(wuliuItem,index) in wuliuItems">
+                    <div class="form-group col">
+                        <label>物流公司：</label>
+                        <el-select v-model="wuliuItem.kuaidi" filterable placeholder="请选择">
+                            <el-option v-for="item in wuliuoptions"
+                                       :key="item.Key"
+                                       :label="item.Value"
+                                       :value="item.Key">
+                            </el-option>
+                        </el-select>
+                    </div>
+                    <div class="form-group col"> <label>物流单号：</label><input class="form-control" v-model="wuliuItem.code" id="send_nu" /></div>
+                    <div class="form-group col"> <label>发货数量：</label><input type="number" class="form-control" v-model.number="wuliuItem.count" id="send_nu"  v-on:input="inputCount(index)" /></div>
+                    <div class="col align-center flex"><span v-if="index > 0" v-on:click="del(index)">删除</span></div>
+                </div>
+
+            </div>
+            <div class="modal-footer flex justify-center">
+                <button type="button" class="btn btn-primary"  v-on:click="caifenfahuo" data-id="">拆分发货</button>
+                <button type="button" class="btn btn-primary"  data-id="" v-on:click="send()" v-bind:disabled="!sendIsAble">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@*添加品牌反馈模态窗体*@
+<div class="modal fade" id="mySystemRemarkModal" tabindex="-1" role="dialog" data-backdrop="static" aria-labelledby="mySystemRemarkModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="mySystemRemarkModalLabel">
+                    添加品牌反馈
+                </h4>
+            </div>
+            <div class="modal-body">
+                <div class="form-inline">
+                    <textarea id="SystemRemark" cols="100" rows="5"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="systemremark_save" data-id="">确定</button>
+                <button type="button" class="btn btn-default cancelload" data-dismiss="modal">取消</button>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@*录入退款数量模态窗体*@
+<div class="modal fade" id="inputRefundCountModal" tabindex="-1" role="dialog" data-backdrop="static" aria-labelledby="mySystemRemarkModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="mySystemRemarkModalLabel">
+                    输入退款数量
+                </h4>
+            </div>
+            <div class="modal-body">
+                <div class="form-inline">
+                    <input type="number" name="refundCount" value="" class="form-control" />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="applyRefund(this)" data-id="">确定</button>
+                <button type="button" class="btn btn-default cancelload" data-dismiss="modal">取消</button>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 订单详情模态框（Modal） -->
+<div class="modal fade" id="orderModal" tabindex="-1" role="dialog" aria-labelledby="orderModalLabel" aria-hidden="true">
+    <div class="modal-dialog ordermodal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button"
+                        class="close"
+                        data-dismiss="modal"
+                        aria-hidden="true">
+                    &times;
+                </button>
+                <h4 class="modal-title text-center">订单详情</h4>
+            </div>
+            <div class="modal-body">
+                <div id="orderBox"></div>
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal -->
+</div>
+
+@*课程列表模板*@
+<script id="tmp_tb" type="text/template">
+    <%
+    var pages = data.currentPageItems;
+    @*console.log(pages);*@
+    %>
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="table-box">
+                <table id="bootstrap-data-table-export" class="table table-striped table-bordered dataTable no-footer" role="grid" aria-describedby="bootstrap-data-table-export_info">
+                    <thead class="tbheader">
+                        <tr role="row">
+                            <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Office: activate to sort column ascending" @*style="width:40px;"*@>
+                                <input class="selectall" type="checkbox" />
+                            </th>
+                            <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Office: activate to sort column ascending" @*style="width:120px;"*@>
+                                (预)订单号
+                            </th>
+                            <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Office: activate to sort column ascending" @*style="width:120px;"*@>
+                                (子)订单号
+                            </th>
+                            <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Office: activate to sort column ascending" @*style="width: 8%;"*@>
+                                时间
+                            </th>
+                            <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Office: activate to sort column ascending" @*style="width: 8%;"*@>
+                                供应商
+                            </th>
+                            <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Office: activate to sort column ascending" @*style="width: 5%;"*@>
+                                品牌
+                            </th>
+                            <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Office: activate to sort column ascending">
+                                spu（商品名称）
+                            </th>
+                            <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Office: activate to sort column ascending">
+                                sku（属性名称）
+                            </th>
+                            <!--<th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Office: activate to sort column ascending"--> @*style="width: 15%;"*@
+                            <!-->
+                                套餐
+                            </th>-->
+                            @*<th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" style="width: 5%;">
+                                    科目
+                                </th>*@
+                            <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Office: activate to sort column ascending">
+                                下单数量
+                            </th>
+                            <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Office: activate to sort column ascending">
+                                sku成本价
+                            </th>
+                            <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Office: activate to sort column ascending">
+                                sku售价
+                            </th>
+                            <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" style="width: 5%;">
+                                实付金额
+                            </th>
+                            <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" @*style="width: 5%;"*@>
+                                下单人电话
+                            </th>
+                            <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" @*style="width: 5%;"*@>
+                                下单人
+                            </th>
+                            <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" @*style="width: 5%;"*@>
+                                收货人电话
+                            </th>
+                            <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" @*style="width: 5%;"*@>
+                                收货人
+                            </th>
+                            <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" @*style="width: 5%;"*@>
+                                上课电话
+                            </th>
+                            <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" @*style="width: 10%;"*@>
+                                发货地址
+                            </th>
+                            <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" @*style="width: 10%;"*@>
+                                订单状态
+                            </th>
+                            <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" @*style="width: 5%;"*@>
+                                约课状态
+                            </th>
+                            <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" @*style="width: 5%;"*@>
+                                物流单号/兑换码
+                            </th>
+                            <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" @*style="width: 5%;"*@>
+                                订单备注
+                            </th>
+                            <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Office: activate to sort column ascending" style="width: 20%;">
+                                品牌反馈
+                            </th>
+                            <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" @*style="width: 13%;"*@>
+                                操作
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% for (var i = 0, c = pages.length; i < c; i++) { %>
+                        <tr role="row" class="odd" style="text-align:center">
+                            <td>
+                                <%if(pages[i].status==103) {%>
+                                <input class="sendedgoods" type="checkbox" id="<%= pages[i].id %>" />
+                                <% } %>
+                            </td>
+                            <td><%= pages[i].advanceOrderNo %></td>
+                            <td><%= pages[i].code %></td>
+                            <td><label><%= pages[i].createTime %></label></td>
+                            <td><%= pages[i].supplierName %></td>
+                            <td><label title="<%= pages[i].orgName %>"><%=pages[i].orgName.substring(0, 10)%><%=pages[i].orgName.length>10?"...":""%></label></td>
+                            @*<td><label title="<%= pages[i].title %>"><%= pages[i].title.substring(0, 10) %><%=pages[i].title.length>10?"...":""%></label></td>*@
+                            <td><label><%= (pages[i].title).replace(/\\n/g, "\n") %></label></td>
+                            <td><%= pages[i].setMeal %></td>
+                            <td><%= pages[i].number %></td>
+                            <td><%= pages[i].costprice %></td>
+                            <td><%= pages[i].price %></td>
+
+                            @*<td><label><%= pages[i].subject %></label></td>*@
+                            <td><label><%= pages[i].price*pages[i].number %></label></td>
+                            <td><label><%= pages[i].mobile %></label></td>
+                            <td><label><%= pages[i].userName %></label></td>
+                            <td><label><%= pages[i].recvMobile %></label></td>
+                            <td><label><%= pages[i].recvUserName %></label></td>
+                            <td><label><%= pages[i].beginClassMobile %></label></td>
+                            <td><label><%= pages[i].recvProvince %><%= pages[i].recvCity %></label></td>
+                            <td><label><%= pages[i].statusEnumDesc %></label></td>
+                            <td>
+                                <%
+                                var options=pages[i].appointmentStatusList;
+                                var ocount=pages[i].appointmentStatusList.length;
+                                %>
+                                <select class="listselect" data-id="<%= pages[i].id %>">
+                                    <% for (var k = 0;k < ocount; k++) { %>
+                                    <option value="<%= options[k].value%>" <%=options[k].selected==true?'Selected':''  %>><%= options[k].text%></option>
+                                    <% } %>
+                                </select>
+
+                            </td>
+                            <td>
+                                <label>
+                                    <%if(pages[i].isMultipleExpress) {%>
+                                    <span>拆分发货</span>
+                                    <%}else{%>
+                                    <span><%= pages[i].exchangeCode %><br> <%= pages[i].expressCode%></span>
+                                    <%}%>
+                                    @*<%= pages[i].exchangeCode %><br> <%= pages[i].expressCode %>*@
+                                </label>
+                            </td>
+                            <td><label><%= pages[i].remark %></label></td>
+                            <td><label><%= pages[i].systemRemark %></label></td>
+
+                            <td class="td-text-center">
+
+                                @*发货-->待收货-->已收货SendExpressTime*@
+                                <%if((pages[i].sendExpressTime==null|| pages[i].exchangeCode==null) && (pages[i].status==103  || pages[i].status==302)) {%>
+                                <button id="a_send" data-json='<%=  JSON.stringify(pages[i]) %>' data-id="<%= pages[i].id %>" data-cid="<%= pages[i].courseId %>" class="btn btn-link" data-index="<%=i%>" onclick="">发货</button> <!--onclick="delivergoods(this)"-->
+                                <% } %>
+                                @*退款*@
+                                @if (Context.HasCtrlActQyx("Courses", "RefundAndChangeOrderStatus", ".qx-api"))
+                                {
+
+                                    <Text>
+                                    <%if(pages[i].totalPayment>0&&(pages[i].status==103||pages[i].status==302)){%>
+                                    <% if(pages[i].advanceOrderNo.indexOf('OGA')==-1){ %>
+                                    <button data-id="<%= pages[i].id %>" data-cid="<%= pages[i].courseId %>" data-orduserid="<%= pages[i].userId %>" data-totalpayment="<%= pages[i].totalPayment %>" data-advanceorderid="<%= pages[i].advanceOrderId %>" data-index="<%= i %>"
+                                            class="btn btn-link" onclick="RefundAndChangeOrderStatues(this)">
+                                        退款
+                                    </button>
+                                    <% } %>
+                                    <% } %>
+                                    </Text>
+
+                                }
+
+
+                                <%if(pages[i].expressCode!=null){%>
+
+                                <button id="a-step1win" data-nu="<%= pages[i].expressCode %>" data-dhCode="<%= pages[i].exchangeCode %>" data-companyCode="<%= pages[i].expressType %>" class="btn btn-link show-logistics-details">物流</button>
+                                <% } %>
+
+                                @*<%if(pages[i].status!=5 && pages[i].status!=333){%>
+
+        <button data-id="<%= pages[i].id %>" class="btn btn-link add-update-Btn" onclick="closeorder(this)">关闭</button>
+        <% } %>*@
+
+                                <button type="button" data-id="<%= pages[i].id %>" class="btn btn-link" onclick="orderData(this)">订单详情 </button>
+
+                                <button id="add_systemremark" data-id="<%= pages[i].id %>" class="btn btn-link" onclick="addsystemremark(this)">添加品牌反馈</button>
+
+
+                            </td>
+                        </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-12 col-md-3">
+            <div class="dataTables_info" id="bootstrap-data-table-export_info" role="status" aria-live="polite">
+                总共 <%=data.totalItemCount %> 条
+            </div>
+        </div>
+        <div class="col-sm-12 col-md-9">
+            <div class="dataTables_paginate paging_simple_numbers" id="div_pager">
+            </div>
+        </div>
+    </div>
+</script>
+
+
+@section Scripts{
+
+    @*可搜索复选下拉框*@
+    <script src="~/js/jqselect/select.js"></script>
+    <link href="@(ViewBag.StaticFile)/bootstrap-datetimepicker/4.17.47/css/bootstrap-datetimepicker.min.css" rel="stylesheet">
+    <script src="@(ViewBag.StaticFile)/moment.js/2.18.1/moment-with-locales.min.js"></script>
+    <script src="@(ViewBag.StaticFile)/bootstrap-datetimepicker/4.17.47/js/bootstrap-datetimepicker.min.js"></script>
+    <script src="@(ViewBag.StaticFile)/bootstrap-3-typeahead/4.0.2/bootstrap3-typeahead.min.js"></script>
+    @*引入Vue*@
+    <script src="https://unpkg.com/vue/dist/vue.js"></script>
+    @*饿了么Vue组件*@
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+
+    @*异步分页*@
+    <script src="~/js/bootstrap-pager.js"></script>
+    <script src="~/js/jq.postJSON.js"></script>
+    <script src="~/js/microTemplate.js"></script>
+
+
+    <script type="text/javascript">
+        var $mdu = new HuLyegaJS.event();
+        jQuery(function () {
+            //列表+查询
+            var reload = (function ($, render) {
+
+                //查询条件
+                var o = {};
+                o.pageSize = 10;
+                o.pageIndex = 1;
+                o.searchType = 0;
+                o.supplierId = null;    //供应商
+                o.orgId = null;         //品牌
+                o.subjectId = null      //科目
+                o.orgTypeId = null      //品牌类型
+                o.status = null;        //状态
+                o.title = "",           //课程名称
+                    o.courseId = null,      //课程Id
+                    o.ordCode = "",          //订单号
+                    o.mobile = "";            //下单人电话
+                o.recvMobile = "";//收货人电话
+                o.beginClassMobile = "";//上课电话
+                o.courseType = null;//商品分类
+                o.startTime = null;
+                o.endTime = null;
+
+
+
+                var bus = new LiejiaJS.event();
+                var msgType = {
+                    relist: 're-list',
+                };
+
+
+
+                var tmp = $('#tmp_tb').html();
+
+                function ui2o() {
+                    o.supplierId = $("#div_Supplier_hidden").val();           //品牌
+                    o.orgId = $("#div_Org_hidden").val();           //品牌
+                    o.subjectId = $("#div_Subject_hidden").val();   //科目
+                    o.orgTypeId = $("#div_OrgType_hidden").val();   //品牌类型
+                    o.status = $("#Status").val();                  //状态
+                    o.title = $("#Title").val();                    //课程名称
+                    o.courseId = $("#div_Course_hidden").val();     //课程
+                    o.ordCode = $("#OrdCode").val();                    //订单号
+                    o.mobile = $("#Mobile").val();                    //下单人电话
+                    o.recvMobile = $("#RecvMobile").val();                    //收货人电话
+                    o.beginClassMobile = $("#BeginClassMobile").val();                    //上课电话
+                    o.courseType = $('#Type').val();//商品分类
+                    o.startTime = jQuery('#StartTime').val()
+                    o.endTime = jQuery('#EndTime').val()
+
+
+
+                }
+
+                function init(data) {
+                    window.tableData = data;
+                    console.log('init and rendering tb with str ...');
+                    var str = render(tmp, data);
+                    console.log('render tb str ok');
+                    $('#tb').html(str);
+
+                    $('#div_pager').page({
+                        count: data.totalItemCount,
+                        pageNum: o.pageIndex,
+                        pageSize: o.pageSize,
+                        canSkip: true,
+                    }).$element.on('pageChanged', function (e, p) {
+                        o.pageIndex = p.pageNum;
+                        ui2o(), ajax();
+                    });
+                    bus.emit(msgType.relist, 1);
+
+                    //约课状态
+                    $(".listselect").on("change", function () {
+                        var ordid = $(this).attr("data-id");
+                        var appointmentStatus = $(this).val();
+                       showConfirm('确定要更改约课状态？', function () {
+                           Loading("正在更新数据！");
+                           $.post("@Url.Action("ChangeAppointmentStatus")", { "OrdId": ordid, "AppointmentStatus": appointmentStatus }, function (data) {
+                               if (data.status == 200) {
+                                   ShowAlert('操作成功', 1000, function () {
+                                       jQuery("#searchBtn").click();
+                                       CloseLoading();
+                                   });
+                               } else {
+                                   ShowAlert(data.msg);
+                                   CloseLoading();
+                               }
+                           });
+            });
+
+                    })
+
+                    //弹框-物流详情
+                    jQuery(".show-logistics-details").on("click", function () {
+                        Loading("努力加载中......");
+                        var nu = jQuery(this).attr('data-nu');//物流单号75460330181332
+                        var dhCode = jQuery(this).attr('data-dhCode');//兑换码
+                        var companyCode = jQuery(this).attr('data-companyCode');//物流公司编号
+                        var json = { "nu": nu, "dhCode": dhCode, "companyCode": companyCode };
+
+                        jQuery.get("@Url.Action("LogisticsDetails")", json, function (data) {
+                            CloseLoading();
+                            //初始化时加载标签页面
+                            jQuery('#gameContainer').html(data);
+                            jQuery('#gameModal').modal('show');
+                        });
+                    });
+
+                    //单个勾选--直接发货复选框
+                    //直接发货复选框
+                    $('.sendedgoods').on('click', function () {
+                        var currentInput = $(this);
+                        var checkinputs = JSON.parse($("#batchsendedgoods_Btn").attr("data-batch"));
+                        var id = currentInput.attr("id");
+
+                        if (currentInput.attr("checked")) {//取消勾选
+                            currentInput.removeAttr("checked");
+                            checkinputs.splice($.inArray(id, checkinputs), 1);
+
+                            $('.selectall').removeAttr("checked");
+
+                        } else {//勾选
+                            currentInput.attr("checked", "checked");
+                            checkinputs.push(id);
+                        }
+                        $("#batchsendedgoods_Btn").attr("data-batch", JSON.stringify(checkinputs));
+                    });
+
+                    //翻页复选框勾选状态保持
+                    var isall = true;
+                    $('.sendedgoods').each(function (index, input) {
+                        debugger;
+                        var currentInput = $(input);
+                        var id = currentInput.attr("id");
+                        var checkinputs = JSON.parse($("#batchsendedgoods_Btn").attr("data-batch"));
+                        if ($.inArray(id, checkinputs) >= 0) {
+                            currentInput.attr("checked", "checked");
+
+                        } else {//非全选
+                            isall = false;
+                        }
+                    });
+                    if (isall == true && $('.sendedgoods').length>0) {//全选
+                        $('.selectall').attr("checked", "checked");
+                    } else {//非全选
+                        $('.selectall').removeAttr("checked");
+                    }
+
+                    //全选
+                    $('.selectall').on('click', function () {
+                        var currentInput = $(this);
+                        var ids = allIds();
+
+                        var checkinputs = JSON.parse($("#batchsendedgoods_Btn").attr("data-batch"));
+
+                        if (currentInput.attr("checked")) {//取消勾选
+                            currentInput.removeAttr("checked");
+                            $(ids).each(function (index, id) {
+                                checkinputs.splice($.inArray(id, checkinputs), 1);
+                                $('#' + id).removeAttr("checked");
+                            });
+
+                        } else {//勾选
+                            currentInput.attr("checked", "checked");
+                            $(ids).each(function (index, id) {
+                                if ($.inArray(id, checkinputs) < 0) {//排重
+                                    checkinputs.push(id);
+                                }
+                                $('#' + id).attr("checked", "checked");
+                            });
+
+                        }
+                        $("#batchsendedgoods_Btn").attr("data-batch", JSON.stringify(checkinputs));
+                    });
+                }
+
+                //current page ids
+                function allIds() {
+                    var ids = [];
+                    $('.sendedgoods').each(function (index, single) {
+                        ids.push($(single).attr("id"));
+                    });
+                    return ids;
+                }
+
+
+
+
+                function ajax() {
+                    Loading("努力加载中......");
+                    $.getJSON('/Courses/GetOrders', o, function (res) {
+
+                        if (!res.isOk) {
+                            ShowAlert('网络异常');
+                            return console.log(res);
+                            CloseLoading();
+                        } else {
+                            init(res.data);
+                            CloseLoading();
+                        }
+                    });
+                }
+
+                //查询确定按钮
+                $('#searchBtn').click(function () {
+
+                    o.pageIndex = 1, o.searchType = 0, ui2o(), ajax();
+                });
+
+                //导出按钮
+                // export excel
+                $('#exportBtn').on('click', function () {
+                    //get_ui_data_to_o($.extend({}, o));
+                    o.pageIndex = 1; o.pageSize = 10000000;
+                    ui2o(); exportorders();
+
+                });
+                function exportorders() {
+                    $.getJSON('/Order/ExportOrders', o).then(function (res) {
+                        if (res.status != 200) {
+                            return ShowAlert(res.msg, -1);
+                        }
+                        var id = res.data;
+                        window.location.href = '/home/getxlsx?id=' + id;
+                    });
+                }
+                //批量导入更新订单信息
+                var OrderInfo_BatchUpdate = (function () {
+                    //选择导入excel
+                    $("#importBtn").on("click", function () {
+                        $("#selectFile").click();
+                    })
+                //导入
+                $('#selectFile').on("change", function () {
+                    var fileinput = $(this);//上传文件
+                var videoInput = fileinput.attr('id');
+                var $videoInput = document.getElementById(videoInput);
+                if ($videoInput.files.length == 0) {
+                    return;
+                }
+                var formData = new FormData();
+                for (var i = 0; i < $videoInput.files.length; i++) {
+                    formData.append(videoInput, $videoInput.files[i]);
+                }
+                Loading("正在导入！");
+                    $.post({
+                    url: '@Url.Action("BatchUpdateOrderInfosFromExcel", "Order")',
+                    type: "post",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    cache: false
+                }).done(function (res) {
+                    debugger;
+                    console.log('msgres', res)
+                    if (res.isOk == true) {
+                        ShowAlert('导入成功', 1000, function () {
+
+                            $("#searchBtn").click();
+                        });
+
+                    } else {
+                        ShowAlert("导入失败:" + res.msg, -1);
+
+                    }
+                    fileinput.val('');
+                    CloseLoading();
+                }).fail(function (res) {
+                    ShowAlert("网络异常:" + res.msg, -1);
+                    CloseLoading();
+                });
+        })
+                })()
+
+                //批量导入更新物流信息
+                var WLInfo_BatchUpdate = (function () {
+                    debugger;
+                    //选择导入excel
+                    $("#importWLBtn").on("click", function () {
+                        debugger;
+                        $("#selectWLFile").click();
+                    })
+                    //导入
+                    $('#selectWLFile').on("change", function () {
+                        debugger;
+                        var fileinput = $(this);//上传文件
+                        var videoInput = fileinput.attr('id');
+                        var $videoInput = document.getElementById(videoInput);
+                        if ($videoInput.files.length == 0) {
+                            return;
+                        }
+                        var formData = new FormData();
+                        for (var i = 0; i < $videoInput.files.length; i++) {
+                            formData.append(videoInput, $videoInput.files[i]);
+                        }
+                        Loading("正在导入！");
+                        $.post({
+                            url: '@Url.Action("BatchUpdateWLInfosFromExcel", "Order")',
+                            type: "post",
+                            data: formData,
+                            processData: false,
+                            contentType: false,
+                            cache: false
+                        }).done(function (res) {
+                            debugger;
+                            console.log('msgres', res)
+                            if (res.succeed == true) {
+                                ShowAlert('导入成功', 1000, function () {
+                                    $("#searchBtn").click();
+                                });
+                            } else {
+                                HuLyegaJS.win({
+                                    width: 500,
+                                    height: 400,
+                                    title: '导入物流有错',
+                                    nofooter: true,
+                                    body: '<pre style="overflow-y:scroll;height:290px;">'
+                                        + res.msg + '</pre>',
+                                    autoDispose: true,
+                                    backdrop: 'static'
+                                });
+                            }
+                            fileinput.val('');
+                            CloseLoading();
+                        }).fail(function (res) {
+                            ShowAlert("网络异常:" + res.msg, -1);
+                            CloseLoading();
+                        });
+                    })
+                })();
+
+                function get_ui_data_to_o(o) {
+                    $('[prop]').each(function () {
+                        var self = $(this);
+                        o[self.attr('prop')] = self.val();
+                    });
+                    $mdu.fire('get_ui_data', o);
+                }
+
+                var dt1 = JSON.parse($('#pgjson1').html()); //初始化分页数据
+
+                //$('#pgjson1').remove();
+                if (dt1) {
+
+                    init(dt1);
+                } else {
+
+                    init({
+                        currentPageIndex: o.pageIndex,
+                        pageSize: o.pageSize,
+                        totalItemCount: 0,
+                        totalPageCount: 0,
+                        currentPageItems: [],
+                    });
+                    ajax();
+                }
+
+                return function () { ui2o(), ajax() };
+            })(jQuery, microTemplate);
+
+
+
+
+            //品牌、科目、类型下拉框
+            var singlesearchselect = (function ($) {
+
+                //初始化
+                jQuery("#div_Supplier").mySelect();//品牌
+                jQuery("#div_Org").mySelect();//品牌
+                jQuery("#div_Course").mySelect();//课程
+                jQuery("#div_Subject").mySelect();//科目
+                jQuery("#div_OrgType").mySelect();//品牌类型div_OrgType
+                jQuery("#div_Companys").mySelect();//div_Companys 快递公司
+
+
+                 //品牌-课程联动
+                jQuery(document).on('click touch', '#div_Org .select-picker-options-list-item', function (e) {
+
+                    e.preventDefault();
+                    SetCourseData(jQuery(this).attr("id"), jQuery("#div_Course"));
+
+                });
+                function SetCourseData(orgId, jQueryselect) {
+
+                    if (orgId == null || orgId == 0) {
+                       return;
+                    }
+                    jQuery.getJSON("@Url.Action("CourseSelectList", "Courses")", { orgId: orgId }, function (data) {
+
+                        var options = '<option value="-1">所有</option>';
+                        jQuery.each(data, function (index, item) {
+                            options += '<option value="' + item.value + '">' + item.text + '</option>';
+                        });
+
+                        jQuery("#div_Course .select-picker-search").each(function (index) {
+                            jQuery(this).remove();
+                        })
+                        jQuery("#div_Course .select-picker-options-wrp").each(function (index) {
+                            jQuery(this).remove();
+                        })
+                        ReRenderMySelect("div_Course", options);
+                    });
+                }
+                //重新渲染下拉框
+                function ReRenderMySelect(id, options) {
+
+                    jQuery("#" + id + " .select-picker-search").each(function (index) {
+                        jQuery(this).remove();
+                    })
+                    jQuery("#" + id + " .select-picker-options-wrp").each(function (index) {
+                        jQuery(this).remove();
+                    })
+
+                    var iscanselect = false;//是否可选
+
+                    //options包含选中项，则把选项传入,否则重置所有选项为未选中
+                    if (options == null || options == undefined) {
+                        options = "";
+                        jQuery("#" + id + "_select").find("option").each(function () {
+                            var option = jQuery(this);
+                            options += '<option  value="' + option.val() + '">' + option.text() + '</option>';
+                        });
+                    }
+                    jQuery("#" + id + "_select").empty();
+                    jQuery("#" + id + "_select").append(options);
+                    jQuery("#" + id).mySelect();//重新渲染
+
+                    //if (readonly) {
+                    //    jQuery("#" + id).removeClass("readonly");
+                    //}
+                }
+            })(jQuery)
+
+            //时间
+            var datetime = (function () {
+
+                jQuery('.datetimepicker4').datetimepicker({
+                    format: 'YYYY-MM-DD',
+                    locale: moment.locale('zh-cn')
+                }).bind('dp.change', function (e) {
+                    var d = new Date(e.date);
+                    var timeId = jQuery(this).attr("id")
+                    var time = jQuery(this).val();
+                    if (timeId == "StartTime") {//设置结束时间的最小值为开始时间
+                        jQuery("#EndTime").data("DateTimePicker").minDate(time);
+
+                    } else if (timeId == "EndTime") {//设置开始时间的最大值为结束时间
+                        jQuery("#StartTime").data("DateTimePicker").maxDate(time);
+
+                    }
+                });
+
+
+
+            })();
+
+        });
+
+        // 订单详情弹框数据
+        function orderData(obj) {
+            Loading("正在加载......");
+
+            var $ = jQuery;
+            var orderParams = { "ordId": $(obj).attr("data-id") };
+            $.get('@Url.Action("GetOrderDetails", "Courses")', orderParams, function (data) {
+                // 判断返回对象是否为空
+                for (var key in data) {
+                    if (Object.hasOwnProperty.call(data, key)) {
+                        if (data[key] === null || data[key] === "") {
+                            data[key] = "暂无"
+                        }
+                    }
+                }
+                // 订单详情弹框
+                var orderData = "";
+                for (var i = 0; i < data.length; i++) {
+                       orderData+=`<div class="order-info flex">
+						<img
+							src="${data[i].banner}"
+							alt="${data[i].title}"
+						/>
+						<div class="order-text flex1">
+							<h3 class="order-title">${data[i].title}</h3>
+							<div class="subtitle">${data[i].subTitle}</div>
+							<div class="flex align-center justify-between">
+								<div class="order-price">
+									<span class="bold">￥${data[i].price}</span>
+									<span>x${data[i].number}</span>
+								</div>
+								<div class="actual-pay">实付金额：${data[i].price * data[i].number}</div>
+							</div>
+						</div>
+					</div><br>`;
+                    }
+                orderData+=	`<div class="order-form">
+						<div class="form-group flex">
+							<div class="flex-auto">
+								<label class="control-label">订单号：</label>
+								<span>${data[0].code}</span>
+							</div>
+							<div class="flex-auto">
+								<label class="control-label">订单状态：</label>
+								<span>${data[0].status}</span>
+							</div>
+							<div class="flex-auto">
+								<label class="control-label">下单时间：</label>
+								<span>${data[0].createTime}</span>
+							</div>
+						</div>
+						<div class="form-group flex">
+							<div class="flex-auto">
+								<label class="control-label">下单账号ID：</label>
+								<span>${data[0].userId}</span>
+							</div>
+							<div class="flex-auto">
+								<label class="control-label">下单账号电话：</label>
+								<span>${data[0].userMobile}</span>
+							</div>
+							<div class="flex-auto">
+								<label class="control-label">下单账号昵称：</label>
+								<span>${data[0].nickname}</span>
+							</div>
+						</div>
+						<div class="form-group flex">
+							<div class="flex-auto">
+								<label class="control-label">收货人姓名：</label>
+								<span>${data[0].recvUsername}</span>
+							</div>
+							<div class="flex-auto">
+								<label class="control-label">收货人电话：</label>
+								<span>${data[0].recvMobile}</span>
+							</div>
+							<div class="flex-auto">
+								<label class="control-label">订单状态：</label>
+								<span>${data[0].status}</span>
+							</div>
+						</div>
+						<div class="form-group flex">
+							<label class="control-label">收货地址：</label>
+							<span>${data[0].address}</span>
+						</div>
+						<div class="form-group flex">
+							<label class="control-label">最新物流信息：</label>
+							<span>${data[0].lastJStr}</span>
+						</div>
+						<div class="form-group flex">
+							<div class="flex-auto">
+								<label class="control-label">物流订单号：</label>
+								<span>${data[0].expressCode}</span>
+							</div>
+							<div class="flex-auto">
+								<label class="control-label">课程兑换码：</label>
+								<span>${data[0].dhCode}</span>
+							</div>
+							<div class="flex-auto">
+								<label class="control-label">约课程状态：</label>
+								<span>${data[0].appointmentStatus}</span>
+							</div>
+						</div>
+					</div>
+				`
+                //$("#orderBox").append(orderData)
+                $("#orderBox").html(orderData)
+                CloseLoading();
+                jQuery("#orderModal").modal('show');
+            })
+        }
+
+        //一键发货
+        jQuery("#batchsendedgoods_Btn").on('click', function () {
+            var ids = JSON.parse(jQuery(this).attr("data-batch"));
+            if (ids.length <= 0) {
+                ShowAlert("请先勾选订单！");
+                return;
+            }
+            showConfirm('确定要一键发货？', function () {
+                Loading("正在更新数据！");
+                jQuery.post("@Url.Action("BatchSendGoods")", { "OrderIds": ids }, function (data) {
+                    if (data.status == 200) {
+                        ShowAlert('操作成功', 1000, function () {
+                            jQuery("#searchBtn").click();
+                            jQuery("#batchsendedgoods_Btn").attr("data-batch", "[]");
+                            CloseLoading();
+                        });
+                    } else {
+                        ShowAlert(data.msg);
+                        CloseLoading();
+                    }
+                });
+
+            });
+        });
+
+        //录入退款数量模态窗确认处理
+        function applyRefund(obj) {
+            var refundCount = jQuery('input[name="refundCount"]').val();
+            var data = window.tableData.currentPageItems[window.refundIndex];
+            if (refundCount < 1 || refundCount > data.number) {
+                ShowAlert("退款数量不合理。");
+                return;
+            }
+            refund(data, refundCount, function () {
+                jQuery("#inputRefundCountModal").modal('hide');
+            });
+        }
+
+        function RefundAndChangeOrderStatues(obj) {
+            var $this = jQuery(obj);
+            var index = $this.attr("data-index");
+            var status = jQuery.trim($this.text());
+            window.refundBtn = $this;
+            window.refundIndex = index;
+            if (status == "退款") {
+                var data = window.tableData.currentPageItems[index];
+                if (data.number > 1) {
+                    jQuery("#inputRefundCountModal").modal('show');
+                    return;
+                } else {
+                    refund(data, 1);
+                }
+            }
+
+        }
+
+        function refund(data,refundCount,callback_fn) {
+              showConfirm('确定要退款？', function () {
+                  window.refundBtn.text("退款中");
+                    Loading("正在更新数据！");
+                  jQuery.post("@Url.Action("RefundAndChangeOrderStatus")", { "OrderDetailId": data.orderDetailId, "RefundCount": refundCount }, function (res) {
+                      if (res.succeed) {
+                        ShowAlert('已退款', 1000, function () {
+                            jQuery("#searchBtn").click();
+                            CloseLoading();
+                        });
+                     } else {
+                        window.refundBtn.text("退款");
+                          ShowAlert(res.msg);
+                        CloseLoading();
+                     }
+                      callback_fn();
+                });
+            });
+        }
+
+        //发货
+        function delivergoods(obj) {
+            var $this = jQuery(obj);
+            var index = $this.attr("data-index");//订单Id
+            appData.currentItem = window.tableData.currentPageItems[index];
+            appData.wuliuItems = [{}]
+            initmySendModal();
+
+            Loading("加载中...");
+            var id = $this.attr("data-id").toUpperCase();//订单Id
+            var cid = $this.attr("data-cid").toUpperCase();//课程Id
+            jQuery("#send_checkdhcode").attr("data-id", id);
+            jQuery("#send_checkdhcode").attr("data-cid", cid);
+
+
+            var dbdata = JSON.parse($this.attr("data-json"));
+            if (dbdata.expressCode != null && dbdata.expressType != null) {//已经录入物流信息
+                jQuery("#div_Companys_hidden").val(dbdata.expressType);
+                var companyName = jQuery('option[value=' + dbdata.expressType + ']').html();
+                jQuery("#div_Companys").attr("hidden", "hidden");
+                jQuery("#showcommanyname").val(companyName).removeAttr("hidden").attr("disabled", "disabled")
+                jQuery("#send_nu").val(dbdata.expressCode).attr("disabled", "disabled");
+            }
+            debugger;
+            if (dbdata.exchangeCode != null) {//兑换码已经发送过
+                jQuery("#send_checkdhcode").attr("disabled", "disabled").removeAttr("checked");
+                jQuery("#send_dhCode").html("已发送过兑换码给用户")
+                jQuery("#send_checkdhcode").attr("disabled", "disabled");
+                jQuery("#mySendModal").modal('show');
+            } else {//未发送过
+                GetDHCode(id, cid);
+            }
+            var data = $this.attr("data-json");
+            jQuery("#send_save").attr("data-json", data)
+
+        }
+        //展示添加品牌反馈模态窗
+        function addsystemremark(obj) {
+            jQuery("#SystemRemark").val('');
+            var $this = jQuery(obj);
+            var id = $this.attr("data-id").toUpperCase();//订单Id
+            jQuery("#systemremark_save").attr("data-id", id);
+            jQuery("#mySystemRemarkModal").modal('show');
+        }
+        //保存品牌反馈
+        jQuery("#systemremark_save").on("click", function () {
+            var remarkInput = jQuery("#SystemRemark");
+            var systemRemark = remarkInput.val().trim();
+            if (systemRemark == "") {
+                ShowAlert("请填写品牌反馈");
+                remarkInput.focus();
+                return;
+            }
+            var id = jQuery(this).attr("data-id");
+
+            showConfirm('确定要添加品牌反馈？', function () {
+                Loading("正在更新数据！");
+                jQuery.post("@Url.Action("UpdateOrderInfo")", { "ordId": id, "systemRemark": systemRemark }, function (data) {
+
+                    if (data == true) {
+                        jQuery("#mySystemRemarkModal").modal('hide');
+                        ShowAlert('操作成功', 1000, function () {
+                            jQuery("#searchBtn").click();
+                            CloseLoading();
+                        });
+                    } else {
+                        ShowAlert(data.msg);
+                        CloseLoading();
+                    }
+                });
+            });
+        });
+
+
+
+        //勾选发送兑换码
+        jQuery("#send_checkdhcode").on("click", function () {
+
+            var current = jQuery(this);
+            if (current.attr("checked")) {//不需发送
+                current.removeAttr("checked");
+            } else {//获取兑换码
+                current.attr("checked", "checked");
+                var id = current.attr("data-id");
+                var cid = current.attr("data-cid");
+                var dhCode = GetDHCode(id, cid, true);
+                jQuery("#send_dhCode").html(dhCode);
+            }
+        });
+        //获取兑换码
+        function GetDHCode(orderid,courseid,noshow) {
+
+            jQuery.getJSON("@Url.Action("GetDHCode")", { "orderid": orderid, "courseid": courseid }, function (data) {
+                var msgorcode = '';
+
+                if (data != null) {
+                    jQuery("#send_dhCode").html(data.code)
+                    jQuery("#send_dhCode").attr("data-dhcodeid", data.id).attr("checked", "checked");
+                    msgorcode = data.code;
+                } else {
+                    jQuery("#send_dhCode").html("当前已无可用兑换码！");
+                    msgorcode = "当前已无可用兑换码！";
+                }
+                if (noshow == undefined) {
+                    jQuery("#send_dhCode").html(msgorcode);
+                    jQuery("#mySendModal").modal('show');
+                    CloseLoading();
+                }
+            });
+        }
+
+        //取消发货则关闭加载
+        jQuery(".cancelload").on('click', function () {
+            CloseLoading();
+            //initmySendModal();
+        })
+
+        function ReRenderMySelect(id, options) {
+
+            jQuery("#" + id + " .select-picker-search").each(function (index) {
+                jQuery(this).remove();
+            })
+            jQuery("#" + id + " .select-picker-options-wrp").each(function (index) {
+                jQuery(this).remove();
+            })
+
+            var iscanselect = false;//是否可选
+
+            //options包含选中项，则把选项传入,否则重置所有选项为未选中
+            if (options == null || options == undefined) {
+                options = "";
+                jQuery("#" + id + "_select").find("option").each(function () {
+                    var option = jQuery(this);
+                    options += '<option  value="' + option.val() + '">' + option.text() + '</option>';
+                });
+            }
+            jQuery("#" + id + "_select").empty();
+            jQuery("#" + id + "_select").append(options);
+            jQuery("#" + id).mySelect();//重新渲染
+
+            //if (readonly) {
+            //    jQuery("#" + id).removeClass("readonly");
+            //}
+        }
+        //恢复发货弹框初始值
+        function initmySendModal() {
+
+            debugger;
+            //物流公司
+            ReRenderMySelect("div_Companys");
+            //jQuery("#div_Companys_hidden").val('');//div_Companys 快递公司
+            jQuery('#showcommanyname').val('').attr('hidden', 'hidden');
+            jQuery('#div_Companys').removeAttr('hidden');
+
+
+            //物流单号
+            jQuery('#send_nu').val('').removeAttr('disabled');
+
+            //勾选框
+            jQuery("#send_checkdhcode").attr("checked", "checked").removeAttr('disabled');
+
+            //兑换码
+            jQuery('#send_dhCode').html('');
+        }
+
+        //保存发货信息
+        jQuery("#send_save").on("click", function () {
+            debugger;
+            var nu = jQuery.trim(jQuery("#send_nu").val()); //物流单号
+            var comanytype = jQuery.trim(jQuery("#div_Companys_hidden").val()); //物流公司
+
+            if ((nu != "" || comanytype != "") && nu == "") {
+                ShowAlert("若发物流信息，则物流公司与物流单号都必填！")
+                jQuery("#send_nu").focus();
+                checkNuIsExit = true;
+                return;
+            }
+            if ((nu != "" || comanytype != "") && comanytype == "") {
+                ShowAlert("若发物流信息，则物流公司与物流单号都必填！")
+                checkNuIsExit = true;
+                return;
+            }
+
+            var dbdata = JSON.parse(jQuery(this).attr("data-json"));
+            var IsSendExpress = true;
+            if ((dbdata.expressCode != null && dbdata.expressType != null) || (nu == "" && comanytype=="")) {//已经录入过物流信息
+                IsSendExpress = false;
+            }
+
+
+
+            //兑换码及兑换码复选框
+            var dhcode = jQuery("#send_dhCode").html();
+            var dhcodeid = jQuery("#send_dhCode").attr("data-dhcodeid");
+
+            var ischecked = jQuery("#send_checkdhcode").get(0).checked;
+            if (ischecked && (dhcode == "" || dhcode =="当前已无可用兑换码！")) {//勾选兑换码，则必须有有效兑换码
+                ShowAlert("当前无可用兑换码，请先导入兑换码");
+                jQuery("#send_checkdhcode").focus();
+                return;
+            }
+            //既不发物流，也不发兑换码
+            if (IsSendExpress == false && ischecked == false) {
+                ShowAlert("请录入信息");
+                return;
+            }
+
+            var d = jQuery("#send_save").attr("data-json")
+
+            var data = JSON.parse(d);
+
+            var RedeemCodeId = dhcodeid;
+            var IsSendDHCode = ischecked;
+            var OrderId = data.id;
+            var UserId = data.userId;
+            var BeginClassMobile = data.beginClassMobile;
+            var CourseId = data.courseId;
+            var Title = data.title;
+            var RecvMobile = data.mobile;
+            var CompanyName = IsSendExpress == true ? jQuery('option[value=' + comanytype + ']').html() : "";
+            var postdata = {
+                "RedeemCodeId": RedeemCodeId, "IsSendDHCode": IsSendDHCode, "DHCode": dhcode, "ExpressType": comanytype, "ExpressCode": nu, "CompanyName": CompanyName,
+                "OrderId": OrderId, "UserId": UserId, "BeginClassMobile": BeginClassMobile, "CourseId": CourseId, "Title": Title, "RecvMobile": RecvMobile, "IsSendExpress": IsSendExpress
+            };
+            if (nu != "" && comanytype != "") {
+                //saveing(postdata);
+                jQuery.getJSON('@Url.Action("CheckNu", "Courses")', { "nu": nu, "companyCode": comanytype }, function (res) {
+                    debugger;
+                    checkNuIsExit = res;
+                    if (!checkNuIsExit) {
+                        ShowAlert("物流单号错误，请重新填写！",5000)
+                        jQuery("#send_nu").focus();
+                        return;
+                    } else {//校验全通过，发货
+                        saveing(postdata);
+                        //initmySendModal();
+                    }
+                });
+            }
+            if (nu == "" && comanytype == "") {
+                saveing(postdata);
+                //initmySendModal();
+            }
+        });
+
+        function saveing(postdata) {
+            showConfirm('确定要发货？', function () {
+                    jQuery("#mySendModal").modal('hide');
+                    Loading("正在更新数据！");
+                    jQuery.post("@Url.Action("SaveSendGoods")", postdata, function (data) {
+                        if (data.status == 200) {
+                            ShowAlert('操作成功', 1000, function () {
+                                jQuery("#searchBtn").click();
+                                //清空弹框的值
+                                jQuery("#send_dhCode").html('');//兑换码
+                                jQuery("#send_nu").val('');//物流单号
+                                jQuery("#send_checkdhcode").attr("checked", "checked");//恢复默认勾选
+                                jQuery("#div_Companys_hidden").val('');//物流公司
+                                CloseLoading();
+                            });
+                        } else {
+                            ShowAlert(data.msg, -1);
+                            CloseLoading();
+                        }
+                    });
+                });
+        }
+
+        //关闭订单(课程订单)
+        function closeorder(obj) {
+            var id = jQuery(obj).attr("data-id");
+            showConfirm('确定要关闭订单？', function () {
+                Loading("正在更新数据！");
+                jQuery.post("@Url.Action("CacleOrCloseOrder")", { "ordId": id}, function (data) {
+                    if (data.status == 200) {
+                        ShowAlert('操作成功', 1000, function () {
+                            jQuery("#searchBtn").click();
+                            CloseLoading();
+                        });
+                    } else {
+                        ShowAlert(data.msg);
+                        CloseLoading();
+                    }
+                });
+            });
+        }
+
+
+        //鼠标移上去放大图片
+        function moveover(obj) {
+
+            var id = jQuery(obj).attr('id');
+            document.getElementById(id).width = "300"
+        }
+        //鼠标离开恢复图片大小
+        function moveback(obj) {
+
+            var id = jQuery(obj).attr('id');
+            document.getElementById(id).width = "150";
+        }
+
+
+
+    </script>
+    <script>
+        var appData = {
+            currentItem: window.currentItem,
+            wuliuoptions: @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(listCompanys)) ,
+            wuliuItems: [{
+                kuaidi: null,
+                code: null,
+                count: null
+            }],
+            sendIsAble: false
+
+        };
+        //为mySendModal创建一个Vue示例
+        new Vue({
+            el: "#mySendModal",
+            data: appData,
+            methods: {
+                inputCount: function (index) {
+                    var total = this.getTotalCount();
+                    if (total > this.currentItem.number) {
+                        ShowAlert('发货总数量超过订单数量。');
+                        this.wuliuItems[index].count = 0;
+                    }
+                },
+                getTotalCount: function () {
+                    var total = 0;
+                    for (var i = 0; i < this.wuliuItems.length; i++) {
+                        if (this.wuliuItems[i].count) {
+                            total += this.wuliuItems[i].count;
+                        }
+                    }
+                    return total;
+                },
+                caifenfahuo: function () {
+                    this.wuliuItems.push({})
+                },
+                del: function (index) {
+                    this.wuliuItems.splice(index, 1);
+                },
+                send: function () {
+                    alert('发送')
+                },
+                checkSendBtnCanEnable: function () {
+                    for (var i = 0; i < this.wuliuItems.length; i++) {
+                        if (!this.wuliuItems[i].kuaidi || !this.wuliuItems[i].code || !this.wuliuItems[i].count) {
+                            this.sendIsAble = false;
+                            return;
+                        }
+                    }
+                    this.sendIsAble = true;
+
+                }
+            }
+        })
+
+    </script>
+}

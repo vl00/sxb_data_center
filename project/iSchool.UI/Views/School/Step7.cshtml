@@ -1,0 +1,328 @@
+﻿@using iSchool;
+@using iSchool.Application.ViewModels;
+@using iSchool.Domain.Enum;
+@using iSchool.Domain.Modles;
+@using iSchool.Infrastructure;
+@model iSchool.Application.ViewModels.SchoolExtLifeDto
+@{
+    var ext = ViewBag.Ext as iSchool.Domain.SchoolExtension;
+    var menus = (ViewBag.Menus as List<ExtMenuItem>);
+    var schextImgs = Model.Imgs ?? Enumerable.Empty<UploadImgDto>();
+    var schtype = new SchFType0(ext.SchFtype);
+
+    ViewData["Title"] = "硬件设施及学生生活";
+}
+@*自定义控件需要引入addTagHelper*@
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, iSchool.UI
+@section css{
+    <link href="@(ViewBag.StaticFile)/cropper/4.0.0-beta/cropper.min.css" rel="stylesheet">
+    <link href="~/lib/cropper/main.css" rel="stylesheet">
+    <style>
+        .rich:empty:before {
+            content: attr(placeholder); /* element attribute*/
+            color: #d0c1c1;
+        }
+        /*焦点时内容为空*/
+        .rich:focus:before {
+            content: none;
+        }
+
+        .side-bar {
+            position: fixed;
+            bottom: 100px;
+            right: 25px;
+            font-size: 0;
+            line-height: 0;
+            z-index: 100;
+        }
+
+            .side-bar a {
+                width: 66px;
+                height: 66px;
+                display: inline-block;
+                margin-bottom: 2px;
+            }
+
+
+            .side-bar .icon-right {
+                background-position: 0 -62px;
+            }
+
+        #auditcard {
+            width: 500px;
+        }
+    </style>
+}
+<div>
+    <div id="Step7" class="row">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-header">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h4><strong>总体</strong></h4>
+                        </div>
+                        <div class="col-md-6 text-right">
+                            <h4>@Math.Round(menus.Average(_ => _.Completion) * 100, 2, MidpointRounding.AwayFromZero)%</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @{await Html.RenderPartialAsync("P_Menu_Step1");}
+                    @for (var i = 0; i < menus.Count; i++)
+                    {
+                        <div class="row form-group">
+                            <div class="col-md-6">
+                                <a href="/school/step@(i + 2)?sid=@ViewBag.sid&extid=@ViewBag.eid">@menus[i].Name</a>
+                            </div>
+                            <div class="col-md-6 text-right">@Math.Round(menus[i].Completion * 100, 2, MidpointRounding.AwayFromZero)%</div>
+                        </div>
+                    }
+                </div>
+                @{await Html.RenderPartialAsync("P_Menu_Alg");}
+            </div>
+        </div>
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header">
+                    <h4>硬件设施及学生生活</h4>
+                </div>
+                <div class="card-body">
+                    <h6 class="text-danger">
+                        *注意：标星号的字段将不列入完成度统计中
+                    </h6>
+                    <div class="form-group">
+                        <label class="form-control-label">硬件设施</label>
+                        <div class="row" ui-batch-uploadImg="@(SchoolImageEnum.Hardware.ToInt())"
+                             data-imgwidth="218" data-imgheight="218"
+                             data-title="硬件设施图片上传"
+                             data-url="@Url.Action("upload", "School", new { Type = (int)UploadType.Gallery, Id = ext.Id })">
+                            <pre data-data style="display:none;">
+                            @((schextImgs.FirstOrDefault(_ => _.Type == (byte)SchoolImageEnum.Hardware)?.Items ?? Enumerable.Empty<UploadImgItemDto>()).ToJsonString(true))
+                            </pre>
+                        </div>
+                        <input type="hidden" ac="1" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-control-label">学生生活</label>
+                        <br />
+                        <div>
+                            <span class="badge">社团活动<i class="fa fa-star"></i></span>
+                            @if (SchUtils.Canshow2("e7.community", schtype))
+                            {
+                                <div class="row" ui-batch-uploadImg="@(SchoolImageEnum.CommunityActivities.ToInt())"
+                                     data-imgwidth="218" data-imgheight="218"
+                                     data-title="社团活动图片上传"
+                                     data-url="@Url.Action("upload", "School", new { Type = (int)UploadType.Gallery, Id = ext.Id })">
+                                    <pre data-data style="display:none;">
+                                    @((schextImgs.FirstOrDefault(_ => _.Type == (byte)SchoolImageEnum.CommunityActivities)?.Items ?? Enumerable.Empty<UploadImgItemDto>()).ToJsonString(true))
+                                    </pre>
+                                </div>
+                                <input type="hidden" ac="1" />
+                            }
+                            else
+                            {
+                                <span style="color:red;display:block;">该字段与所选学校类型无关</span>
+                            }
+                        </div>
+                        <div>
+                            <span class="badge">各年级课程表 </span>
+                            @if (SchUtils.Canshow2("e7.Timetables", schtype))
+                            {                                
+                                <div class="row" ui-batch-uploadImg="@(SchoolImageEnum.GradeSchedule.ToInt())"
+                                     data-imgwidth="218" data-imgheight="218"
+                                     data-title="各年级课程表图片上传"
+                                     data-url="@Url.Action("upload", "School", new { Type = (int)UploadType.Gallery, Id = ext.Id })">
+                                    <pre data-data style="display:none;">
+                                    @((schextImgs.FirstOrDefault(_ => _.Type == (byte)SchoolImageEnum.GradeSchedule)?.Items ?? Enumerable.Empty<UploadImgItemDto>()).ToJsonString(true))
+                                    </pre>
+                                </div>
+                                <input type="hidden" ac="1" />
+                            }
+                            else
+                            {
+                                <span style="color:red;display:block;">该字段与所选学校类型无关</span>
+                            }
+                        </div>
+                        <div>
+                            <span class="badge">作息时间表<i class="fa fa-star"></i></span>
+                            @if (SchUtils.Canshow2("e7.Schedule", schtype))
+                            {                                
+                                <div class="row" ui-batch-uploadImg="@(SchoolImageEnum.Schedule.ToInt())"
+                                     data-imgwidth="218" data-imgheight="218"
+                                     data-title="作息时间表图片上传"
+                                     data-url="@Url.Action("upload", "School", new { Type = (int)UploadType.Gallery, Id = ext.Id })">
+                                    <pre data-data style="display:none;">
+                                    @((schextImgs.FirstOrDefault(_ => _.Type == (byte)SchoolImageEnum.Schedule)?.Items ?? Enumerable.Empty<UploadImgItemDto>()).ToJsonString(true))
+                                    </pre>
+                                </div>
+                                <input type="hidden" ac="1" />
+                            }
+                            else
+                            {
+                                <span style="color:red;display:block;">该字段与所选学校类型无关</span>
+                            }
+                        </div>
+                        <div>
+                            <span class="badge">校车路线 </span>
+                            @if (SchUtils.Canshow2("校车路线", schtype))
+                            {                                
+                                <div class="row" ui-batch-uploadImg="@(SchoolImageEnum.Diagram.ToInt())"
+                                     data-imgwidth="218" data-imgheight="218"
+                                     data-title="校车路线图片上传"
+                                     data-url="@Url.Action("upload", "School", new { Type = (int)UploadType.Gallery, Id = ext.Id })">
+                                    <pre data-data style="display:none;">
+                                    @((schextImgs.FirstOrDefault(_ => _.Type == (byte)SchoolImageEnum.Diagram)?.Items ?? Enumerable.Empty<UploadImgItemDto>()).ToJsonString(true))
+                                    </pre>
+                                </div>
+                                <input type="hidden" ac="1" />
+                            }
+                            else
+                            {
+                                <span style="color:red;display:block;">该字段与所选学校类型无关</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer text-center">
+                    <button type="button" class="save btn btn-outline-secondary" data-page="prev">上一页</button>
+                    <button type="button" class="save btn btn-outline-secondary" data-page="last">下一页</button>
+                </div>
+            </div>
+        </div>
+        @*右下角审核意见*@
+        <div class="side-bar qx qx-doaudit" style="width:66px;">
+            <a href="javascript:void(0);" class="icon-right">
+                <img src="~/images/right.png" alt="" />
+            </a>
+            <div class="card" id="auditcard" style="display:none">
+                <div class="card-body">
+                    <h5><strong>审核意见</strong></h5>
+                    @Html.TextArea("textarea-CurrAuditMessage", ViewBag.CurrAuditMessage, 4, 4, new { @class = "form-control", @readonly = "readonly" })
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-primary" id="hidebtn">隐藏</button>
+                </div>
+            </div>
+        </div>
+        <input type="hidden" name="Sid" value="@ViewBag.sid" />
+        <input type="hidden" name="Eid" value="@ViewBag.eid" />
+    </div>
+</div>
+@(await Html.PartialAsync("avatar-content", new { }))
+@section Scripts{
+    @*上传图片*@
+    <script src="@(ViewBag.StaticFile)/cropper/4.0.0-beta/cropper.min.js"></script>
+    <script src="~/lib/cropper/cropper.cut.js"></script>
+    <script src="~/js/CropAvatarImgWin.js"></script>
+    <script src="~/js/batchUploadImg.js?@(DateTime.Now.Ticks)"></script>
+    <script type="text/javascript">
+        if (typeof String.prototype.trim === 'undefined') {
+            String.prototype.trim = function () {
+                return this.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, '');
+            };
+        }
+    </script>
+    <script type="text/javascript">
+        var _isonlyjump = false;
+        var ui_batch_uploadImg = []; //[(type,uiobj)]
+
+        jQuery(function () {
+            // init图片上传ui组件
+            jQuery.map(jQuery('[ui-batch-uploadImg]'), function (x) {
+                x = jQuery(x);
+                ui_batch_uploadImg.push({
+                    type: x.attr('ui-batch-uploadImg'),
+                    obj: jQuery.batchUploadImg({
+                        el: x,
+                        maxItemCount: -1,
+                        fd_imgsrc: 'url',
+                        fd_imgsrc_s: 'url_s',
+                        onItemAdded: function (item, uiItem) {
+                            _isonlyjump = undefined;
+                        },
+                        onItemDel: function (item, uiItem) {
+                            _isonlyjump = undefined;
+                        },
+                    }),
+                });
+            });
+
+            //提交
+            (function (busy) {
+                jQuery('.save').on('click', function () {
+                    var o = {}, err;
+                    o.imgs = [];
+
+                    o.op = jQuery(this).attr('data-page');
+                    if (_isonlyjump) {
+                        if (o.op == "last") {//下一页
+                            window.location.replace('/school/Complete?sid=' + jQuery("input[name=Sid]").val() + '&extid=' + jQuery("input[name=Eid]").val());
+                        }
+                        else {//上一页
+                            window.location.replace('/school/step6?sid=' + jQuery("input[name=Sid]").val() + '&extid=' + jQuery("input[name=Eid]").val());
+                        }
+                        return;
+                    }
+
+                    jQuery('#Step7 input[name]').each(function () {
+                        var it = jQuery(this), n = it.attr('name');
+                        o[n] = it.val();
+                    });
+
+                    o.imgs = jQuery.map(ui_batch_uploadImg, function (x) {
+                        var items = x.obj.getData();
+                        for (var i = 0, len = items.length; i < len; i++) {
+                            if (!jQuery.trim(items[i].desc)) err = '请输入图片信息';
+                        }
+                        return { type: x.type, items: items };
+                    });
+
+                    if (err) {
+                        return ShowAlert("请输入图片信息", -1);
+                    }
+
+                    var c = 0.0, ac = jQuery('#Step7 [ac]').length;
+                    jQuery.each(o.imgs, function (_, x) {
+                        x.items && x.items.length && c++;
+                    });
+                    o.Completion = ac == 0 ? 0 : c / ac;
+
+                    if (busy) return;
+                    b = true, Loading('保存中...'); debugger;
+                    jQuery.post('/school/step7', o, function (res) {
+                        busy = false, CloseLoading();
+                        if (res.state == 200) {
+                            ShowAlert('保存成功', 1000, function () {
+                                window.onbeforeunload = undefined;
+                                if (o.op == "last") {
+                                    window.location.href = ('/school/Complete?sid=' + jQuery("input[name=Sid]").val() + '&extid=' + jQuery("input[name=Eid]").val());
+                                } else {
+                                    window.location.href = ('/school/step6?sid=' + jQuery("input[name=Sid]").val() + '&extid=' + jQuery("input[name=Eid]").val());
+                                }
+                            });
+                        } else {
+                            ShowAlert('保存意外失败', -1);
+                        }
+                    });
+                });
+            })();
+
+            //展开右下角审核意见
+            jQuery(".icon-right").on("click", function () {
+                jQuery(this).css("display", "none");
+                jQuery(".side-bar").css("width", "500px");
+                jQuery("#auditcard").css("display", "block");
+            });
+            //收回右下角审核意见
+            jQuery("#hidebtn").on("click", function () {
+                jQuery(".icon-right").css("display", "block");
+                jQuery(".side-bar").css("width", "66px");
+                jQuery("#auditcard").css("display", "none");
+                return false;
+            });
+        });
+
+    </script>
+}

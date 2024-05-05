@@ -1,0 +1,500 @@
+﻿@using iSchool;
+@using iSchool.Application.ViewModels;
+@using iSchool.Domain.Enum;
+@using iSchool.Domain.Modles;
+@using iSchool.Infrastructure;
+@model iSchool.Application.Service.Alg1QyRstDto
+@{
+    ViewData["Title"] = "算法-社会";
+
+    var menus = (ViewBag.Menus as List<ExtMenuItem>);
+}
+
+@section css{
+    <style>
+        .pre-hide {
+            display:none;
+        }
+        .a-href {
+            cursor:pointer;
+        }
+        .lgc-div {
+            margin-top:5px;
+        }
+        .j-item {
+			position: relative;
+			margin: 0 0.5em 0.5em 0;
+			display: inline-block;
+        }
+        .j-item .deletebutten {
+            position: absolute;
+            display: block;
+            width: 5px;
+            height: 5px;
+            top: 0px;
+            right: 0.2em;
+        }
+        .badge-light {
+            color: #212529;
+            background-color: #e9ecef;
+        }
+    </style>
+}
+
+<div class="row">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-header">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h4><strong>总体</strong></h4>
+                    </div>
+                    <div class="col-md-6 text-right">
+                        <h4>@Math.Round(menus.Average(_ => _.Completion) * 100, 2, MidpointRounding.AwayFromZero)%</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                @{await Html.RenderPartialAsync("P_Menu_Step1");}
+                @for (var i = 0; i < menus.Count; i++)
+                {
+                    <div class="row form-group">
+                        <div class="col-md-6">
+                            <a href="/school/step@(i + 2)?sid=@ViewBag.sid&extid=@ViewBag.eid">@menus[i].Name</a>
+                        </div>
+                        <div class="col-md-6 text-right">@Math.Round(menus[i].Completion * 100, 2, MidpointRounding.AwayFromZero)%</div>
+                    </div>
+                }
+            </div>
+            @{await Html.RenderPartialAsync("P_Menu_Alg");}
+        </div>
+    </div>
+    <div class="col-md-9">
+        <div class="card">
+            <div class="card-header">
+                <h4>社会</h4>
+            </div>
+            <div class="card-body">
+                <div class="custom-tab">
+                    <nav>
+                        <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                            <a class="nav-item nav-link active show" id="tab_TeacherPower" data-toggle="tab" href="#custom-nav-TeacherPower" role="tab" aria-controls="custom-nav-TeacherPower" aria-selected="true"><h3><b>师资力量</b></h3></a>
+                            <a class="nav-item nav-link " id="tab_CourseKind" data-toggle="tab" href="#custom-nav-CourseKind" role="tab" aria-controls="custom-nav-CourseKind" aria-selected="false"><h3><b>课程种类</b></h3></a>   
+                        </div>
+                    </nav>
+                    <div class="tab-content pl-3 pt-2" id="nav-tabContent">
+                        @* 师资力量 *@
+                        <div class="tab-pane fade active show" id="custom-nav-TeacherPower" role="tabpanel" aria-labelledby="tab_TeacherPower">
+                            <div id="div_TeacherPower">
+                                <div class="form-group">
+                                    <label class="form-control-label">教师总数</label>
+                                    <div class="row">
+                                        <div class="form-inline col-md-4">
+                                            <input type="text" fname="TeacherCount" class="form-control" value="@(Model.TeacherCount)" valid-med="valid_num0" valid-errmsg="教师总数 请输入正确的人数!!" />
+                                            <label class="pr-1  form-control-label">人</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-control-label">外教人数</label>
+                                    @if (
+(Model.Ext.Grade == (byte)SchoolGrade.Kindergarten && Model.Ext.Type == (byte)SchoolType.International)
+|| (Model.Ext.Grade == (byte)SchoolGrade.PrimarySchool && !Model.Ext.Type.In((byte)SchoolType.Public, (byte)SchoolType.Private))
+|| (Model.Ext.Grade == (byte)SchoolGrade.JuniorMiddleSchool && !Model.Ext.Type.In((byte)SchoolType.Public, (byte)SchoolType.Private))
+|| (Model.Ext.Grade == (byte)SchoolGrade.SeniorMiddleSchool && !Model.Ext.Type.In((byte)SchoolType.Public, (byte)SchoolType.Private))
+                                        )
+                                    {
+                                    <div class="row">
+                                        <div class="form-inline col-md-4">
+                                            <input type="text" fname="FgnTeacherCount" class="form-control" value="@(Model.FgnTeacherCount)" valid-med="valid_num0" valid-errmsg="外教人数 请输入正确的人数!!" />
+                                            <label class="pr-1  form-control-label">人</label>
+                                        </div>
+                                    </div>
+                                    }
+                                    else
+                                    {
+                                        <span style="color:red;display:block;">该字段与所选学校类型无关</span>
+                                    }
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-control-label">本科及研究生以上</label>
+                                    @if (
+Model.Ext.Grade.In((byte)SchoolGrade.JuniorMiddleSchool, (byte)SchoolGrade.SeniorMiddleSchool)
+|| (Model.Ext.Grade == (byte)SchoolGrade.PrimarySchool && Model.Ext.Type.In((byte)SchoolType.Public, (byte)SchoolType.Private))
+                                        )
+                                    {
+                                    <div class="row">
+                                        <div class="form-inline col-md-4">
+                                            <input type="text" fname="UndergduateOverCount" class="form-control" value="@(Model.UndergduateOverCount)"  valid-med="valid_num0" valid-errmsg="本科及研究生以上 请输入正确的人数!!" />
+                                            <label class="pr-1  form-control-label">人</label>
+                                        </div>
+                                    </div>
+                                    }
+                                    else
+                                    {
+                                    <span style="color:red;display:block;">该字段与所选学校类型无关</span>
+                                    }
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-control-label">研究生以上</label>
+                                    @if (
+Model.Ext.Grade == (byte)SchoolGrade.SeniorMiddleSchool 
+|| (Model.Ext.Grade.In((byte)SchoolGrade.JuniorMiddleSchool, (byte)SchoolGrade.PrimarySchool) && Model.Ext.Type.In((byte)SchoolType.Private, (byte)SchoolType.Public))
+                                        )
+                                    {
+                                    <div class="row">
+                                        <div class="form-inline col-md-4">
+                                            <input type="text" fname="GduateOverCount" class="form-control" value="@(Model.GduateOverCount)" valid-med="valid_num0" valid-errmsg="研究生以上 请输入正确的人数!!" />
+                                            <label class="pr-1  form-control-label">人</label>
+                                        </div>
+                                    </div>
+                                    }
+                                    else
+                                    {
+                                        <span style="color:red;display:block;">该字段与所选学校类型无关</span>
+                                    }
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-control-label">教师荣誉</label>
+                                    @if (
+Model.Ext.Type == (byte)SchoolType.Public && Model.Ext.Grade.In((byte)SchoolGrade.PrimarySchool, (byte)SchoolGrade.JuniorMiddleSchool, (byte)SchoolGrade.SeniorMiddleSchool)
+                                        )
+                                    {
+                                    <div class="row">
+                                        @* 教师荣誉 *@
+                                        <div class="col-md-2">
+                                            <select id="TeacherPower_addsel" class="form-control">
+                                                <option value="0">请选择</option>
+                                                @foreach (var (em, desc) in EnumUtil.GetDescs<SchAlgTeacherHonorLvs>())
+                                                {
+                                                    <option value="@(em.ToInt())">@(desc)</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4 form-inline">
+                                            <input type="text" class="form-control" id="TeacherPower_addvalue" valid-errmsg="请输入正确的教师荣誉人数!!" />
+                                            <label class="pr-1 form-control-label">人</label>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <input type="text" class="form-control" id="TeacherPower_addkey" />
+                                        </div>
+                                        <div class="col-md-3">
+                                            <button id="btnAddTeacherPower" class="btn btn-primary btn-dark">添加</button>
+                                        </div>
+                                    </div>
+                                    <div id="div_added_TeacherPower" class="lgc-div">
+                                        @* tmp #tmp_TeacherPower *@
+                                        <pre class="pre-hide">@(Model.TeacherHonor.ToJsonString(true))</pre>
+                                    </div>
+                                    }
+                                    else
+                                    {
+                                        <span style="color:red;display:block;">该字段与所选学校类型无关</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        @* 课程种类 *@
+                        <div class="tab-pane fade" id="custom-nav-CourseKind" role="tabpanel" aria-labelledby="tab_CourseKind">
+                            <div id="div_CourseKind">
+                                <div lgc="SubjsKvs" class="form-group">
+                                    <label class="form-control-label">学科类</label>
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <select class="form-control lgc-sel">
+                                                <option value="">请选择</option>
+                                                @foreach (var kv in ((KeyValueDto<string>[])ViewBag.Subjs))
+                                                {
+                                                    <option value="@(kv.Value)">@(kv.Key)</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4 form-inline">
+                                            <input type="text" class="form-control lgc-addtxt" />
+                                        </div>
+                                        <div class="col-md-3">
+                                            <button class="lgc-btn btn btn-primary btn-dark">添加</button>
+                                        </div>
+                                    </div>
+                                    <div class="lgc-div">
+                                        <pre class="pre-hide">@(Model.SubjsKvs.ToJsonString(true))</pre>
+                                    </div>
+                                </div>
+                                <div lgc="ArtsKvs" class="form-group">
+                                    <label class="form-control-label">艺术类</label>
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <select class="form-control lgc-sel">
+                                                <option value="">请选择</option>
+                                                @foreach (var kv in ((KeyValueDto<string>[])ViewBag.Arts))
+                                                {
+                                                    <option value="@(kv.Value)">@(kv.Key)</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4 form-inline">
+                                            <input type="text" class="form-control lgc-addtxt" />
+                                        </div>
+                                        <div class="col-md-3">
+                                            <button class="lgc-btn btn btn-primary btn-dark">添加</button>
+                                        </div>
+                                    </div>
+                                    <div class="lgc-div">
+                                        <pre class="pre-hide">@(Model.ArtsKvs.ToJsonString(true))</pre>
+                                    </div>
+                                </div>
+                                <div lgc="SportsKvs" class="form-group">
+                                    <label class="form-control-label">体育类</label>
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <select class="form-control lgc-sel">
+                                                <option value="">请选择</option>
+                                                @foreach (var kv in ((KeyValueDto<string>[])ViewBag.Sports))
+                                                {
+                                                    <option value="@(kv.Value)">@(kv.Key)</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4 form-inline">
+                                            <input type="text" class="form-control lgc-addtxt" />
+                                        </div>
+                                        <div class="col-md-3">
+                                            <button class="lgc-btn btn btn-primary btn-dark">添加</button>
+                                        </div>
+                                    </div>
+                                    <div class="lgc-div">
+                                        <pre class="pre-hide">@(Model.SportsKvs.ToJsonString(true))</pre>
+                                    </div>
+                                </div>
+                                <div lgc="ScienceKvs" class="form-group">
+                                    <label class="form-control-label">科学类</label>
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <select class="form-control lgc-sel">
+                                                <option value="">请选择</option>
+                                                @foreach (var kv in ((KeyValueDto<string>[])ViewBag.Science))
+                                                {
+                                                    <option value="@(kv.Value)">@(kv.Key)</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4 form-inline">
+                                            <input type="text" class="form-control lgc-addtxt" />
+                                        </div>
+                                        <div class="col-md-3">
+                                            <button class="lgc-btn btn btn-primary btn-dark">添加</button>
+                                        </div>
+                                    </div>
+                                    <div class="lgc-div">
+                                        <pre class="pre-hide">@(Model.ScienceKvs.ToJsonString(true))</pre>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer text-center">
+                <button type="button" class="save btn btn-outline-secondary" nxt-page="/school/step7?sid=@(ViewBag.sid)&extid=@(ViewBag.eid)">上一页</button>
+                &nbsp;&nbsp;&nbsp;&nbsp;
+                <button type="button" class="save btn btn-outline-secondary" nxt-page="/school/alg2?sid=@(ViewBag.sid)&extid=@(ViewBag.eid)">下一页</button>
+            </div>
+        </div>
+    </div>  
+</div>
+<script id="tmp_TeacherPower" type="text/template">
+    <%
+        for (var i = 0, len = data.length; i < len; i++) {
+            var item = data[i];
+    %>
+    <div class="j-item">        
+        <span class="badge badge-light">
+            <h5 style="display:inline-block;"><%=item.key%></h5>
+            <h5 style="display:inline-block;color:blue;"><%=item.value%>人</h5>
+        </span>
+        <a class="a-href fa fa-minus-circle deletebutten text-danger"></a>
+    </div>
+    <% } %>
+</script>
+<script id="tmp_CourseKind" type="text/template">
+    <%
+        for (var i = 0, len = data.length; i < len; i++) {
+            var item = data[i];
+    %>
+    <div class="j-item">        
+        <span class="badge badge-light">
+            <h5 style="display:inline-block;"><%=item.key%></h5>
+        </span>
+        <a class="a-href fa fa-minus-circle deletebutten text-danger"></a>
+    </div>
+    <% } %>
+</script>
+
+@section Scripts{ 
+    <script src="~/js/microTemplate.js"></script>
+    @*<script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>*@
+    <script src="~/js/schoolDataEnter.js?@(DateTime.Now.Ticks)"></script>
+    <script src="~/js/jq.postJSON.js"></script>
+    <script type="text/javascript">
+        if (typeof String.prototype.trim === 'undefined') {
+            String.prototype.trim = function () {
+                return this.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, '');
+            };
+        }
+    </script>
+    <script>
+        jQuery(function () {
+            //教师荣誉
+            (function () {
+                var render_TeacherPower = microTemplate(jQuery("#tmp_TeacherPower").html());
+
+                function load(items) {
+                    var html = render_TeacherPower(items);
+                    jQuery(html).appendTo('#div_added_TeacherPower').filter('.j-item').each(function (i, ele) {
+                        jQuery(ele).data(items[i]);
+                    });
+                }
+                jQuery('#btnAddTeacherPower').on('click', function () {
+                    var o = {};
+                    var k = jQuery('#TeacherPower_addkey').val().trim();
+                    if (k) {
+                        jQuery('#TeacherPower_addsel').val('0');
+                        o.key = k;
+                        o.message = null;
+                    } else {
+                        o.key = jQuery('#TeacherPower_addsel')[0].selectedOptions[0].innerText || '';      
+                        o.message = jQuery('#TeacherPower_addsel').val();
+                    }
+                    o.value = jQuery('#TeacherPower_addvalue').val().trim(); 
+
+                    if (!o.message && !jQuery('#TeacherPower_addsel').val()) {
+                        return ShowAlert('请选择或输入教师荣誉级别', -1);
+                    }
+                    if (!valid_num(o.value)) {
+                        return ShowAlert(jQuery('#TeacherPower_addvalue').attr('valid-errmsg'), -1);
+                    }
+
+                    var b = jQuery.grep(jQuery('#div_added_TeacherPower .j-item'), function (item, i) {
+                        return jQuery(item).data().key === o.key.trim();
+                    });
+                    if (b.length) {
+                        return ShowAlert('已添加重复项', -1);
+                    }                
+
+                    load([o]);
+                    jQuery('#TeacherPower_addsel').val('0'), jQuery('#TeacherPower_addkey,#TeacherPower_addvalue').val('');
+                });
+                jQuery('#div_added_TeacherPower').delegate('a.fa', 'click', function () {
+                    jQuery(this).parents('div.j-item').eq(0).remove();                
+                });
+
+                var pre = jQuery('#div_added_TeacherPower').find('pre.pre-hide');
+                load(JSON.parse(pre.html() || '[]'));
+                pre.remove();
+            })();
+
+            //课程种类
+            init_items('[lgc=SubjsKvs]');
+            init_items('[lgc=ArtsKvs]');
+            init_items('[lgc=SportsKvs]');
+            init_items('[lgc=ScienceKvs]');
+
+            jQuery('.save').on('click', function () {
+                var btns = jQuery('.save'), btn = jQuery(this), errmsg;
+                var o1 = {}; //o2 = {};
+                o1.eid = '@ViewBag.eid';
+                jQuery('#div_TeacherPower').find('[fname]').each(function () {
+                    var f = jQuery(this), v = f.val(), vmed = f.attr('valid-med');
+                    if (vmed && window[vmed] && !window[vmed](v, f)) {
+                        return (errmsg = f.attr('valid-errmsg')), false;
+                    }
+                    o1[f.attr('fname')] = v;
+                });
+                if (errmsg) {
+                    return ShowAlert(errmsg, -1);
+                }
+                o1.TeacherHonor = jQuery.map(jQuery('#div_added_TeacherPower').find('.j-item'), function (x) { return jQuery(x).data() });
+                if (!o1.TeacherHonor.length) o1.TeacherHonor = null;
+
+                jQuery('#div_CourseKind').find('[lgc]').each(function () {
+                    var f = jQuery(this);
+                    var a = jQuery.map(f.find('.j-item'), function (x) { return jQuery(x).data() });
+                    if (a.length) o1[f.attr('lgc')] = a;
+                });
+                
+                
+                btns.disable(), Loading("正在保存！"); 
+                jQuery.postJSON('/school/alg1?sid=@ViewBag.sid', o1).then(
+                    function (res) {
+                        CloseLoading();
+                        if (!res.isOk) {
+                            return ShowAlert(res.msg), btns.enable();
+                        }
+                        ShowAlert('保存成功', 1000, function () {
+                            window.onbeforeunload = undefined;
+                            window.location.replace(btn.attr('nxt-page'));
+                        });
+                    }, function (res) {
+                        console.log(res), CloseLoading(), btns.enable();
+                    }
+                );
+            });
+        });
+
+        function init_items(id) {
+            var div = jQuery(id);
+            var render = microTemplate(jQuery('#tmp_CourseKind').html());
+
+            function load(items) {
+                var html = render(items);
+                jQuery(html).appendTo(div.find('.lgc-div')).filter('.j-item').each(function (i, ele) {
+                    jQuery(ele).data(items[i]);
+                });
+            }
+            div.find('.lgc-div').delegate('a.fa', 'click', function () {
+                jQuery(this).parents('div.j-item').eq(0).remove();                
+            });
+            div.find('.lgc-sel').on('change', function () {
+                var v = this.value;
+                if (v == '') return;
+                var k = this.selectedOptions[0].innerText || '';
+                add_item({ key: k, value: v });
+                div.find('.lgc-addtxt').val('');
+            });
+            div.find('.lgc-btn').on('click', function () {
+                var o = {};
+                var k = div.find('.lgc-addtxt').val().trim();
+                o.key = k;
+                o.value = k;
+                if (add_item(o)) return;
+                div.find('.lgc-sel').val(''), div.find('.lgc-addtxt').val('');
+            });            
+            //o { key: '', value: '' }
+            function add_item(o) {
+                if (!o.value) {
+                    //ShowAlert('请选择或输入', -1);
+                    return 1;
+                }
+
+                var b = jQuery.grep(div.find('.lgc-div .j-item'), function (item, i) {
+                    return jQuery(item).data().key === o.key.trim();
+                });
+                if (b.length) {
+                    return ShowAlert('已添加重复项', -1);
+                }                
+
+                load([o]);
+            }
+
+            var pre = div.find('.lgc-div pre.pre-hide'), str = pre.html() || '[]';
+            pre.remove(), load(JSON.parse(str));
+        }
+        
+        function valid_num(value, element) {
+            return (jQuery.isNumeric(value) && parseFloat(value, 10) >= 0);
+        }
+        function valid_num0(value, element) {
+            return value == '' || (jQuery.isNumeric(value) && parseFloat(value, 10) >= 0);
+        }
+    </script>
+}

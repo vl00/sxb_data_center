@@ -1,0 +1,174 @@
+﻿@using iSchool.Domain.Enum;
+@using iSchool.Infrastructure;
+@{
+    ViewData["Title"] = "人员管理 - 详细";
+}
+
+@section css{
+    <style>
+        .tbheader {
+            background-color: #bbb5b5;
+        }
+
+        .a-href {
+            cursor: pointer;
+        }
+
+        .typeahead {
+            z-index: 8000;
+        }
+    </style>
+}
+
+@*搜索*@
+<div class="card">
+    <div class="card-body">
+        <div class="row form-group">
+            <div class="col-md-6"></div>
+            <div class="col-md-6 ">
+                <div class="input-group">
+                    <input type="text" placeholder="请输入学校ID或学校名称" class="form-control" prop="sidOrName" data-provide="typeahead" autocomplete="off" />
+                    <div class="input-group-btn"><button id="btn1" class="btn btn-secondary">检索</button></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="div_searchC" class="card">
+    <div class="card-body">
+        <div class="row form-group">
+            <div class="col-md-3">
+                <label class=" form-control-label">审核状态</label>
+                <select class="form-control" prop="auditStatus" prop-val-default-to-null="">
+                    <option value="">所有</option>
+                    <option value="@(SchoolAuditStatus.UnAudit.ToInt())">@(EnumUtil.GetDesc(SchoolAuditStatus.UnAudit))</option>
+                    <option value="@(SchoolAuditStatus.Success.ToInt())">@(EnumUtil.GetDesc(SchoolAuditStatus.Success))</option>
+                    <option value="@(SchoolAuditStatus.Failed.ToInt())">@(EnumUtil.GetDesc(SchoolAuditStatus.Failed))</option>
+                </select>
+            </div>
+            <div class="col-md-11 text-right" style="padding-top:10px">
+                <button id="btn2c" class="btn btn-danger btn-sm" type="reset">取消筛选</button>
+                &nbsp;&nbsp;
+                <button id="btn2" class="btn btn-primary btn-sm" type="button">筛选</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="card">
+    <div class="card-body">
+        <div id="div_tb_schools">@{ await Html.RenderPartialAsync("P_TbUserWorkInfo", (object)ViewBag.Schools); }</div>
+    </div>
+</div>
+
+@section Scripts{
+    <script src="@(ViewBag.StaticFile)/bootstrap-3-typeahead/4.0.2/bootstrap3-typeahead.min.js"></script>
+    <script>
+        (function (cb) {
+            jQuery(function () { cb(jQuery) });
+        })(function ($) {
+            var o = {};
+
+            //自动补全 | 智能匹配?
+            $('[prop=sidOrName]').typeahead({
+                //items: 10,
+                //source: function (query, process) {
+                //    var o = {
+                //        keyword: query, //jQuery('[prop=idOrName]').val(),
+                //        top: 10,
+                //        isOnline: false,
+                //    };
+                //    $.ajax({
+                //        url: '/audit/GetSchoolTypeahead',
+                //        type: 'get',
+                //        data: o,
+                //        dataType: 'json',
+                //        success: function (res) {
+                //            if (!res.isOk) return;
+                //            process($.map(res.data, function (item) { return item.sgname }));
+                //        }
+                //    });
+                //}
+            });
+
+            //table
+            var tbpg = (function (ele) {
+                o.pageIndex = 1;
+                o.pageSize = 10;
+                o.UserId = '@Context.Request.Query["uid"]';
+                o.type = '@Context.Request.Query["type"]';
+                function init() {
+                    $(ele).find('a[data-dt-idx]').on('click', function () {
+                        var pi = $(this).attr('data-dt-idx');
+                        if (o.pageIndex == pi) return;
+                        load(pi);
+                    });
+                    $(ele).find('.btn-skip').on('click', function () {
+                        var pi = parseInt($(ele).find('.span-skip input').val(), 10), maxi = parseInt($(ele).find('.span-skip').attr('data-totalPageCount'), 10);
+                        pi = pi < 1 ? 1 : pi > maxi ? maxi : pi;
+                        if (o.pageIndex == pi) return;
+                        load(pi);
+                    });
+                    init_after_paged();
+                }
+                function load(pi) {
+                    if (pi !== undefined) o.pageIndex = pi;
+                    $.post('/total/PageUserWorkInfo', o, function (str) {
+                        $(ele).html(str);
+                        init();
+                    });
+                }
+                init();
+                return load;
+            })('#div_tb_schools');
+
+            //获取查询条件
+            function ui2o() {
+                $('[prop]').each(function (t, n, v) {
+                    t = $(this), n = t.attr('prop-val-default-to-null'), v = t.val();
+                    o[t.attr('prop')] = n == v ? null : v;
+                });
+            }
+
+            //查询
+            $('#btn1').on('click', function () {
+                $('[prop]').each(function (a) {
+                    a = $(this);
+                    o[a.attr('prop')] = a.val();
+                });
+                tbpg(1);
+            });
+            $('#btn2c').click(function () {
+                $('#div_searchC [prop]').each(function () { $(this).val('') });
+            });
+            $('#btn2').click(function () {
+                $('[prop=sidOrName]').val('');
+                ui2o(), tbpg(1);
+            });
+
+            function init_after_paged() {
+                $('.dropdown.modify-auditstatus').on('shown.bs.dropdown', function () {
+                    $(this).find('a.disabled').css('color', 'gainsboro');
+                });
+                $('.dropdown.modify-auditstatus').find('a.dropdown-item').on('click', function () {
+                    var a = $(this), o = {}, aid = a.parents('.modify-auditstatus').eq(0).attr('aid'), st = a.attr('s');
+                    o.id = aid;
+                    o.fail = st == '@SchoolAuditStatus.Failed.ToInt()';
+                    o.msg = o.fail ? '管理员调整学校状态为需修改' : '';
+                    a.disable();
+                    showConfirm('确定要修改此学校审核状态？', function () {
+                        $.post('/audit/DoAudit', o).then(function (res) {
+                            a.enable();
+                            if (res.isOk) {
+                                ShowAlert('修改状态成功！');
+                                tbpg();
+                            } else {
+                                console.log(res);
+                                ShowAlert(res.msg || '意外失败');
+                            }
+                        });
+                    });
+                });
+            }
+        });
+    </script>
+}

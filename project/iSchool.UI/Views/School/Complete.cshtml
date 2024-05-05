@@ -1,0 +1,92 @@
+﻿@using iSchool.Domain.Enum;
+@using iSchool.Domain.Modles;
+@using iSchool.Infrastructure;
+@{
+    ViewData["Title"] = "完成";
+
+    var menus = (ViewBag.Menus as List<ExtMenuItem>);
+}
+
+@section css{ 
+    <style>
+        input.btn {
+            margin: 0 5px;
+        }
+    </style>
+}
+<div class="row">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-header">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h4><strong>总体</strong></h4>
+                    </div>
+                    <div class="col-md-6 text-right">
+                        <h4>@Math.Round(menus.Average(_ => _.Completion) * 100, 2, MidpointRounding.AwayFromZero)%</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                @{await Html.RenderPartialAsync("P_Menu_Step1");}
+                @for (var i = 0; i < menus.Count; i++)
+                {
+                    <div class="row form-group">
+                        <div class="col-md-6">
+                            <a href="/school/step@(i + 2)?sid=@ViewBag.sid&extid=@ViewBag.eid">@menus[i].Name</a>
+                        </div>
+                        <div class="col-md-6 text-right">@Math.Round(menus[i].Completion * 100, 2, MidpointRounding.AwayFromZero)%</div>
+                    </div>
+                }
+            </div>
+            @{await Html.RenderPartialAsync("P_Menu_Alg");}
+        </div>
+    </div>
+    <div class="col-md-9">
+        <div class="card">
+            <div class="card-header">
+                <h4>完成</h4>
+            </div>
+            <div class="card-body text-center">
+                <br />
+                <br />
+                <h2>
+                    <strong>数据录入完成率</strong>
+                </h2>
+                <br />
+                <h2>
+                    <strong>@Math.Round(menus.Average(_ => _.Completion) * 100, 2, MidpointRounding.AwayFromZero)%</strong>
+                </h2>
+                <br />
+                <h2>
+                    记得点击预览再次检查哦！
+                </h2>
+                <br />
+                <br />
+                <div>
+                    <input type="button" class="btn btn-outline-secondary  btnc-prev" value="上一页" />
+                    <input type="button" class="btn btn-outline-secondary  btnc-preview" value="预览" />
+                    <input type="button" class="btn btn-outline-info btnc-complete"  value="返回编辑学校" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts{ 
+    <script src="~/js/schoolDataEnter.js?_t=@(DateTime.Now.Ticks)"></script>
+    <script>
+        window.onbeforeunload = undefined;
+
+        jQuery(function () {
+            jQuery('.btnc-prev').on('click', function () {
+                window.location.replace('/school/step7?sid=' + '@ViewBag.sid' + '&extid=' + '@ViewBag.eid');
+            });
+            jQuery('.btnc-preview').on('click', function () {
+                window.location.replace('/school/preview?sid=' + '@ViewBag.sid' + '&extid=' + '@ViewBag.eid');
+            });
+            jQuery('.btnc-complete').on('click', function () {
+                window.location.replace('/school/main?sid=' + '@ViewBag.sid');
+            });
+        });
+    </script>
+}

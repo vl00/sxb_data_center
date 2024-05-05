@@ -1,0 +1,417 @@
+﻿@using iSchool;
+@using iSchool.Infrastructure
+@using iSchool.Domain.Modles
+@using iSchool.Domain.Enum
+@model iSchool.Application.ViewModels.SchoolExtCourseDto
+@{
+    ViewData["Title"] = "课程设置";
+
+    var schtype = new SchFType0(Model.SchFtype);
+}
+
+@section css{
+    <style type="text/css">
+        .side-bar {
+            position: fixed;
+            bottom: 100px;
+            right: 25px;
+            font-size: 0;
+            line-height: 0;
+            z-index: 100;
+        }
+
+            .side-bar a {
+                width: 66px;
+                height: 66px;
+                display: inline-block;
+                margin-bottom: 2px;
+            }
+
+
+            .side-bar .icon-right {
+                background-position: 0 -62px;
+            }
+
+        #auditcard {
+            width: 500px;
+        }
+    </style>
+}
+
+<div class="row">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-header">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h4><strong>总体</strong></h4>
+                    </div>
+                    <div class="col-md-6 text-right">
+                        <h4>@(string.Format("{0:F}", ((List<ExtMenuItem>)ViewBag.Menus).Sum(p => p.Completion) / ((List<ExtMenuItem>)ViewBag.Menus).Count() * 100))%</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                @{await Html.RenderPartialAsync("P_Menu_Step1");}
+                @for (var i = 0; i < ((List<ExtMenuItem>)ViewBag.Menus).Count(); i++)
+                {
+                    <div class="row form-group">
+                        <div class="col-md-8">
+                            <a href="@Url.Action("Step" + (i+2), new { sid = ViewBag.Sid,extId=  ViewBag.ExtId })"> @(((List<ExtMenuItem>)ViewBag.Menus)[i].Name)</a>
+                        </div>
+                        <div class="col-md-4 text-right">@(((List<ExtMenuItem>)ViewBag.Menus)[i].Completion * 100)%</div>
+                    </div>
+                }
+                @*<div class="row form-group">
+                        <div class="col-md-6">学校概况</div>
+                        <div class="col-md-6 text-right">0%</div>
+                    </div>
+                    <div class="row form-group">
+                        <div class="col-md-8">招生简章</div>
+                        <div class="col-md-4 text-right">0%</div>
+                    </div>
+                    <div class="row form-group">
+                        <div class="col-md-8">课程体系</div>
+                        <div class="col-md-4 text-right">0%</div>
+                    </div>
+                    <div class="row form-group">
+                        <div class="col-md-8">收费标准</div>
+                        <div class="col-md-4 text-right">0%</div>
+                    </div>
+                    <div class="row form-group">
+                        <div class="col-md-8">师资力量及教学质量</div>
+                        <div class="col-md-4 text-right">0%</div>
+                    </div>
+                    <div class="row form-group">
+                        <div class="col-md-8">硬件设施及学生生活</div>
+                        <div class="col-md-4 text-right">0%</div>
+                    </div>*@
+            </div>
+            @{await Html.RenderPartialAsync("P_Menu_Alg");}
+        </div>
+    </div>
+    <div class="col-md-9">
+        <form id="SchoolExtCourseForm" action="@(Url.Action("Step4"))" method="post">
+            <div class="card">
+                <div class="card-header">
+                    <h4>课程体系</h4>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label class="control-label mb-1">课程设置</label>
+                        @*screen*@
+                        @if (SchUtils.Canshow2("课程设置", schtype))
+                        {
+                            <div class="row">
+                                <div class="col-md-auto " id="tag-list-@((byte)TagType.CourseSet)">
+                                    @if (Model != null && Model.Courses != null)
+                                    {
+                                        foreach (var item in Model.Courses)
+                                        {
+                                            <div class="col-md-auto">
+                                                <section class="card  float-left ">
+                                                    <div class="card-body text-secondary" data-TagId="@item.Value">
+                                                        @item.Key
+                                                    </div>
+                                                </section>
+                                            </div>
+                                        }
+                                    }
+                                </div>
+                                <input type="hidden" name="Courses" id="Courses" class="c_ignore JsonData" value="@(Model==null||Model.Courses==null?"[]": JsonSerializationHelper.Serialize(Model.Courses))" />
+                                <div class="col-md-4">
+                                    <button type="button" class="btn btn-outline-secondary btn-lg createtag" data-input="Courses" data-tag="@((byte)TagType.CourseSet)">  +&nbsp;&nbsp;立即创建</button>
+                                    <input type="hidden" class="tag-@((byte)TagType.CourseSet)" />
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <span style="color:red;display:block;">该字段与所选学校类型无关</span>
+                        }
+                    </div>
+                    @*screen*@
+                    <div class="form-group">
+                        <label class="control-label mb-1">课程特色</label>
+                        @if (SchUtils.Canshow2("e4.Characteristic", schtype))
+                        {
+                            <div class="border uecontent" id="meal" style="min-height:50px">
+                                <script id="editor1" type="text/plain" style="width:100%;height:200px;">
+                                </script>
+                            </div>
+                        }
+                        else
+                        {
+                            <span style="color:red;display:block;">该字段与所选学校类型无关</span>
+                        }
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label mb-1">课程认证</label>
+                        @*screen*@
+                        @if (SchUtils.Canshow2("e4.Authentication", schtype))
+                        {
+                            <div class="row">
+                                <div class="col-md-auto " id="tag-list-@((byte)TagType.CourseAccre)">
+                                    @if (Model != null && Model.Authentication != null)
+                                    {
+                                        foreach (var item in Model.Authentication)
+                                        {
+                                            <div class="col-md-auto">
+                                                <section class="card  float-left ">
+                                                    <div class="card-body text-secondary" data-TagId="@item.Value">
+                                                        @item.Key
+                                                    </div>
+                                                </section>
+                                            </div>
+                                        }
+                                    }
+                                </div>
+                                <input type="hidden" name="Authentication" id="Authentication" class="c_ignore JsonData" value="@(Model == null || Model.Authentication == null ? "[]" : JsonSerializationHelper.Serialize(Model.Authentication))" />
+                                <div class="col-md-4">
+                                    <button type="button" class="btn btn-outline-secondary btn-lg createtag" data-input="Authentication" data-tag="@((byte)TagType.CourseAccre)">  +&nbsp;&nbsp;立即创建</button>
+                                    <input type="hidden" class="tag-@((byte)TagType.CourseAccre)" />
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <span style="color:red;display:block;">该字段与所选学校类型无关</span>
+                        }
+                    </div>
+                </div>
+                <input type="hidden" name="Eid" value="@ViewBag.ExtId" />
+                <input type="hidden" name="Sid" value="@ViewBag.Sid" />
+                <div class="card-footer text-center">
+                    <button type="button" class="btn btn-outline-secondary saveform-btn" data-page="previous">
+                        上一页
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary saveform-btn" data-page="last">
+                        下一页
+                    </button>
+                </div>
+            </div>
+
+            @*右下角审核意见*@
+            <div class="side-bar qx qx-doaudit" style="width:66px;">
+                <a href="javascript:void(0);" class="icon-right">
+                    <img src="~/images/right.png" alt="" />
+                </a>
+                <div class="card" id="auditcard" style="display:none">
+                    <div class="card-body">
+                        <h5><strong>审核意见</strong></h5>
+                        @Html.TextArea("textarea-CurrAuditMessage", ViewBag.CurrAuditMessage, 4, 4, new { @class = "form-control", @readonly = "readonly" })
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn btn-primary" id="hidebtn">隐藏</button>
+                    </div>
+                </div>
+            </div>
+
+        </form>
+    </div>
+</div>
+<pre style="display:none;" id="tmp_Characteristic">@Html.Raw(Model == null ? "" : Model.Characteristic)</pre>
+@section Scripts{
+    @*editor 富文本编辑器*@
+    <script type="text/javascript" charset="utf-8" src="~/ueditor/ueditor.config.nostyle4cccv1.js"></script>
+    <script type="text/javascript" charset="utf-8" src="~/ueditor/editor_api.js"></script>
+    @*jquery-validation*@
+    <environment include="Development">
+        <script src="@(ViewBag.StaticFile)/jquery-validate/1.19.0/jquery.validate.js"></script>
+        <script src="@(ViewBag.StaticFile)/jquery-validate/1.19.0/localization/messages_zh.js"></script>
+        <script src="@(ViewBag.StaticFile)/jquery.form/4.2.2/jquery.form.js"></script>
+
+    </environment>
+    <environment exclude="Development">
+        <script src="@(ViewBag.StaticFile)/jquery-validate/1.19.0/jquery.validate.min.js"></script>
+        <script src="@(ViewBag.StaticFile)/jquery-validate/1.19.0/localization/messages_zh.min.js"></script>
+        <script src="@(ViewBag.StaticFile)/jquery.form/4.2.2/jquery.form.min.js"></script>
+    </environment>
+    <script src="~/js/jquery-validate.bootstrap-tooltip.min.js"></script>
+    <script src="~/assets/js/Completion.js"></script>
+    @*linq js*@
+    <script src="@(ViewBag.StaticFile)/linq.js/2.2.0.2/linq.min.js"></script>
+    <script src="~/js/schoolDataEnter.js?@(DateTime.Now.Ticks)"></script>
+    <script type="text/javascript">
+        //是否只跳转页面
+        var isOnlyJump = true;
+        var count = 0;
+        @if (SchUtils.Canshow2("e4.Characteristic", schtype))
+                    {
+                        <Text>
+         //ue编辑器
+         var ue = UE.getEditor('editor1', {
+            configPath: 'ueditor/config.json',
+            initialContent: "",
+            theme: 'tt',
+            elementPathEnabled: !1,
+            imageScaleEnabled: !1,
+            imagePopup: !1,
+            tableDragable: !1,
+            wordCount: !1,
+            autoHeight: false,
+            toolbars: [["source", "h2", "bold", "underline", "italic", "strikethrough", "forecolor", "blockquote", "horizontal", "justifyleft", "justifycenter", "justifyright", "link", "unlink", "|", "insertimage", "|", "selectall", "removeformat", "undo", "redo"]],
+            removeFormatTags: "b,big,code,del,dfn,em,font,i,ins,kbd,q,samp,small,span,strike,strong,sub,sup,tt,u,var,blockquote,h1,h2,h3,h4,h5,h6",
+            autotypeset: {
+                mergeEmptyline: !0,
+                removeClass: !1,
+                removeEmptyline: !0,
+                pasteFilter: !0,
+                clearFontSize: !0,
+                clearFontFamily: !0
+            },
+         });
+        
+        ue.ready(function () {
+            jQuery(this.container).click(function (e) {
+            e.stopPropagation()
+            });
+            ue.execCommand('serverparam', 'contentID', '@(ViewBag.Sid)');
+            ue.execCommand('serverparam', 'contentType', 'school_v3');
+            ue.execCommand('cleardoc');
+            ue.execCommand("insertHtml", '');
+            ue.setContent(document.getElementById('tmp_Characteristic').innerHTML);
+            
+        });
+        (function (b) {
+            ue.ready(function () {
+                if (b) return;
+                b = true, bind_toolbar_event();
+            });
+            function bind_toolbar_event() {
+                //ue 清除格式事件
+                jQuery('.edui-editor').on('click', '.edui-for-removeformat', function () {
+                    ue.setContent(rmStyle(ue.getContent()));
+                    console.log('ueeditor rm style');
+                });
+            }
+        })();
+        jQuery('.uecontent').click(function (e) {           
+            
+            e.stopPropagation();
+            var jQuerytarget = jQuery(this);
+            //解决多个ueditor切换后工具栏和输入框分离
+            jQuery('.edui-editor-toolbarbox').attr('style', '');
+            var content = jQuerytarget.html();
+            var currentParnet = ue.container.parentNode.parentNode;
+            var currentContent = ue.getContent();
+            jQuerytarget.html('');
+            jQuerytarget.append(ue.container.parentNode);
+            ue.reset();
+            setTimeout(function () {
+                ue.setContent(content);
+            }, 200)
+            jQuery(currentParnet).html(currentContent);
+           
+            return false;
+        });
+        </Text>
+                }
+        
+        jQuery(function () {
+
+            //ue编辑器内容发生改变时会触发该事件
+            UE.getEditor('editor1').addListener('contentChange', function (editor) {            
+               if (count>0) {
+                    isOnlyJump = false;//跳转变量
+                   
+                }
+                ++count;
+            });
+
+            //添加标签
+            jQuery(".createtag").on("click", function () {
+                var tagId = jQuery(this).attr("data-tag");
+                var input = jQuery(this).attr("data-input");
+
+                var value = jQuery("#" + input).val();
+                var json = { "tagId": tagId, "input": input, "selectIds":value };
+            jQuery.get("@Url.Action("TagPanel", "Tag")", json, function (data) {
+                jQuery('#gameContainer').html(data);
+                //初始化时加载标签页面
+                var json = JSON.parse(jQuery("#hideTags").val());
+                ShowTagContent(json);
+                jQuery('#gameModal').modal('show');
+                isOnlyJump = false;//跳转变量
+            });
+        })
+            //保存表单
+            jQuery(".saveform-btn").on("click", function () {
+            //进行校验
+            var validate = validform("#SchoolExtCourseForm").form();
+                if (validate) {
+                    //翻页参数
+                    var page = jQuery(this).attr("data-page");
+                 //只跳转不保存
+                if (isOnlyJump) {
+                    if (page == "last") {//下一页
+                        window.location.replace('/school/step5?sid=' + '@ViewBag.Sid' + '&extid=' + '@ViewBag.ExtId');
+                    }
+                    else {//上一页
+                       window.location.replace('/school/step3?sid=' + '@ViewBag.Sid' + '&extid=' + '@ViewBag.ExtId');
+                    }
+                    isOnlyJump = true;
+                    count = 0;
+                    return;
+                }
+                var count = 0, useCount = 0;
+
+                var jsonObj = {};
+
+
+                //完成率
+                  @if (SchUtils.Canshow2("课程特色", schtype))
+                  {
+                         <Text>
+                        //学园特色
+                        var characteristic = ue.getContent();
+                        //学园特色完成率
+                        count += 1;
+                        if (jQuery.trim(characteristic))
+                        { useCount += 1; }
+                        jsonObj["characteristic"] = characteristic;
+                        </Text>
+
+                  }
+
+            var completion = Completion("SchoolExtCourseForm", useCount, count);
+            jsonObj["completion"] = completion;
+            jsonObj["operation"] = page;
+            Loading("正在保存！");
+            jQuery("#SchoolExtCourseForm").ajaxSubmit({
+                data: jsonObj,
+                        success: function (data) {
+                    if (data.state == 200) {
+                        //取消onbeforeunload事件
+                        window.onbeforeunload = undefined;
+                        jQuery(window).attr('location', data.result);
+                    }
+                    else {
+                        CloseLoading();
+                        ShowAlert(data.message);
+                    }
+                }
+            });
+          }
+            });
+
+            //展开右下角审核意见
+            jQuery(".icon-right").on("click", function () {
+                jQuery(this).css("display", "none");
+                jQuery(".side-bar").css("width", "500px");
+                jQuery("#auditcard").css("display", "block");
+            });
+            //收回右下角审核意见
+            jQuery("#hidebtn").on("click", function () {
+                jQuery(".icon-right").css("display", "block");
+                jQuery(".side-bar").css("width", "66px");
+                jQuery("#auditcard").css("display", "none");
+                return false;
+            });
+        });
+        //表单校验
+        function validform(formId) {
+            return jQuery(formId).validate();
+        }
+    </script>
+}

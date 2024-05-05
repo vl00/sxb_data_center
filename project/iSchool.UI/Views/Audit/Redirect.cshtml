@@ -1,0 +1,13 @@
+﻿@{
+    Layout = null;
+}
+<div>
+    @ViewBag.Msg
+</div>
+<script>
+    window.onload = function () {
+        setTimeout(function () {
+            window.location.replace('@ViewBag.Url');
+        }, 1000);
+    };
+</script>

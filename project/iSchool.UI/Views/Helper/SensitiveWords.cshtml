@@ -1,0 +1,115 @@
+﻿@*@using iSchool.Organization.Appliaction.ViewModels
+@using iSchool.Infrastructure;
+@using iSchool.Organization.Domain.Enum;
+@model OrgAddOrEditShowDto*@
+@{
+    ViewData["Title"] = "敏感词";
+}
+
+@section css
+{
+    @*<link href="@(ViewBag.StaticFile)/bootstrap-tagsinput/0.8.0/bootstrap-tagsinput.css" rel="stylesheet">
+    <link href="@(ViewBag.StaticFile)/cropper/4.0.0-beta/cropper.min.css" rel="stylesheet">        
+    <link href="https://cdn.bootcss.com/bootstrap-tagsinput/0.8.0/bootstrap-tagsinput.css" rel="stylesheet">*@
+
+}
+
+<div class="card">
+    <div class="card-header">
+        <div class="form-inline">
+            <div class="text-left col-md-6">敏感词查询</div>
+        </div>
+    </div>
+    <div class="card-body">
+        @*待查内容*@
+        <div class="form-group">
+            <div class="form-inline">
+                <label class="control-label mb-1"><span style="color:red;">*</span>待查内容：</label>
+                <div class="col-md-6">
+                    <textarea type="text" name="SearchText" id="SearchText" placeholder="请输入需查询内容"   rows="6" class="form-control" value="" style="width:190%;"></textarea>
+                </div>
+
+            </div>
+        </div>
+
+        @*查询结果*@
+        <div class="form-group">
+            <div class="form-inline">
+                <label class="control-label mb-1">&nbsp;&nbsp;查询结果：</label>
+                <div class="col-md-6">
+                    <textarea type="text" readonly="readonly"   rows="10"  name="SearchResult" id="SearchResult" class="form-control" value="" style="width:190%;"> </textarea>
+                </div>
+            </div>            
+        </div>
+        @*操作按钮*@
+        <div class="text-center">
+            <button id="search" class="btn btn-primary btn-sm font-size" type="button" style="width:10%;height:2em; ">查询</button>
+           
+        </div>
+
+    </div>
+
+</div>
+@section Scripts{
+   
+    @*数据补全*@
+    <script src="@(ViewBag.StaticFile)/bootstrap-3-typeahead/4.0.2/bootstrap3-typeahead.min.js"></script>
+    @*taginput*@
+    <script src="@(ViewBag.StaticFile)/bootstrap-tagsinput/0.8.0/bootstrap-tagsinput.min.js"></script>
+
+    @*<script src="~/js/jquery-validate.bootstrap-tooltip.min.js"></script>
+    <script src="~/assets/js/GetFormJson.js"></script>
+    <script src="~/assets/js/Completion.js"></script>
+    <script src="~/js/jq.postJSON.js"></script>*@
+
+    <script type="text/javascript">
+
+        //保存抓取评测
+        jQuery("#search").on("click", function () {
+            var data = jQuery("#SearchText").val();//获取表单数据
+            if (!(data.trim())) {
+                ShowAlert("待查内容不能为空！");
+                jQuery("#SearchText").focus();
+                return;
+            }
+            Loading("查询中......")
+            jQuery.post("@Url.Action("SearchSensitiveWords")", { "text": data }, function (result) {                
+                     
+                if (result.pass) {
+                    ShowAlert("内容不包含敏感词",500, function () {
+                        jQuery("#SearchResult").val('内容不包含敏感词');
+                        jQuery("#SearchResult").focus();
+                    });
+                    }
+                else {
+                    ShowAlert("内容包含敏感词", 500, function () {
+                        debugger;                          
+                        var txts = "";
+                        if (result.filteredTxt != null)
+                            txts += result.filteredTxt
+                        else if (result.filteredTxts != null)
+                            txts = result.filteredTxts
+                        //jQuery.each(result.filteredTxts,function (index, txt) {
+                        //    txts += txt + '\n';
+                        //});
+                        jQuery("#SearchResult").val(txts);
+                        jQuery("#SearchResult").focus();
+                    });
+                }
+                CloseLoading();
+                });
+        });
+
+        //获取表单数据
+        function GetFormData() {
+           
+
+            var data =
+            {
+                "text": jQuery("#SearchText").val(),
+               
+            };
+            return data;
+        }
+    </script>
+}

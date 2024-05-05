@@ -1,0 +1,2849 @@
+﻿@using iSchool
+@using iSchool.Application.ViewModels 
+@using iSchool.Infrastructure
+@using iSchool.Domain.Modles
+@using iSchool.Domain.Enum
+@using iSchool.Infrastructure.Common;
+@model iSchool.Application.ViewModels.SchoolExtContentDto
+@{
+    var listNewYear = TimeHelp.GetNewYearist();
+    var currentYear = DateTime.Now.Year;
+    ViewData["Title"] = "学校概况";
+    var qqMapKey = @"Z66BZ-BLM3S-BCBOC-66J6X-ZGLRK-SWFVP";
+    var schtype = new SchFType0(Model.SchFtype);
+    var listSchoolRange = Model.YearTagList.FirstOrDefault(x => x.Field == SchoolExtFiledYearTag.Range.GetName());/*.OrderByDescending(x => x.Year).ToList();*/
+    var listCounterpart = Model.YearTagList.FirstOrDefault(x => x.Field == SchoolExtFiledYearTag.Counterpart.GetName());
+    var lodgingSdExternOptions = (IEnumerable<(LodgingSdExternOptions, string)>)ViewBag.LodgingSdExternSelect;
+    var schextImgs = Model.Imgs ?? Enumerable.Empty<UploadImgDto>();
+    var defaultLogo = "https://cos.sxkid.com/images/school/default.png";
+}
+@*自定义控件需要引入addTagHelper*@
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, iSchool.UI
+@section css{
+    <link href="@(ViewBag.StaticFile)/cropper/4.0.0-beta/cropper.min.css" rel="stylesheet">
+    <link href="@(ViewBag.StaticFile)/bootstrap-datetimepicker/4.17.47/css/bootstrap-datetimepicker.min.css" rel="stylesheet">
+    <link href="~/lib/cropper/main.css" rel="stylesheet">
+    <link href="@(ViewBag.StaticFile)/bootstrap-tagsinput/0.8.0/bootstrap-tagsinput.css" rel="stylesheet">
+    @*select2*@
+    <link href="@(ViewBag.StaticFile)/select2/4.0.6-rc.1/css/select2.min.css" rel="stylesheet">
+    <link href="@(ViewBag.StaticFile)/select2-bootstrap-css/1.4.6/select2-bootstrap.min.css" rel="stylesheet">
+    <style type="text/css">
+        /*tags样式*/
+        .label-info {
+            display: inline-block;
+            padding: 2px 4px;
+            font-size: 11.844px;
+            font-weight: bold;
+            line-height: 14px;
+            text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+            white-space: nowrap;
+            vertical-align: baseline;
+            background-color: #3a87ad;
+            margin-right: 2px;
+            color: white;
+        }
+
+        .bootstrap-tagsinput {
+            background-color: #fff;
+            border: 1px solid #ccc;
+            box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+            /*display: inline-block;*/
+            /*padding: 4px 6px;*/
+            padding: .375rem .75rem;
+            color: #555;
+            vertical-align: middle;
+            border-radius: 4px;
+            max-width: 100%;
+            line-height: 22px;
+            cursor: text;
+            width: 100%;
+        }
+
+        .c_contain {
+        }
+
+        .c_value {
+        }
+
+        .select2-dropdown, .select2 {
+            width: 200px !important;
+        }
+
+        .counterpart-content select, .ach-panel-content select {
+            width: 200px !important;
+        }
+
+        /*.deletebutten {
+            position: absolute;
+            display: block;
+            width: 5px;
+            height: -6px;
+            top: 0px;
+            right: 11px;
+        }*/
+
+        .side-bar {
+            position: fixed;
+            bottom: 100px;
+            right: 25px;
+            font-size: 0;
+            line-height: 0;
+            z-index: 100;
+        }
+
+            .side-bar a {
+                width: 66px;
+                height: 66px;
+                display: inline-block;
+                margin-bottom: 2px;
+            }
+
+
+            .side-bar .icon-right {
+                background-position: 0 -62px;
+            }
+
+        #auditcard {
+            width: 500px;
+        }
+        /*年份标签按钮默认样式*/
+        .btnCommon {
+            color: #000;
+            /*background-color: #FFF0F5;*/
+            border-color: #F5F5F5;
+            border-width: 2px;
+            margin: 5px;
+        }
+        /*选中样式*/
+        .btn-red {
+            color: #000;
+            background-color: #FFF0F5;
+            border-color: #F5F5F5;
+            border-width: 2px;
+            margin: 5px;
+        }
+        /*删除样式*/
+        .btn-grey {
+            color: #000;
+            background-color: #DCDCDC;
+            border-color: #F5F5F5;
+            border-width: 2px;
+            margin: 5px;
+        }
+
+        .div-addyear {
+            border: 2px solid #F5F5F5;
+        }
+
+        .font-size {
+            font-size: 12px;
+        }
+
+        .div_vdo {
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+    </style>
+}
+
+<div class="row">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-header">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h4><strong>总体</strong></h4>
+                    </div>
+                    <div class="col-md-6 text-right">
+                        <h4>@(string.Format("{0:F}", ((List<ExtMenuItem>)ViewBag.Menus).Sum(p => p.Completion) / ((List<ExtMenuItem>)ViewBag.Menus).Count() * 100))%</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                @{await Html.RenderPartialAsync("P_Menu_Step1");}
+                @for (var i = 0; i < ((List<ExtMenuItem>)ViewBag.Menus).Count(); i++)
+                {
+                    <div class="row form-group">
+                        <div class="col-md-8">
+                            <a href="@Url.Action("Step" + (i+2), new { sid = ViewBag.Sid,extId= ViewBag.ExtId })"> @(((List<ExtMenuItem>)ViewBag.Menus)[i].Name)</a>
+                        </div>
+                        <div class="col-md-4 text-right">@(Math.Round(((List<ExtMenuItem>)ViewBag.Menus)[i].Completion * 100.0f, 2, MidpointRounding.AwayFromZero))%</div>
+                    </div>
+                }
+                @*<div class="row form-group">
+                        <div class="col-md-6">学校概况</div>
+                        <div class="col-md-6 text-right">0%</div>
+                    </div>
+                    <div class="row form-group">
+                        <div class="col-md-8">招生简章</div>
+                        <div class="col-md-4 text-right">0%</div>
+                    </div>
+                    <div class="row form-group">
+                        <div class="col-md-8">课程体系</div>
+                        <div class="col-md-4 text-right">0%</div>
+                    </div>
+                    <div class="row form-group">
+                        <div class="col-md-8">收费标准</div>
+                        <div class="col-md-4 text-right">0%</div>
+                    </div>
+                    <div class="row form-group">
+                        <div class="col-md-8">师资力量及教学质量</div>
+                        <div class="col-md-4 text-right">0%</div>
+                    </div>
+                    <div class="row form-group">
+                        <div class="col-md-8">硬件设施及学生生活</div>
+                        <div class="col-md-4 text-right">0%</div>
+                    </div>*@
+            </div>
+            @{await Html.RenderPartialAsync("P_Menu_Alg");}
+        </div>
+    </div>
+    @{await Html.RenderPartialAsync("/Views/YearTagFieldExtendView/YearTagSetp2Ext.cshtml");}
+    <div class="col-md-9">
+        <div class="card">
+            <div class="card-header"><h4>学校概况</h4></div>
+            <form name="extcontent-form" id="extcontent-form" action="@(Url.Action("Step2"))" method="post">
+                <div class="card-body">
+                    <div class="custom-tab">
+                        <nav>
+                            <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                                <a class="nav-item nav-link active show" id="custom-nav-contact-tab" data-toggle="tab" href="#custom-nav-contact" role="tab" aria-controls="custom-nav-contact" aria-selected="true">内容数据</a>
+                                <a class="nav-item nav-link " id="custom-nav-home-tab" data-toggle="tab" href="#custom-nav-home" role="tab" aria-controls="custom-nav-home" aria-selected="false">院校总评</a>
+                                <a class="nav-item nav-link " id="custom-nav-video-tab" data-toggle="tab" href="#custom-nav-video" role="tab" aria-controls="custom-nav-video" aria-selected="false">学校视频</a>
+                                <a class="nav-item nav-link " id="custom-nav-openday-tab" data-toggle="tab" href="#custom-nav-openday" role="tab" aria-controls="custom-nav-openday" aria-selected="false">开放日及行事历  </a>
+
+                                <a class="nav-item nav-link " id="custom-nav-achievement-tab" data-toggle="tab" href="#custom-nav-achievement" role="tab" aria-controls="custom-nav-achievement" aria-selected="false">升学成绩</a>
+                                @*@if (Model.Grade != (byte)SchoolGrade.Kindergarten && Model.Type != (byte)SchoolType.SAR)
+                                    {
+                                        <a class="nav-item nav-link " id="custom-nav-achievement-tab" data-toggle="tab" href="#custom-nav-achievement" role="tab" aria-controls="custom-nav-achievement" aria-selected="false">升学成绩</a>
+                                    }*@
+
+                                <a class="nav-item nav-link " id="custom-nav-data-tab" data-toggle="tab" href="#custom-nav-data" role="tab" aria-controls="custom-nav-data" aria-selected="false">更多数据</a>
+                            </div>
+                        </nav>
+                        <div class="tab-content pl-3 pt-2" id="nav-tabContent">
+                            @*内容数据*@
+                            <div class="tab-pane fade active show" id="custom-nav-contact" role="tabpanel" aria-labelledby="custom-nav-contact-tab">
+                                @*地区*@
+                                <div class="form-group" id="locality">
+                                    <label class="form-control-label">地区</label>
+                                    <div class="form-inline">
+                                        <select asp-for="Province" class="form-control" asp-items="@ViewBag.ProvinceSelect">
+                                            <option value="0">所有</option>
+                                        </select>
+                                        <select asp-for="City" asp-items="@ViewBag.CitySelect" class="form-control">
+                                            <option value="0">所有</option>
+                                        </select>
+                                        <select asp-for="Area" asp-items="@ViewBag.AreaSelect" class="form-control">
+                                            <option value="0">所有</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                @*经纬度*@
+                                <div class="form-group">
+                                    <pre style="display:none;">@(Model.LatLong.ToJsonString(true))</pre>
+                                    <label class="control-label mb-1">经纬度</label>
+                                    <div class="map" id="map" data-latitude="@(Model?.Latitude==null?39.90: Model.Latitude)" data-longitude="@(Model?.Longitude==null?116.38: Model.Longitude)"></div>
+                                    <span class="badge">
+                                        经度：
+                                    </span>
+                                    <span class="longitude badge badge-warning">
+                                        @*<input type="text" id="Longitude" name="Longitude" value="@(Model == null||Model.Longitude==null ? 116.38 : Model.Longitude )" />*@
+                                        <input type="text" asp-for="Longitude" />
+                                    </span>
+                                    <span class="badge">
+                                        纬度：
+                                    </span>
+                                    <span class="latitude badge badge-warning">
+                                        @*<input type="text" id="Latitude" name="Latitude" value="@(Model == null||Model.Latitude==null ? 39.90 : Model.Latitude )" />*@
+                                        <input type="text" asp-for="Latitude" />
+                                    </span>
+
+                                </div>
+                                @*地址*@
+                                <div class="form-group">
+                                    <label class="control-label mb-1">地址</label>
+                                    <div class="input-group">
+
+                                        <input type="text" asp-for="Address" placeholder="请输入学校地址，检索正常将自动获得经纬度" class="form-control">
+                                        <div class="input-group-btn"><div id="FindAddressBtn" class="btn btn-secondary">检索</div></div>
+                                    </div>
+                                </div>
+                                @*电话*@
+                                <div class="form-group">
+                                    <label class="control-label mb-1">电话</label>
+                                    <input type="text" asp-for="Tel" class="form-control">
+                                </div>
+                                @*走读/寄宿*@
+                                <div class="form-group">
+                                    <label class="control-label mb-1">走读/寄宿</label>
+                                    <select asp-for="Lodging" class="form-control">
+                                        @foreach ((LodgingSdExternOptions i, string desc) in lodgingSdExternOptions)
+                                        {
+                                            <option value="@((int)i)">@desc</option>
+
+                                        }
+                                    </select>
+                                </div>
+                                @* 师生人数 师生比例*@
+                                <div class="form-group" style="margin-left:-15px; margin-bottom:100px;">
+                                    @*学生人数*@
+                                    <div class="col-md-4">
+                                        <label class="control-label mb-1">学生人数</label>
+                                        <div class="form-inline">
+                                            <input type="number" min="0" class="form-control" asp-for="Studentcount" style="width:80%;" />
+                                            <label class="pr-1  form-control-label">人</label>
+                                        </div>
+                                    </div>
+                                    @*教师人数*@
+                                    <div class="col-md-4">
+                                        <label class="control-label mb-1">教师人数</label>
+                                        <div class="form-inline">
+                                            <input type="number" min="0" class="form-control" asp-for="Teachercount" style="width:80%;" />
+                                            <label class="pr-1  form-control-label">人</label>
+                                        </div>
+                                    </div>
+                                    @*师生比例*@
+                                    <div class="col-md-4">
+                                        <label class="control-label mb-1">师生比例</label>
+                                        <div class="form-inline">
+                                            <label class="pr-1  form-control-label">1：</label>
+                                            @if (Model.Studentcount > 0 && Model.Teachercount > 0)
+                                            {
+                                                <input type="text" class="form-control" asp-for="TsPercent" disabled="disabled" style="width:50%;" />
+                                            }
+                                            else
+                                            {
+                                                <input type="text" class="form-control" asp-for="TsPercent" style="width:50%;" min="1" max="999.9" />
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+
+                                @*学校认证*@
+                                <div class="form-group">
+                                    <label class="control-label mb-1">学校认证</label>
+                                    @if (SchUtils.Canshow2("学校认证", schtype))
+                                    {
+                                        <div class="row">
+                                            <div class="col-md-auto " id="tag-list-@((byte)TagType.SchoolAccre)">
+                                                @if (Model != null && Model.Authentication != null)
+                                                {
+                                                    foreach (var item in Model.Authentication)
+                                                    {
+                                                        <div class="col-md-auto">
+                                                            <section class="card  float-left ">
+                                                                <div class="card-body text-secondary" data-TagId="@item.Value">
+                                                                    @item.Key
+                                                                </div>
+                                                            </section>
+                                                        </div>
+                                                    }
+                                                }
+                                            </div>
+                                            <input type="hidden" name="Authentication" id="Authentication" class=" JsonData" value="@(Model==null||Model.Authentication==null?"[]": JsonSerializationHelper.Serialize(Model.Authentication))" />
+                                            <div class="col-md-4">
+                                                <button type="button" class="btn btn-outline-secondary btn-lg createtag" data-input="Authentication" data-tag="@((byte)TagType.SchoolAccre)">  +&nbsp;&nbsp;立即创建</button>
+                                                <input type="hidden" class="tag-@((byte)TagType.SchoolAccre)" />
+                                            </div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span style="color:red;display:block;">该字段与所选学校类型无关</span>
+
+                                    }
+                                </div>
+                                @*screen*@
+                                @*出国方向*@
+                                <div class="form-group">
+                                    <label class="control-label mb-1">出国方向</label>
+                                    @if (SchUtils.Canshow2("出国方向", schtype))
+                                    {
+                                        <div class="row">
+                                            <div class="col-md-auto " id="tag-list-@((byte)TagType.Abroad)">
+                                                @if (Model != null && Model.Abroad != null)
+                                                {
+                                                    foreach (var item in Model.Abroad)
+                                                    {
+                                                        <div class="col-md-auto">
+                                                            <section class="card  float-left ">
+                                                                <div class="card-body text-secondary" data-TagId="@item.Value">
+                                                                    @item.Key
+                                                                </div>
+                                                            </section>
+                                                        </div>
+                                                    }
+                                                }
+                                            </div>
+                                            <input type="hidden" name="Abroad" id="Abroad" class="JsonData" value="@(Model == null || Model.Abroad == null ? "[]" : JsonSerializationHelper.Serialize(Model.Abroad))" />
+                                            <div class="col-md-4">
+                                                <button type="button" class="btn btn-outline-secondary btn-lg createtag" data-tag="@((byte)TagType.Abroad)" data-input="Abroad">  +&nbsp;&nbsp;立即创建</button>
+                                                <input type="hidden" id="" class="tag-@((byte)TagType.Abroad)" />
+                                            </div>
+                                        </div>
+
+                                    }
+                                    else
+                                    {
+                                        <span style="color:red;display:block;">该字段与所选学校类型无关</span>
+                                    }
+                                </div>
+                                @*有无校车*@
+                                <div class="form-group">
+                                    <label class="form-control-label">有无校车</label>
+                                    <select asp-for="HasSchoolBus" class="form-control">
+                                        <option value="0">未收录</option>
+                                        <option value="true">有</option>
+                                        <option value="false">无</option>
+                                    </select>
+                                </div>
+                                @*有无饭堂*@
+                                <div class="form-group">
+                                    <label class="form-control-label">有无饭堂</label>
+                                    <select asp-for="Canteen" class="form-control">
+                                        <option value="0">未收录</option>
+                                        <option value="true">有</option>
+                                        <option value="false">无</option>
+                                    </select>
+                                </div>
+                                @*伙食情况*@
+                                <div class="form-group">
+                                    <label class="form-control-label">伙食情况</label>
+                                    <div class="border uecontent" id="meal" name="meal" style="min-height:50px">
+                                        <script id="editor1" type="text/plain" style="width:100%;height:200px;">
+                                        </script>
+                                    </div>
+                                </div>
+                                @*学校特色课程或项目*@
+                                <div class="form-group">
+                                    <label class="control-label mb-1">学校特色课程或项目</label>
+                                    @*screen*@
+                                    @if (SchUtils.Canshow2("e2.characteristic+e2.project", schtype))
+                                    {
+                                        <div class="row">
+                                            <div class="col-md-auto " id="tag-list-@((byte)TagType.CharacteristicCourse)">
+                                                @if (Model != null && Model.Characteristic != null)
+                                                {
+                                                    foreach (var item in Model.Characteristic)
+                                                    {
+                                                        <div class="col-md-auto">
+                                                            <section class="card  float-left ">
+                                                                <div class="card-body text-secondary" date-Tags="@item.Value">
+                                                                    @item.Key
+                                                                </div>
+                                                            </section>
+                                                        </div>
+                                                    }
+                                                }
+                                            </div>
+                                            <input name="Characteristic" id="Characteristic" type="hidden" class=" JsonData" value="@(Model==null||Model.Characteristic==null?"[]": JsonSerializationHelper.Serialize(Model.Characteristic))" />
+                                            <div class="col-md-4">
+                                                <button type="button" class="btn btn-outline-secondary btn-lg createtag" data-input="Characteristic" data-tag="@((byte)TagType.CharacteristicCourse)">  +&nbsp;&nbsp;立即创建</button>
+                                                <input type="hidden" class="tag-@((byte)TagType.CharacteristicCourse)" />
+                                            </div>
+                                        </div>
+                                        <br />
+                                        <div class="border uecontent" name="Project" id="Project" style="min-height:50px">
+                                            @Html.Raw((Model == null || string.IsNullOrEmpty(Model.Project) ? "" : Model.Project))
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span style="color:red;display:block;">该字段与所选学校类型无关</span>
+                                    }
+                                </div>
+                                @*学校品牌图片 *@
+                                <div class="form-group">
+                                    <label class="control-label mb-1">学校品牌图片</label>
+                                    <div id="div_schoolBrand" class="row" ui-batch-uploadBrand="@(SchoolImageEnum.SchoolBrand.ToInt())"
+                                        data-title="@(EnumUtil.GetDesc(SchoolImageEnum.SchoolBrand))图片上传">
+                                        <pre data-data style="display:none;">  
+@((schextImgs.FirstOrDefault(_ => _.Type == (byte)SchoolImageEnum.SchoolBrand)?.Items ?? Enumerable.Empty<UploadImgItemDto>()).ToJsonString(true))      
+                                        </pre>
+                                    </div>
+                                </div>                                
+                            </div>
+                            @*院校总评*@
+                            <div class="tab-pane fade" id="custom-nav-home" role="tabpanel" aria-labelledby="custom-nav-home-tab">
+                                @*师资力量*@
+                                <div class="form-group">
+                                    <label class="form-control-label">师资力量</label>
+                                    <div class="row">
+                                        @*高级教师数量*@
+                                        <div class="col-md-3">
+                                            <span class="badge">高级教师数量</span>
+                                            @if (SchUtils.Canshow2("高级教师数量", schtype))
+                                            {
+                                                <div class="form-inline">
+                                                    <input type="number" class="form-control" asp-for="SeniorTea" min="0" style="width:80%;" />
+                                                    <label class="pr-1  form-control-label">人</label>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <span style="color:red;display:block;">该字段与所选学校类型无关</span>
+                                            }
+                                        </div>
+                                        @*特级教师数量*@
+                                        <div class="col-md-3">
+                                            <span class="badge">特级教师数量</span>
+                                            @if (SchUtils.Canshow2("特级教师数量", schtype))
+                                            {
+                                                <div class="form-inline">
+                                                    <input type="number" class="form-control" placeholder="" asp-for="CharacteristicTea" min="0" style="width:80%;" />
+                                                    <label class="pr-1  form-control-label">人</label>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <span style="color:red;display:block;">该字段与所选学校类型无关</span>
+                                            }
+                                        </div>
+                                        @*外教人数*@
+                                        <div class="col-md-3">
+                                            <span class="badge">
+                                                外教人数
+                                            </span>
+                                            <div class="form-inline">
+                                                @*screen*@
+                                                @if (SchUtils.Canshow2("外教占比", schtype))
+                                                {
+                                                    <input type="number" class="form-control" asp-for="ForeignTeaCount" min="0" style="width:80%;" />
+                                                    <label class="pr-1  form-control-label">人</label>
+                                                }
+                                                else
+                                                {
+                                                    <span style="color:red;display:block;font-size:13px;">该字段与所选学校类型无关</span>
+                                                }
+                                            </div>
+                                        </div>
+                                        @*外教占比*@
+                                        <div class="col-md-3">
+                                            <span class="badge">
+                                                外教占比
+                                            </span>
+                                            <div class="form-inline">
+                                                @*screen*@
+                                                @if (SchUtils.Canshow2("外教占比", schtype))
+                                                {
+                                                    @*<label class="pr-1  form-control-label">1：</label>*@
+                                                    @if (Model.ForeignTeaCount > 0 && Model.Teachercount > 0)
+                                                    {
+                                                        <input type="text" class="form-control" asp-for="ForeignTea" disabled="disabled" style="width:70%;">
+
+                                                    }
+                                                    else
+                                                    {
+                                                        <input type="text" class="form-control" asp-for="ForeignTea" style="width:70%;">
+                                                    }
+                                                    <label class="pr-1  form-control-label">&nbsp; %</label>
+                                                }
+                                                else
+                                                {
+                                                    <span style="color:red;display:block;font-size:13px;">该字段与所选学校类型无关</span>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-control-label">硬件设施</label>
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <span class="badge">
+                                                建校时间
+                                            </span>
+                                            <div class="form-inline">
+                                                <input type="text" class="form-control datetimepicker4" asp-for="Creationdate">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <span class="badge">
+                                                建筑面积
+                                            </span>
+                                            <div class="form-inline">
+                                                <input type="number" class="form-control" asp-for="Acreage" min="0">
+                                                <label class="pr-1  form-control-label">平方米</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            @*<span class="badge">
+                                                    学费
+                                                </span>
+                                                <div class="form-inline">
+                                                    <input type="number" class="form-control" asp-for="Tuition" min="0">
+                                                    <label class="pr-1  form-control-label">万元</label>
+                                                </div>*@
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            @*学校视频*@
+                            <div class="tab-pane fade" id="custom-nav-video" role="tabpanel" aria-labelledby="custom-nav-video-tab">
+                                <h6 class="text-danger">
+                                    视频数量建议不多于3个
+                                    @* http://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4 *@
+                                </h6>
+                                @*学校简介*@
+                                <div class="form-group">
+                                    <label class="form-control-label">学校简介</label>
+                                    <div class="div_vdo" ui-batch-uploadVideo="@((int)VideoType.Profile)"
+                                         data-title="@(EnumUtil.GetDesc(VideoType.Profile))">
+                                        <pre data-data style="display:none;">@(Model.ProfileVideos.ToJsonString(true))</pre>
+                                    </div>
+                                </div>
+                                @*学校专访*@
+                                <div class="form-group">
+                                    <label class="form-control-label">学校专访</label>
+                                    <div class="div_vdo" ui-batch-uploadVideo="@((int)VideoType.Interview)"
+                                         data-title="@(EnumUtil.GetDesc(VideoType.Interview))">
+                                        <pre data-data style="display:none;">@(Model.InterviewVideos.ToJsonString(true))</pre>
+                                    </div>
+                                </div>
+                                @*线上体验课程*@
+                                <div class="form-group">
+                                    <label class="form-control-label">线上体验课程</label>
+                                    @*screen*@
+                                    @if (!SchUtils.Canshow2("线上体验课程", schtype))
+                                    {
+                                        <span style="color:red;display:block;">该字段与所选学校类型无关</span>
+                                    }
+                                    else
+                                    {
+                                        <div class="div_vdo" ui-batch-uploadVideo="@((int)VideoType.Experience)"
+                                             data-title="@(EnumUtil.GetDesc(VideoType.Experience))">
+                                            <pre data-data style="display:none;">@(Model.ExperienceVideos.ToJsonString(true))</pre>
+                                        </div>
+                                    }
+                                </div>
+                                <br />
+                                <br />
+                            </div>
+                            @*开放日及行事历*@
+                            <div class="tab-pane fade" id="custom-nav-openday" role="tabpanel" aria-labelledby="custom-nav-openday-tab">
+                                <div class="form-group openday">
+                                    <h5 class="pb-2 display-5">
+                                        开放日
+                                    </h5>
+                                    @*screen*@
+                                    @if (!SchUtils.Canshow2("e2.Openhours", schtype))
+                                    {
+                                        <span style="color:red;display:block;">该字段与所选学校类型无关</span>
+                                    }
+                                    else
+                                    {
+                                        <div class="row" id="OpenHourContent">
+                                            @if (Model != null && Model.Openhours != null)
+                                            {
+                                                for (int i = 0; i < Model.Openhours.Length; i++)
+                                                {
+                                                    <div class="form-group">
+                                                        <div class="col-md-5">
+                                                            <input class="form-control c_ignore" name="OpenHourName" placeholder="请输入时间线的名字" value="@Model.Openhours[i].Key">
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <div class="col-md-4 form-inline"> <input type="text" value="@Model.Openhours[i].Value" placeholder="请输入时间" name="OpenHourTime" class="form-control datetimepicker4 c_ignore"></div>
+                                                        </div>
+                                                        <div class="col-md-3">
+                                                            <a href="javascript:void(0)" onclick="DelLine(this)">
+                                                                <i class="fa fa-times-circle text-danger"></i>
+                                                            </a>
+                                                        </div>
+                                                        <br>
+                                                        <br>
+                                                        <hr style="width:850PX;height:20px;">
+                                                    </div>
+                                                }
+                                            }
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 form-inline">
+                                                <button type="button" onclick="AddOpenHour()" class="btn btn-info">添加</button>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                                <div class="form-group">
+                                    <h5 class="pb-2 display-5">
+                                        学校行事历
+                                    </h5>
+                                    @*screen*@
+                                    @if (SchUtils.Canshow2("学校行事历", schtype))
+                                    {
+                                        <div class="row" id="CalendarContent">
+                                            @if (Model != null && Model.Calendar != null)
+                                            {
+                                                for (int i = 0; i < Model.Calendar.Length; i++)
+                                                {
+                                                    <div class="form-group">
+                                                        <div class="col-md-5">
+                                                            <input class="form-control c_ignore" placeholder="请输入行事日历的名字" required data-placement="bottom" name="CalendarName" value="@Model.Calendar[i].Key" />
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <div class="col-md-6 form-inline "> <input type="text" value="@Model.Calendar[i].Value" placeholder="请输入时间" name="CalendarTime" required data-placement="bottom" class="form-control datetimepicker4 c_ignore"> </div>
+                                                        </div>
+                                                        <div class="col-md-3"><a href="javascript:void(0)" onclick="DelLine(this)"><i class="fa fa-times-circle text-danger"></i></a></div><br><br>
+                                                        <hr style="width:850PX;height:20px;" />
+                                                    </div>
+                                                }
+                                            }
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 form-inline">
+                                                <button type="button" onclick="AddCalendar()" class="btn btn-info">添加</button>
+                                            </div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span style="color:red;display:block;">该字段与所选学校类型无关</span>
+                                    }
+                                </div>
+                            </div>
+                            @*screen*@
+                            @*升学成绩*@
+                            @*@if (Model.Grade != (byte)SchoolGrade.Kindergarten && Model.Type != (byte)SchoolType.SAR)*@
+
+                            <div class="tab-pane fade" id="custom-nav-achievement" role="tabpanel" aria-labelledby="custom-nav-achievement-tab">
+                                @if (Model.Grade.In((byte)iSchool.Domain.Enum.SchoolGrade.Kindergarten, (byte)iSchool.Domain.Enum.SchoolGrade.PrimarySchool)
+&& !SchUtils.Canshow2("sa.link", schtype))
+                                {
+                                    <span style="color:red;display:block;">该字段与所选学校类型无关</span>
+                                }
+                                else
+                                {
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <input type="text" id="root-year" name="text-input" placeholder="请输入年份标题" class="form-control datetimepicker4-year c_ignore" />
+                                        </div>
+                                        <div class="col-md-8"></div>
+                                    </div>
+                                    <div class="row" style="margin-top:5px">
+                                        <div class="col-md-4" onclick="AddYear()">
+                                            <section class="card">
+                                                <div class="card-body text-secondary">
+                                                    <i class="fa fa-plus-square"></i>&nbsp;&nbsp; 立即创建
+                                                </div>
+                                            </section>
+                                        </div>
+                                        <div class="col-md-8"></div>
+                                    </div>
+
+                                    <div id="achievement-content">
+                                        @if (Model != null && Model.Achievement != null)
+                                        {
+                                            foreach (var item in Model.Achievement)
+                                            {
+                                                <div class="form-group">
+                                                    <label class="form-control-label">@item.Key</label>
+                                                    <div class="row">
+                                                        <div class="col-md-4 ach-form" data-extid="@(ViewBag.ExtId)" data-year="@(item.Key)">
+                                                            <section class="card">
+                                                                <div class="card-body text-secondary"> 编辑成绩 </div>
+                                                            </section>
+                                                        </div>
+                                                        <div class="col-md-3 ach-del" data-year="@(item.Key)" data-id="@(ViewBag.ExtId)">
+                                                            <section class="card"><div class="card-body text-secondary text-danger"><i class="fa fa-times-circle"></i>&nbsp;&nbsp;清空成绩</div></section>
+                                                        </div>
+                                                    </div>
+                                                    <input type="hidden" class="c_value" name="@(item.Key)_completion" value="@(item.Message)">
+                                                </div>
+                                            }
+                                        }
+                                    </div>
+                                }
+                            </div>
+
+                            @*更多数据*@
+                            <div class="tab-pane fade" id="custom-nav-data" role="tabpanel" aria-labelledby="custom-nav-data-tab">
+
+                                @*划片范围*@
+                                <div class="form-group">
+                                    <label class="form-control-label">划片范围</label>
+                                    @*screen*@
+                                    @if (SchUtils.Canshow2("划片范围", schtype))
+                                    {
+                                        @if (listSchoolRange != null)
+                                        {
+                                            <div>
+                                                @*年份展示标签*@
+                                                <CustomYearsBtnShow field=@listSchoolRange.Field latest-year=@listSchoolRange.Year.ToString() years=@listSchoolRange.Years page-cache-input-id=@("dbdataofyearfield")></CustomYearsBtnShow>
+                                            </div>
+                                            <input type="hidden" id="jsonhid_Year_@listSchoolRange.Field" class="c_ignore hid_json_value" value='[]' />
+                                            <div class="row schoolrange_container notnull" id="show_input_item_@listSchoolRange.Field" hidden="hidden" data-primarykey="@listSchoolRange.Id" style="margin-bottom:20px;margin-left:5px">
+                                                <div>
+                                                    <CustomYears name=@listSchoolRange.Field data=@listSchoolRange.Years fields=@listSchoolRange.Field set-value=@listSchoolRange.Year></CustomYears>
+                                                </div>
+                                                <textarea data-update="Y" Name="Year_Range" rows="3" class="form-control" checkednull="" style="width:40%"></textarea>
+                                                <div class="col-md-3"><a href="javascript:void(0)" data-input="@(listSchoolRange.Field+ "|Year_Range")" onclick="DelAndClear(this)"><i class="fa fa-times-circle text-danger"></i></a><span id="span_@(listSchoolRange.Field)" hidden="hidden">已编辑</span></div>
+                                            </div>
+                                            //}
+                                            <hr>
+                                        }
+                                        <script type="text/html" id="school_range_addbtn_year">
+                                            <customnewotheryears data=@(listSchoolRange==null?listNewYear:listSchoolRange.NewOtherYears) set-value=@currentYear></customnewotheryears>
+                                        </script>
+                                        <div class="row" id="school_range_addbtn">
+                                            <div class="col-md-6 form-inline">
+                                                <button type="button" onclick="AddSchoolRange('school_range_addbtn')" class="btn btn-info">添加年份</button>
+                                            </div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span style="color:red;display:block;">该字段与所选学校类型无关</span>
+                                    }
+                                </div>
+
+                                @*对口学校*@
+                                <div class="form-group">
+                                    <label class="form-control-label">对口学校</label>
+                                    @*screen*@
+                                    @if (SchUtils.Canshow2("对口学校", schtype))
+                                    {
+                                        <div class="form-group" id="divCounterpart">
+                                            @if (listCounterpart != null)
+                                            {
+                                                <div>
+                                                    @*年份展示标签*@
+                                                    <CustomYearsBtnShow field=@listCounterpart.Field latest-year=@listCounterpart.Year.ToString() years=@listCounterpart.Years page-cache-input-id=@("dbdataofyearfield")></CustomYearsBtnShow>
+                                                </div>
+                                                <input type="hidden" id="jsonhid_Year_@listCounterpart.Field" class="c_ignore hid_json_value" value='[]' />
+
+                                                <div class="row counterpart_container notnull" id="show_input_item_@listCounterpart.Field" hidden="hidden" ac="1" data-primarykey="@listCounterpart.Id" style="margin-bottom:20px;margin-left:5px">
+                                                    <div class="form-inline" style="align-items:baseline;margin-right:0px">
+                                                        <CustomYears name=@listCounterpart.Field data=@listCounterpart.Years fields=@listCounterpart.Field set-value=@listCounterpart.Year></CustomYears>
+                                                    </div>
+                                                    <div id="@(listCounterpart.Field + "_Content")">
+                                                        @*动态加载输入项*@
+                                                    </div>
+                                                </div>
+                                                <hr />
+
+                                            }
+                                            <script type="text/html" id="counterpart_year_addbtn_year">
+                                                <customnewotheryears data=@(listCounterpart==null?listNewYear:listCounterpart.NewOtherYears) set-value=@currentYear></customnewotheryears>
+                                            </script>
+                                            <div class="row" id="counterpart_year_addbtn">
+                                                <div class="col-md-6 form-inline">
+                                                    <button type="button" onclick="AddCounterpart('counterpart_year_addbtn')" class="btn btn-info">添加年份</button>
+                                                </div>
+                                            </div>
+
+                                        </div>
+
+                                    }
+                                    else
+                                    {
+                                        <span style="color:red;display:block;">该字段与所选学校类型无关</span>
+                                    }
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-control-label">课后管理</label>
+                                    @*screen*@
+                                    @if (SchUtils.Canshow2("课后管理", schtype))
+                                    {
+                                        <div class="border uecontent" id="afterclass" name="afterclass" style="min-height:50px">
+                                            @if (Model != null && !string.IsNullOrEmpty(Model.AfterClass))
+                                            {
+                                                @Html.Raw(Model.AfterClass)
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span style="color:red;display:block;">该字段与所选学校类型无关</span>
+                                    }
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-control-label">PGC点评</label>
+                                    <h6 class="text-danger">
+                                        *数据中心只提供查看“PGC点评”的能力，修改该文章仍需要到运营管理平台中操作PGC点评的顺序按时间排序（另设置顶能力），在运营平台上操作
+                                    </h6>
+                                    <div id="div_sgArticle">
+                                        @*@Html.Partial(Url.Action("GetSchoolArticlePageList", "Audit"), (object)ViewBag.Article)*@
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+                <input type="hidden" name="Eid" value="@ViewBag.ExtId" />
+                <input type="hidden" name="Sid" value="@ViewBag.Sid" />
+                <div class="card-footer text-center">
+                    <button type="button" class="btn btn-outline-secondary saveform-btn" data-page="previous">
+                        上一页
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary saveform-btn" data-page="last">
+                        下一页
+                    </button>
+                </div>
+            </form>
+        </div>
+        @*升学成绩*@
+        @if (Model.Grade == (byte)iSchool.Domain.Enum.SchoolGrade.SeniorMiddleSchool && !SchUtils.Canshow2("hsa.keyundergraduate", schtype))
+        {
+            <!--国际|外籍 高中升学成绩start-->
+            <div class="card ach-card" style="display:none">
+                <form id="achcontent-form" method="post">
+                    <div class="card-header">
+                        <h4>升学成绩</h4>
+                    </div>
+                    <div class="card-body">
+                        <input type="hidden" name="year" class="form-control  ach-year" />
+                        <div id="div_achInfos" class="row" style="padding-left:15px;">
+                        </div>
+                        <div class="row form-group">
+                            <div class="col-md-4 ach-input" data-extId="@ViewBag.ExtId" data-backdrop="static">
+                                <section class="card">
+                                    <div class="card-body text-secondary text-center" style="font-size:x-large">
+                                        <i class="fa fa-plus"></i>
+                                    </div>
+                                </section>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" name="completion" value="" />
+                    <input type="hidden" class="c_value" name="achcompletion" value="" />
+                    <input type="hidden" name="sid" value="@ViewBag.Sid" />
+                    <input type="hidden" name="extid" value="@ViewBag.ExtId" />
+                    <div class="card-footer text-right">
+                        <button type="submit" class="reset" style="display:none">重置</button>
+                        @*<button type="button" class="btn btn-outline-secondary">保存</button>*@
+                    </div>
+                </form>
+            </div>
+            <!--国际高中升学成绩end-->
+        }
+        else if (Model.Grade == (byte)iSchool.Domain.Enum.SchoolGrade.SeniorMiddleSchool)
+        {
+            <!--高中升学成绩start-->
+            <div class="card ach-card" style="display:none">
+                <div class="card-header">
+                    <h4>升学成绩</h4>
+                </div>
+                <form id="achcontent-form" method="post">
+                    <div class="card-body">
+                        <input type="hidden" name="year" class="form-control  ach-year" />
+                        <div class="form-group">
+                            <label class="control-label mb-1">重本率</label>
+                            <div class="form-inline">
+                                <input type="number" min="0" class="form-control" name="Keyundergraduate">
+                                <label class="pr-1  form-control-label">%</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label mb-1">本科率</label>
+                            <div class="form-inline">
+                                <input type="number" min="0" class="form-control" name="Undergraduate">
+                                <label class="pr-1  form-control-label">%</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label mb-1">高优线录取人数</label>
+                            @if (SchUtils.Canshow2("hsa.count", schtype))
+                            {
+                                <div class="form-inline">
+                                    <input type="number" min="0" class="form-control" name="Count">
+                                    <label class="pr-1  form-control-label">人</label>
+                                </div>
+                            }
+                            else
+                            {
+                                <span style="color:red;display:block;">该字段与所选学校类型无关</span>
+                            }
+                        </div>
+                        @*<div class="form-group">
+                                <label class="control-label mb-1">录取分数线</label>
+                                <div class="row" id="FractionalineContent">
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-12 text-left">
+                                        <button class="btn btn-info" type="button" onclick="AddLine()">+</button>
+                                    </div>
+                                </div>
+                            </div>*@
+
+                        <div class="form-group">
+                            <label class="control-label mb-1">毕业去向</label>
+                            <div id="div_achInfos" class="row" style="padding-left:15px;">
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4 ach-input" data-extId="@ViewBag.ExtId" data-backdrop="static">
+                                    <section class="card">
+                                        <div class="card-body text-secondary text-center" style="font-size:x-large">
+                                            <i class="fa fa-plus"></i>
+                                        </div>
+                                    </section>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" class="c_value" name="achcompletion" value="" />
+                    <input type="hidden" name="sid" value="@ViewBag.Sid" />
+                    <input type="hidden" name="extid" value="@ViewBag.ExtId" />
+                    <input type="hidden" name="completion" class="c_ignore" value="" />
+                    <div class="card-footer text-right">
+                        <button type="reset" style="display:none">重置</button>
+                        <button type="submit" class="btn btn-outline-secondary">保存</button>
+                    </div>
+                </form>
+            </div>
+            <!--高中升学成绩end-->
+        }
+        else if (Model.Grade == (byte)iSchool.Domain.Enum.SchoolGrade.JuniorMiddleSchool)
+        {
+            <!--初中升学成绩start-->
+            <div id="div_achJuniorMiddleSchool" class="card ach-card" style="display:none">
+                <form id="achcontent-form" method="post">
+                    <div class="card-header">
+                        <h4>升学成绩</h4>
+                    </div>
+                    <div class="card-body">
+                        <input type="hidden" name="year" class="form-control  ach-year" />
+                        <div class="form-group">
+                            <label class="control-label mb-1">重点率</label>
+                            <div class="form-inline">
+                                <input type="number" min="0" class="form-control" data-placement="bottom" number="true" name="Keyrate">
+                                <label class="pr-1  form-control-label">%</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label mb-1">中考平均分</label>
+                            <div class="form-inline">
+                                <input type="text" class="form-control" name="Average" valid-errmsg="中考平均分 要求填入最多2位正小数" />
+                                <label class="pr-1  form-control-label">分</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label mb-1">当年最高分</label>
+                            <div class="form-inline">
+                                <input type="text" class="form-control" name="Highest" valid-errmsg="当年最高分 要求填入最多2位正小数" />
+                                <label class="pr-1  form-control-label">分</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label mb-1">高优线录取比例</label>
+                            @if (SchUtils.Canshow2("msa.ratio", schtype))
+                            {
+                                <div class="form-inline">
+                                    <input type="number" min="0" class="form-control" name="Ratio">
+                                    <label class="pr-1  form-control-label">%</label>
+                                </div>
+                            }
+                            else
+                            {
+                                <span style="color:red;display:block;">该字段与所选学校类型无关</span>
+                            }
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label mb-1">毕业去向</label>
+                            <div id="div_achInfos" class="row" style="padding-left:15px;">
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4 ach-input" data-extId="@ViewBag.ExtId" data-backdrop="static">
+                                    <section class="card">
+                                        <div class="card-body text-secondary text-center" style="font-size:x-large">
+                                            <i class="fa fa-plus"></i>
+                                        </div>
+                                    </section>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" name="completion" value="" />
+                    <input type="hidden" class="c_value" name="achcompletion" value="" />
+                    <input type="hidden" name="sid" value="@ViewBag.Sid" />
+                    <input type="hidden" name="extid" value="@ViewBag.ExtId" />
+                    <div class="card-footer text-right">
+                        <button type="reset" style="display:none">重置</button>
+                        <button type="submit" class="btn btn-outline-secondary">保存</button>
+                    </div>
+                </form>
+            </div>
+            <!--初中升学成绩end-->
+        }
+        else if (Model.Grade == (byte)iSchool.Domain.Enum.SchoolGrade.PrimarySchool && SchUtils.Canshow2("sa.link", schtype))
+        {
+            <!--小学升学成绩start-->
+            <div class="card ach-card" style="display:none">
+                <form id="achcontent-form" method="post">
+                    <div class="card-header">
+                        <h4>升学成绩</h4>
+                    </div>
+                    <div class="card-body">
+                        <input type="hidden" name="year" class="form-control  ach-year" />
+                        <div class="form-group">
+                            <label class="control-label mb-1">升学情况</label>
+                            <div id="ArticleList">
+
+                            </div>
+                            <div class="text-center">
+                                <button type="button" class=" btn btn-outline-secondary btn-lg btn-block" onclick="AddAchLink()">+</button>
+                            </div>
+                        </div>
+                        <input type="hidden" name="completion" value="" />
+                        <input type="hidden" class="c_value" name="achcompletion" value="" />
+                        <input type="hidden" name="sid" value="@ViewBag.Sid" />
+                        <input type="hidden" name="extid" value="@ViewBag.ExtId" />
+                    </div>
+                    <div class="card-footer text-right">
+                        <button type="reset" style="display:none">重置</button>
+                        <button type="submit" class="btn btn-outline-secondary">保存</button>
+                    </div>
+                </form>
+            </div>
+            <!--小学升学成绩end-->
+        }
+        else if (Model.Grade == (byte)iSchool.Domain.Enum.SchoolGrade.Kindergarten && SchUtils.Canshow2("sa.link", schtype))
+        {
+            <!--幼儿园升学成绩start-->
+            <div class="card ach-card" style="display:none">
+                <form id="achcontent-form" method="post">
+                    <div class="card-header">
+                        <h4>升学成绩</h4>
+                    </div>
+                    <div class="card-body">
+                        <input type="hidden" name="year" class="form-control  ach-year" />
+                        <div class="form-group">
+                            <label class="control-label mb-1">升学情况</label>
+                            <div id="ArticleList">
+
+                            </div>
+                            <div class="text-center">
+                                <button type="button" class=" btn btn-outline-secondary btn-lg btn-block" onclick="AddAchLink()">+</button>
+                            </div>
+                        </div>
+                        <input type="hidden" name="completion" value="" />
+                        <input type="hidden" class="c_value" name="achcompletion" value="" />
+                        <input type="hidden" name="sid" value="@ViewBag.Sid" />
+                        <input type="hidden" name="extid" value="@ViewBag.ExtId" />
+                    </div>
+                    <div class="card-footer text-right">
+                        <button type="reset" style="display:none">重置</button>
+                        <button type="submit" class="btn btn-outline-secondary">保存</button>
+                    </div>
+                </form>
+            </div>
+            <!--幼儿园升学成绩end-->
+        }
+        else
+        {
+            <div class="card ach-card" style="display:none">
+                <form id="achcontent-form">
+                    <span style="color:red;display:block;">该字段与所选学校类型无关</span>
+                </form>
+            </div>
+        }
+    </div>
+
+    @*右下角审核意见*@
+    <div class="side-bar qx qx-doaudit" style="width:66px;">
+        <a href="javascript:void(0);" class="icon-right">
+            <img src="~/images/right.png" alt="" />
+        </a>
+        <div class="card" id="auditcard" style="display:none">
+            <div class="card-body">
+                <h5><strong>审核意见</strong></h5>
+                @Html.TextArea("textarea-CurrAuditMessage", Model.CurrAuditMessage, 4, 4, new { @class = "form-control", @readonly = "readonly" })
+            </div>
+            <div class="card-footer">
+                <button class="btn btn-primary" id="hidebtn">隐藏</button>
+            </div>
+        </div>
+    </div>
+
+    <!--  截图上传 模态框 -->
+    <div id="avatar-view" style="display:none">
+        <img class="logo" title="" data-original-title="上传学校" src="@(defaultLogo)" alt="Avatar">
+        <input id="logo" name="Schoollogo" value="@(defaultLogo)" type="hidden" />
+    </div>
+    @await Html.PartialAsync("avatar-content", new { })
+
+</div>
+
+@* 对口学校 *@
+<div id="counterschool-Select" style="display:none">
+    <div class="form-group">
+        <div class="form-inline" style="align-items:baseline;margin-right:15px">
+            <select class="form-control yeartag" name="CounterPartYear"></select>
+        </div>
+        <select data-placeholder="选择一个学校" name="CounterPart" class="{0}" tabindex="1">
+            <option value=""></option>
+        </select>&nbsp;&nbsp;&nbsp;
+        <a href="javascript:void(0)" class="delcounterschool" data-input="{0}">
+            <i class="fa fa-times-circle text-danger"></i>
+        </a>
+    </div>
+</div>
+
+<input type="hidden" id="ach_year_list" value="@string.Join(",",Model.Achievement.Select(p=>p.Key))">
+<pre style="display:none;" id="tmp_Meal">@Html.Raw(Model == null ? "" : Model.Meal)</pre>
+@*yearfield--cache db data*@
+<input hidden="hidden" id="dbdataofyearfield" value="[]" />
+
+@section Scripts{
+    <script src="~/js/yeartagselect.js"></script>
+    <script src="~/js/jquery-validate.bootstrap-tooltip.min.js"></script>
+    <script type="text/javascript" src="https://map.qq.com/api/js?v=2.exp&key=@(qqMapKey)&libraries=convertor"></script>
+    <script src="@(ViewBag.StaticFile)/linq.js/2.2.0.2/jquery.linq.min.js"></script>
+    <script src="@(ViewBag.StaticFile)/moment.js/2.18.1/moment-with-locales.min.js"></script>
+    <script src="@(ViewBag.StaticFile)/bootstrap-datetimepicker/4.17.47/js/bootstrap-datetimepicker.min.js"></script>
+    <script src="@(ViewBag.StaticFile)/bootstrap-tagsinput/0.8.0/bootstrap-tagsinput.min.js"></script>
+    @*editor 富文本编辑器*@
+    <script type="text/javascript" charset="utf-8" src="~/ueditor/ueditor.config.nostyle4cccv1.js"></script>
+    <script type="text/javascript" charset="utf-8" src="~/ueditor/editor_api.js"></script>
+    @*select2*@
+    <script src="@(ViewBag.StaticFile)/select2/4.0.6-rc.1/js/select2.min.js"></script>
+    <script src="@(ViewBag.StaticFile)/select2/4.0.6-rc.1/js/i18n/zh-CN.js"></script>
+    @*linq js*@
+    <script src="@(ViewBag.StaticFile)/linq.js/2.2.0.2/linq.min.js"></script>
+    @*jquery-validation*@
+    <environment include="Development">
+        <script src="@(ViewBag.StaticFile)/jquery-validate/1.19.0/jquery.validate.js"></script>
+        <script src="@(ViewBag.StaticFile)/jquery-validate/1.19.0/localization/messages_zh.js"></script>
+        <script src="@(ViewBag.StaticFile)/jquery.form/4.2.2/jquery.form.js"></script>
+
+    </environment>
+    <environment exclude="Development">
+        <script src="@(ViewBag.StaticFile)/jquery-validate/1.19.0/jquery.validate.min.js"></script>
+        <script src="@(ViewBag.StaticFile)/jquery-validate/1.19.0/localization/messages_zh.min.js"></script>
+        <script src="@(ViewBag.StaticFile)/jquery.form/4.2.2/jquery.form.min.js"></script>
+    </environment>
+    <script src="~/js/jquery-validate.bootstrap-tooltip.min.js"></script>
+    <script src="~/assets/js/GetFormJson.js"></script>
+    <script src="~/assets/js/Completion.js"></script>
+    <script src="~/js/schoolDataEnter.js?@(DateTime.Now.Ticks)"></script>
+    <script src="~/js/jq.postJSON.js"></script>
+    <script src="~/yearfield/yearfieldCommon.js"></script>
+    <script src="~/CommonHelp.js"></script>
+    @*截图工具*@
+    <script src="@(ViewBag.StaticFile)/cropper/4.0.0-beta/cropper.min.js"></script>
+    <script src="~/lib/cropper/cropper.cut.js"></script>
+    <script src="~/js/CropAvatarImgWin.js"></script>
+    <script src="~/js/batchUploadImg.js?@(DateTime.Now.Ticks)"></script>
+    <script src="~/js/batchUploadVideo.js"></script>    
+
+    <script type="text/javascript">
+        var showAch = false;
+        var achYears = jQuery("#ach_year_list").val().split(",");
+        var counterPartSelect = 0;
+        var achFn = {};
+        var _isonlyjump = true;
+        var isInit = false;
+
+        //ue编辑器
+        var ue = UE.getEditor('editor1', {
+            configPath: 'ueditor/config.json',
+            initialContent: "",
+            theme: 'tt',
+            elementPathEnabled: !1,
+            imageScaleEnabled: !1,
+            imagePopup: !1,
+            tableDragable: !1,
+            wordCount: !1,
+            autoHeight: false,
+            toolbars: [["source", "h2", "bold", "underline", "italic", "strikethrough", "forecolor", "blockquote", "horizontal", "justifyleft", "justifycenter", "justifyright", "link", "unlink", "|", "insertimage", "|", "selectall", "removeformat", "undo", "redo"]],
+            removeFormatTags: "b,big,code,del,dfn,em,font,i,ins,kbd,q,samp,small,span,strike,strong,sub,sup,tt,u,var,blockquote,h1,h2,h3,h4,h5,h6",
+            autotypeset:
+            {
+                mergeEmptyline: !0,
+                removeClass: !1,
+                removeEmptyline: !0,
+                pasteFilter: !0,
+                clearFontSize: !0,
+                clearFontFamily: !0
+            },
+        });
+        ue.ready(function () {
+            jQuery(this.container).click(function (e) {
+                e.stopPropagation()
+            });
+            ue.execCommand('serverparam', 'contentID', '@(ViewBag.Sid)');
+            ue.execCommand('serverparam', 'contentType', 'school_v3');
+            ue.execCommand('cleardoc');
+            ue.execCommand("insertHtml", '');
+            //用于跳转判断
+            isInit = true; 
+            ue.setContent(jQuery('#tmp_Meal').html());
+        });
+        jQuery('.uecontent').click(function (e) {
+            e.stopPropagation();
+            var jQuerytarget = jQuery(this);
+            //解决多个ueditor切换后工具栏和输入框分离
+            jQuery('.edui-editor-toolbarbox').attr('style', '');
+            var content = jQuerytarget.html();
+            var currentParnet = ue.container.parentNode.parentNode;
+            var currentContent = ue.getContent();
+            jQuerytarget.html('');
+            jQuerytarget.append(ue.container.parentNode);
+            ue.reset();
+            setTimeout(function () {
+                //用于跳转判断
+                isInit = true; 
+                ue.setContent(content);
+            }, 200)
+            jQuery(currentParnet).html(currentContent);
+            return false;
+        });
+        (function (b) {
+            ue.ready(function () {
+                if (b) return;
+                b = true, bind_toolbar_event();
+            });
+            function bind_toolbar_event() {
+                //ue 清除格式事件
+                jQuery('.edui-editor').on('click', '.edui-for-removeformat', function () {
+                    //用于跳转判断
+                    isInit = true; 
+                    ue.setContent(rmStyle(ue.getContent()));
+                });
+            }
+        })();
+        //ue编辑器内容发生改变时会触发该事件
+        UE.getEditor('editor1').addListener('contentChange', function (editor) {            if (!isInit) {                //用于跳转判断                _isonlyjump = false;            }            isInit = false;        });
+
+        var videoOption = {
+            videoPlaceholder: '只允许上传Mp4格式的视频!视频大小不能超过40M',
+            maxItemCount: -1,
+            uploadVideoUrl: '/school/upload?type=@((int)UploadType.Video)&id=@(ViewBag.eid)',
+            cover: jQuery.extend({}, jQuery.CropAvatarImgWin.getDefaultOption(), {
+                imgWidth: 686,
+                imgHeight: 386,
+                url: '/school/upload?type=@((int)UploadType.Gallery)&id=@(ViewBag.eid)',
+                placeholder: '最多可输入14个字符。',
+                maxImgDescLength: 14,
+            }),
+        };
+        var brandOption = {
+            imgWidth: 750,
+            imgHeight: 374,
+            url: '/school/upload?type=@((int)UploadType.Gallery)&id=@(ViewBag.eid)',
+            maxItemCount: 8,
+            placeholder: '请输入图片信息，最多可输入14个字符。',
+            maxImgDescLength: 14,
+        };
+
+        var ui_batch_uploadBrand = []; //[(type,uiobj)]
+        var ui_batch_uploadVideo = []; //[(type,uiobj)]
+
+    jQuery(function () {
+
+        jQuery("select,input").on("change", function () { _isonlyjump = undefined;});
+
+        //init提示框
+        jQuery('[data-toggle="tooltip"]').tooltip();
+
+        // init图片上传ui组件
+        jQuery.each(jQuery('[ui-batch-uploadBrand]'), function (_, x) {
+            x = jQuery(x);
+            ui_batch_uploadBrand.push({
+                type: x.attr('ui-batch-uploadBrand'),
+                obj: jQuery.batchUploadImg(jQuery.extend({}, brandOption, {
+                    el: x,
+                    onItemAdded: function (item, uiItem) {
+                        _isonlyjump = undefined;
+                    },
+                    onItemDel: function (item, uiItem) {
+                        _isonlyjump = undefined;
+                    },
+                })),
+            });
+        });
+        // init视频上传ui组件
+        jQuery.each(jQuery('[ui-batch-uploadVideo]'), function (_, x) {
+            x = jQuery(x);
+            ui_batch_uploadVideo.push({
+                type: x.attr('ui-batch-uploadVideo'),
+                obj: jQuery.batchUploadVideo(jQuery.extend({}, videoOption, {
+                    el: x,
+                    onItemAdded: function (item, uiItem) {
+                        _isonlyjump = undefined;
+                    },
+                    onItemDel: function (item, uiItem) {
+                        _isonlyjump = undefined;
+                    },
+                    onItemChanged: function (item, uiItem) {
+                        _isonlyjump = undefined;
+                    },
+                })),
+            });
+        });
+
+        //提示框
+        jQuery('[data-toggle="tooltip"]').tooltip();
+
+             jQuery(".yeartag").yearTagSelect();
+            //日历
+            jQuery('.datetimepicker4').datetimepicker({
+                format: 'YYYY-MM-DD',
+                locale: moment.locale('zh-cn'),
+            });
+            jQuery(".datetimepicker4-year").datetimepicker({
+                format: 'YYYY',
+                locale: moment.locale('zh-cn'),
+            });
+
+            //腾讯地图
+            //var center = new qq.maps.LatLng(39.90, 116.38);
+            var md = jQuery('#map').data();
+            var center = new qq.maps.LatLng(md.latitude, md.longitude);
+            var map = new qq.maps.Map(document.getElementById("map"), {
+                center: center, zoom: 16
+            });
+            var marker = new qq.maps.Marker({ map: map, position: center });
+            //调用地址解析类
+            var geocoder = new qq.maps.Geocoder({
+                complete: function (result) {
+                    marker.setMap(null);
+                    map.setCenter(result.detail.location);
+                    marker = new qq.maps.Marker({
+                        map: map,
+                        position: result.detail.location
+                    });
+                }
+            });
+                   //地址逆向解释
+             jQuery("#FindAddressBtn").on ("click",function(){
+                var address = jQuery("#Address").val();
+                 if (address.length<3) {
+                      ShowAlert("输入的地址不对，正确例子格式如下:广州市海珠区中悦广场...");
+                  }
+                 else {
+                     geocoder.getLocation(address);
+                     jQuery.get("@Url.Action("GetMapLatLnt", "School")", { "address": address }, function (data) {
+                         if (0 != data.status) { ShowAlert("自动填充经纬度异常:" + data.message) }
+                         else {
+                             var result = data.result
+                             jQuery('input[name="Latitude"]').val(result.location.lat);
+                             jQuery('input[name="Longitude"]').val(result.location.lng);
+                             _isonlyjump = undefined;
+                         }
+                      });
+                  }
+            })
+            var listener = qq.maps.event.addListener(map, 'click', function (event) {
+
+                //jQuery('#map').siblings('.latitude').text(event.latLng.getLat());
+                //jQuery('#map').siblings('.longitude').text(event.latLng.getLng());
+                jQuery('input[name="Latitude"]').val(event.latLng.getLat());
+                jQuery('input[name="Longitude"]').val(event.latLng.getLng());
+                marker.setMap(null);
+                marker = new qq.maps.Marker({
+                    map: map, position: new qq.maps.LatLng(event.latLng.getLat(), event.latLng.getLng())
+                });
+            });
+
+            //添加标签
+            jQuery(".createtag").on("click", function () {
+                var tagId = jQuery(this).attr("data-tag");
+                var input = jQuery(this).attr("data-input");
+                var value = jQuery("#" + input).val();
+                var json = { "tagId": tagId, "input": input, "selectIds":value };
+                console.log(value);
+                jQuery.get("@Url.Action("TagPanel", "Tag")", json, function (data) {
+                    jQuery('#gameContainer').html(data);
+                    //初始化时加载标签页面
+                    var json = JSON.parse(jQuery("#hideTags").val());
+                    ShowTagContent(json);
+                    jQuery('#gameModal').modal('show');
+                    _isonlyjump = undefined;
+                });
+            })
+        
+            //升学成绩列表
+            jQuery(".ach-input").on("click", function () {
+                var year = jQuery(".ach-card input[name='year']").val();
+                var extId = jQuery(this).attr("data-extId");
+                jQuery.get("@Url.Action("AchievementPanel", "School")", { "year": year, "extId": extId, "grade":@Html.Raw(Model.Grade), "type":@Html.Raw(Model.Type) },
+                    function (data) {
+                    jQuery('#gameContainer').html(data);
+                        jQuery('#gameModal').modal({
+                            show: true,
+                            backdrop:'static'//点击遮罩层时不关闭模态窗体
+                        });
+                });
+            });
+            //清空升学成绩
+            jQuery("body").delegate(".ach-del","click", function () {
+                var $this = jQuery(this);
+                showConfirm("是否要清空数据", function () {
+                    var year = $this.attr("data-year");
+                    var extId = $this.attr("data-id");
+                    jQuery.post("@Url.Action("DelAchievementData")", { year: year, id: extId }, function (data) {
+                        if (data.state == 200) {
+                            $this.parent().parent().remove();
+                            jQuery(".ach-card").css("display", "none");
+                            var indexOf = achYears.indexOf(year);
+                            if (indexOf != -1) {
+                                achYears.splice(indexOf, 1);
+                            }
+                            ShowAlert("删除成功");
+                            _isonlyjump = undefined;
+                        } else {
+                            ShowAlert("清空失败");
+                        }
+                    })
+                });
+            });
+            //添加对口学校
+            jQuery("#addSchool").on("click", function () {
+                counterPartSelect += 1;
+                var html = jQuery("#counterschool-Select").html().format("counterschool");
+                jQuery("#counterpart-content").append(html);
+                InitSelect2()
+                jQuery(".yeartag").yearTagSelect();
+                _isonlyjump = undefined;
+            });
+            InitSelect2();
+            //删除对口学校
+            jQuery("body").delegate(".delcounterschool", "click", function () {
+                jQuery(this).parent().remove();
+                _isonlyjump = undefined;
+            });
+
+            //城市联动
+            jQuery("#Province").on("change", function () {
+                var value = jQuery(this).val();
+                var $select = jQuery("#City");
+                SetCityData(value, $select);
+                $select.change();
+            });
+            jQuery("#City").on("change", function () {
+                var value = jQuery(this).val();
+                var $select = jQuery("#Area");
+                SetCityData(value, $select);
+            });
+            function SetCityData(cityId, $select) {
+                $select.html('<option value="0">所有</option>');
+                if (cityId == 0) {
+                    return;
+                }
+                jQuery.getJSON("@Url.Action("ChangeCityData")", { parentId: cityId }, function (data) {
+                    jQuery.each(data, function (index, item) {
+                        $select.append('<option value="' + item.value + '">' + item.text + '</option>')
+                    });
+                    $select.val("0");
+                });
+            }
+            jQuery("#locality select").on("change", function () {
+
+                var cityData = "";
+                if (jQuery("#Province").val() != "0") {
+                    cityData += jQuery("#Province option:selected").html() +"省";
+                    if (jQuery("#City").val() != "0") {
+                        cityData += jQuery("#City option:selected").html() + "市";
+                        if (jQuery("#Area").val() != "0") {
+                            cityData += jQuery("#Area option:selected").html() + "区政府";
+                        }
+                    }
+                }
+                if (cityData) {
+                    geocoder.getLocation(cityData);
+                }
+
+            });
+
+            jQuery("input[name='VideoDescs']").on("change", function () {
+                _isonlyjump = undefined;
+            });
+
+            //升学成绩的表单
+            jQuery("body").delegate(".ach-form", "click", function () {
+
+                var $this = jQuery(this);
+                var year = $this.attr("data-year");
+                var completion = jQuery("input[name='" + year + "_completion']").val();
+                jQuery(".ach-card form")[0].reset();
+                achFn['onloading'] && achFn['onloading']();
+                jQuery(".ach-card input[name='completion']").val(completion);
+                @if (Model.Grade == (byte)iSchool.Domain.Enum.SchoolGrade.SeniorMiddleSchool && !SchUtils.Canshow2("hsa.keyundergraduate", schtype))
+                {
+                    //国际|外籍 高中升学成绩
+                    <Text>
+                jQuery(".ach-card input[name='year']").val(year);
+                jQuery(".ach-card").css("display", "block");
+                achFn['onloaded'] && achFn['onloaded']();
+                    </Text>
+                }
+                else if (Model.Grade == (byte)iSchool.Domain.Enum.SchoolGrade.SeniorMiddleSchool)
+                {
+                    //高中升学成绩
+                    <Text>
+                    jQuery(".ach-card input[name='year']").val(year);
+                    //jQuery("#FractionalineContent").html("");
+                    jQuery.getJSON("@(Url.Action("GetAchievementData",new {id=ViewBag.ExtId }))?year=" + year,
+                        function (res) {
+                        if (res.state == 200) {
+                            jQuery("#achcontent-form input[name='Keyundergraduate']").val(res.result.data.keyundergraduate);
+                            jQuery("#achcontent-form input[name='Undergraduate']").val(res.result.data.undergraduate);
+                            jQuery("#achcontent-form input[name='Keyundergraduate']").val(res.result.data.keyundergraduate);
+                            jQuery("#achcontent-form input[name='Count']").val(res.result.data.count);
+                            //升学成绩弹出框的完成率
+                            jQuery("#achcontent-form input[name='achcompletion']").val(res.result.completion);
+                            //var lines = res.result.data.fractionaline?JSON.parse(res.result.data.fractionaline):[];
+                            //jQuery.each(lines, function (index, data) {
+                            //    jQuery("#achcontent-form #FractionalineContent").append(' <div class="form-group "><div class="col-md-5"><input class="form-control JsonArray" name="Name"  placeholder="请输入分数线的名字" value="' + data.Name + '" required  data-placement="bottom" /></div><div class="col-md-5 form-inline"><input type="text" name="Point"  value="' + data.Point + '" class="form-control JsonArray" data-placement="bottom"  placeholder="请输入分数" required digits min="0"></div> <div class="col-md-2"> <a class="fa fa-minus-circle text-danger" href="javascript:void(0)" onclick="DelLine(this)"></a></div></div>');
+                            //});
+                            jQuery(".ach-card").css("display", "block");
+                            showAch = true;
+                            achFn['onloaded'] && achFn['onloaded']();
+                        } else {
+                            ShowAlert(res.message);
+                        }
+                    });
+                    </Text>
+                }
+                else if (Model.Grade == (byte)iSchool.Domain.Enum.SchoolGrade.JuniorMiddleSchool)
+                {
+                    //初中升学成绩
+                    <Text>
+                    jQuery(".ach-card input[name='year']").val(year);
+                    jQuery.getJSON("@(Url.Action("GetAchievementData",new {id=ViewBag.ExtId }))?year=" + year, function (res) {
+                        if (res.state == 200) {
+                            jQuery("#achcontent-form input[name='Keyrate']").val(res.result.data.keyrate);
+                            jQuery("#achcontent-form input[name='Average']").val(res.result.data.average);
+                            jQuery("#achcontent-form input[name='Highest']").val(res.result.data.highest);
+                            jQuery("#achcontent-form input[name='Ratio']").val(res.result.data.ratio);
+                            jQuery("achcontent-form input[name='achcompletion']").val(res.result.completion);
+                            jQuery(".ach-card").css("display", "block");
+                            achFn['onloaded'] && achFn['onloaded']();
+                        } else { ShowAlert(res.message); }
+                    });
+                    </Text>
+                 }
+                else if (Model.Grade == (byte)iSchool.Domain.Enum.SchoolGrade.PrimarySchool && SchUtils.Canshow2("sa.link", schtype))
+                {
+                    //小学升学成绩
+                    <Text>
+                    jQuery(".ach-card input[name='year']").val(year);
+                    jQuery('#ArticleList').html('');
+                    jQuery.getJSON("@(Url.Action("GetAchievementData",new {id=ViewBag.ExtId }))?year=" + year, function (res) {
+                        if (res.state == 200) {
+                            jQuery.each(res.result.data, function (idx, item) {
+                                jQuery(".ach-card #ArticleList").append('<div class="row form-group"><div class="col-md-10"><input class="form-control JsonArray" required data-placement="bottom" name="Link" placeholder="(请输入相关的文章链接)" value="' + item.link + '" /></div></div>');
+                            });
+                            jQuery(".ach-card").css("display", "block");
+                        } else { ShowAlert("操作失败！") }
+                    });
+                    </Text>
+                }
+                else if (Model.Grade == (byte)iSchool.Domain.Enum.SchoolGrade.Kindergarten && SchUtils.Canshow2("sa.link", schtype))
+                {
+                    //幼儿园升学成绩
+                    <Text>
+                    jQuery(".ach-card input[name='year']").val(year);
+                    jQuery('#ArticleList').html('');
+                    jQuery.getJSON("@(Url.Action("GetAchievementData",new {id=ViewBag.ExtId }))?year=" + year, function (res) {
+                        if (res.state == 200) {
+                            jQuery.each(res.result.data, function (idx, item) {
+                                jQuery(".ach-card #ArticleList").append('<div class="row form-group"><div class="col-md-10"><input class="form-control JsonArray" required data-placement="bottom" name="Link"  placeholder="(请输入相关的文章链接)" value="' + item.link + '" /></div></div>');
+                            });
+                            jQuery(".ach-card").css("display", "block");
+                        } else { ShowAlert("操作失败！") }
+                    });
+                    </Text>
+                }
+                _isonlyjump = undefined;
+            });
+
+            //师生比例限制为最多1位小数
+            HuLyegaJS.decimalInput({
+                ele: '[name="TsPercent"]',
+                decimalPlaces:1
+            });
+            //外教占比限制为最多1位小数
+            HuLyegaJS.decimalInput({
+                ele: '[name="ForeignTea"]',
+                decimalPlaces: 1
+            });
+
+            //师生比例校验输入范围
+            jQuery("input[name=TsPercent]").on("blur", function () {
+                var value = parseFloat(jQuery("input[name=TsPercent]").val());
+                if (value < 1 || value > 999.9) {
+                    ShowAlert("请输入 1 至 999.9 之间的数字", -1);
+                    jQuery("input[name=TsPercent]").focus();
+                    return;
+                }
+            });
+
+            //外教占比校验输入范围
+            jQuery("input[name=ForeignTea]").on("blur", function () {
+                var value = parseFloat(jQuery("input[name=ForeignTea]").val());
+                if (value < 0 || value > 999.9) {
+                    ShowAlert("请输入 0 至 999.9 之间的数字", -1);
+                    jQuery("input[name=ForeignTea]").focus();
+                    return;
+                }
+            });
+
+
+            achFn['onloading'] = function () {
+                if (jQuery('#div_achInfos').length) {
+                    jQuery('#div_achInfos').html('');
+                }
+            };
+            //升学成绩部分load后
+            achFn['onloaded'] = function () {
+                if (jQuery('#div_achJuniorMiddleSchool').length) {
+                    //中考分数限制为最多2位小数
+                    HuLyegaJS.decimalInput({
+                        ele: '[name="Average"]',
+                        decimalPlaces: 2
+                    });
+                    HuLyegaJS.decimalInput({
+                        ele: '[name="Highest"]',
+                        decimalPlaces: 2
+                    });
+                }
+                if (jQuery('#div_achInfos').length) {
+                    var year = jQuery(".ach-card input[name='year']").val();
+                    var extId = jQuery(".ach-input").attr("data-extId");
+                    jQuery.get('/School/AchievementPanel', { "year": year, "extId": extId, "grade": '@Html.Raw(Model.Grade)', "type": '@Html.Raw(Model.Type)' }, function (str) {
+                        var html = jQuery('#div_achInfos').html();
+                        if (html && html.length > 0) return;
+                        var div = jQuery('<div>' + str + '</div>').appendTo('body').hide(), j;
+                        try { j = JSON.parse(div.find('#json_achp').html()); } catch (ex) { j = [] };
+                        var ds = jQuery.map(j, function (g) {
+                            return { k: g.value, v: g.message };
+                        });
+                        div.remove(), achFn['after_save'](ds);
+                    });
+                }
+            };
+            // 保存升学成绩后显示出学校名单
+            achFn['after_save'] = function (ds) {
+                var div = jQuery('#div_achInfos');
+                if (div.length) {
+                    var html = '';
+                    for (var i = 0, len = ds.length; i < len; i++) {
+                        var d = ds[i];
+                        html += '<div class="col-6">' + d.k + '</div>';
+                        html += '<div class="col-6">' + '录取' + d.v + '人</div>';
+                    }
+                    div.html(html);
+                }
+            };
+
+            //保存SaveStep2
+        jQuery(".saveform-btn").on("click", function () {
+            debugger;
+
+            //#region 有问题临时屏蔽        
+            //var page = jQuery(this).attr('data-page');
+            //if (_isonlyjump == true) {
+            //    if (page == "last") {//下一页
+            //        window.location.replace('/school/step3?sid=' + jQuery("input[name=Sid]").val() + '&extid=' + jQuery("input[name=Eid]").val());
+            //    }
+            //    else {//上一页
+            //        window.location.replace('/school/step1?sid=' + jQuery("input[name=Sid]").val() + '&extid=' + jQuery("input[name=Eid]").val());
+            //    }
+            //    _isonlyjump = true;
+            //    return;
+            //}
+            //#endregion 有问题临时屏蔽
+
+            //检查输入框是否，为空则提示并阻止保存
+            if (CheckIsNull("extcontent-form")) return;
+
+            SaveStep2Form(jQuery(this));
+        });
+
+
+            //是否展示升学成绩
+            jQuery(".nav-tabs a").on("click", function () {
+
+                var id = jQuery(this).attr("id");
+                if (id == "custom-nav-achievement-tab" && showAch == true) {
+                    jQuery(".ach-card").css("display", "block");
+                }
+                else {
+                    jQuery(".ach-card").css("display", "none");
+                }
+            });
+
+            //升学成绩保存
+            @if (Model.Grade == (byte)iSchool.Domain.Enum.SchoolGrade.JuniorMiddleSchool)
+            {
+                <text>
+            function validJuniorAvg(self) {
+                var fshu = jQuery.trim(self.val()) || '';
+                var a2 = regexParseToDouble2(fshu, true, 2);
+                if (fshu !== '' && a2 === undefined) {
+                    return ShowAlert(self.attr('valid-errmsg'), 3000), false;
+                }
+            }
+                </text>
+            }
+            jQuery("#achcontent-form").validate({
+                submitHandler: function (form) {
+                    @if (Model.Grade == (byte)iSchool.Domain.Enum.SchoolGrade.JuniorMiddleSchool)
+                    {
+                        <text>
+                    if (validJuniorAvg(jQuery('#achcontent-form input[name=Average]')) === false) {
+                        return false;
+                    }
+                    if (validJuniorAvg(jQuery('#achcontent-form input[name=Highest]')) === false) {
+                        return false;
+                    }
+                        </text>
+                    }
+                    //计算完成率
+                    var completion = Completion("achcontent-form");
+                    jQuery("#achcontent-form input[name='completion']").val(completion);
+                    var year = jQuery("#achcontent-form input[name='year']").val();
+                    var formdata = jQuery("#achcontent-form").getFormJSON();
+                    jQuery.post("@Url.Action("SaveAchievement",new {grade=Model.Grade,ExtId= ViewBag.ExtId })",
+                        { json: JSON.stringify(formdata) }, function (res) {
+                            if (res.state == 200) {
+                                _isonlyjump = undefined;
+                                ShowAlert("保存成功！", -1);
+                                //隐藏升学成绩
+                                jQuery("input[name='" + year + "_completion']").val(completion);
+                                jQuery(".ach-card").css("display", "none");
+                                showAch = false;
+                            } else {
+                                ShowAlert(res.message, -1);
+                            }
+                    });
+                    return false;
+                }
+            });
+
+            //展开右下角审核意见
+            jQuery(".icon-right").on("click", function () {
+                jQuery(this).css("display", "none");
+                jQuery(".side-bar").css("width", "500px");
+                jQuery("#auditcard").css("display", "block");
+            });
+            //收回右下角审核意见
+            jQuery("#hidebtn").on("click", function () {
+                jQuery(".icon-right").css("display", "block");
+                jQuery(".side-bar").css("width", "66px");
+                jQuery("#auditcard").css("display", "none");
+                return false;
+            });
+        });
+
+        //保存学部内容
+        function SaveStep2Form($btn) {
+            debugger;
+            //判断地址跟电话是否为空
+            var address = jQuery("#Address").val();
+            if (!jQuery.trim(address)) {
+                ShowAlert("地址不能未空！",-1);
+                return;
+            }
+
+            //1：N N[1,999] 校验是否是正整数，范围在控件中检验了
+            //jQuery('#ForeignTea').val().IsIntNumber(jQuery('#ForeignTea').val());
+            //jQuery('#ForeignTea').IsIntNumber(jQuery('#ForeignTea').val());
+            var Teachercount = parseFloat(jQuery('#Teachercount').val(), 10);
+            var ForeignTeaCount = parseFloat(jQuery('#ForeignTeaCount').val(), 10);
+
+            var inputforeignTea = jQuery('#ForeignTea');
+            if (Teachercount)
+            if (IsIntNumber(inputforeignTea.val()) == false) {
+                ShowAlert("外教占比，请输入[1,999]之间的正整数", -1);
+                inputforeignTea.focus();
+                return;
+            }
+            var tsPercent = jQuery('#TsPercent');
+            if (IsIntNumber(tsPercent.val()) == false) {
+                ShowAlert("师生比例，请输入[1,999]之间的正整数", -1);
+                tsPercent.focus();
+                return;
+            }
+            // 外教人数应该少于教师人数
+
+            if (jQuery.isNumeric(ForeignTeaCount) && jQuery.isNumeric(Teachercount)) {
+                if (ForeignTeaCount > Teachercount) return ShowAlert('外教人数应该少于教师人数', -1);
+                if (ForeignTeaCount <= 0) return ShowAlert('外教人数应该大于0', -1);
+            }
+
+            //var per_ForeignTea = parseFloat(jQuery('#ForeignTeaCount').val(), 10);
+            //alert(per_ForeignTea);
+            //if (jQuery.isNumeric(per_ForeignTea)) {
+            //    if (per_ForeignTea >= 100) return ShowAlert('外教人数应该少于教师人数', -1);
+            //    if (per_ForeignTea <= 0) return ShowAlert('外教人数应该大于0', -1);
+            //}
+            //var tel = jQuery("#Tel").val();
+            //if (!jQuery.trim(tel)) {
+            //    ShowAlert("电话不能未空！",-1);
+            //    return;
+            //}
+
+            //查看number是否为负数
+            var numInput = jQuery("input[type='number']");
+            try {
+                jQuery.each(numInput, function (index, item) {
+                    var value = jQuery(item).val();
+                    if (value) {
+                        var r = /^\d*\.?\d+$/;
+                        if (!r.test(value)) {
+                            ShowAlert("数字框的值应当为正数", -1);
+                            jQuery(item).focus();
+                            throw "";
+                        }
+                    }
+                });
+
+            } catch (e) {
+                return;
+            }
+            //查看视频是否为空
+            var files = jQuery("#extcontent-form input[type='file']");
+
+            try {
+                jQuery.each(files, function (index, item) {
+                    var file = item.files[0];
+                    if (file) { ShowAlert("还有视频尚未提交！"); throw ""; }
+                });
+
+            } catch (e) {
+                return;
+            }
+
+
+            var jsonObj = {};
+            jsonObj["operation"] = $btn.attr("data-page");
+            var c_name = jQuery(ue.container).parents('div.uecontent').get(0).getAttribute('name');
+            //判断ue编辑器的内容
+            var ueCount = jQuery("div.uecontent").length;
+            var userUeCount = 0;
+            jQuery("div.uecontent").each(function () {
+                var it = jQuery(this), n = it.attr('name');
+                var value = n == c_name ? ue.getContent() : it.html();
+                if (jQuery.trim(value)) { userUeCount += 1; }
+                jsonObj[n] = value;
+            });
+
+            //判断对口学校完成率判断
+            @if (SchUtils.Canshow2("对口学校", schtype))
+            {
+                <Text>
+                ueCount += 1;
+                //对口学校Select Text 提交
+                var counterPartText = [];
+                jQuery.each(jQuery("#extcontent-form select[name='CounterPart']"),  function (index, item) {
+                    var text = jQuery(item).find("option:selected").text();
+                    if (!text) { text = null; }
+                    counterPartText.push(text);
+                });
+                jsonObj["CounterPartText"] = counterPartText;
+                if (counterPartText.length > 0) { userUeCount += 1; }
+            //对口学校年份提交
+                var counterPartYear = [];
+                jQuery.each(jQuery("#extcontent-form select[name='CounterPartYear']"),  function (index, item) {
+                    var text = jQuery(item).find("option:selected").text();
+                    if (!text) { text = null; }
+                    counterPartYear.push(text);
+                });
+                jsonObj["counterPartYears"] = counterPartYear;
+                //公办初中de划片范围和对口学校只算其中一个
+                @if (Model.Grade == (byte)SchoolGrade.JuniorMiddleSchool)
+                {
+                    <Text>
+                    jQuery('#range').addClass('c_ignore');
+                    !counterPartText.length && jQuery.trim(jQuery('#range').val()) && (jQuery('#range').removeClass('c_ignore'), userUeCount += 1);
+                    </Text>
+                }
+                //
+                </Text>
+            }
+
+            //开放日完成率判断
+            @if (SchUtils.Canshow2("开放日", schtype)) {
+                <Text>
+            ueCount += 1;
+            var hourline = jQuery("#OpenHourContent .form-group");
+            if (hourline.length != 0) {
+                jQuery.each(hourline, function (index, item) {
+                    var name = jQuery(this).find("input[name='OpenHourName']").val();
+                    var time = jQuery(this).find("input[name='OpenHourTime']").val();
+                    if (jQuery.trim(name) && jQuery.trim(time)) {
+                        userUeCount += 1;
+                        return false;
+                    }
+                });
+            }
+             </Text>
+            }
+
+            //行事日历完成率判断
+            @if (SchUtils.Canshow2("学校行事历", schtype))
+            {
+             <Text>
+                ueCount += 1;
+                var calendar = jQuery("#CalendarContent .form-group");
+                if (calendar.length != 0) {
+                          jQuery.each(calendar, function (index, item) {
+                              var name = jQuery(this).find("input[name='CalendarName']").val();
+                              var time = jQuery(this).find("input[name='CalendarTime']").val();
+                              if (jQuery.trim(name) && jQuery.trim(time)) {
+                                  userUeCount += 1;
+                                  return false;
+                              }
+                          });
+                }
+            </Text>
+            }
+
+            var completion = Completion("extcontent-form", userUeCount, ueCount, true);
+            jsonObj["completion"] = completion;
+
+            var err = (function (form) {
+                // 检查经纬度
+
+                var lng = form.find('[name=Longitude]').val();
+                lng = lng === undefined || lng === null ? '' : lng;
+                if (lng !== '' && !jQuery.isNumeric(lng)) {
+                    return '请正确填写经度';
+                }
+                lng = lng !== '' ? parseFloat(lng, 10) : lng;
+                if (lng !== '' && !(-180 <= lng && lng <= 180)) {
+                    return '经度必须在[-180 180]内';
+                }
+
+                var lat = form.find('[name=Latitude]').val();
+                lat = lat === undefined || lat === null ? '' : lat;
+                if (lat !== '' && !jQuery.isNumeric(lat)) {
+                    return '请正确填写纬度';
+                }
+                lat = lat !== '' ? parseFloat(lat, 10) : lat;
+                if (lat !== '' && !(-90 <= lat && lat <= 90)) {
+                    return '纬度必须在[-90 90]内';
+                }
+
+                if (!(lat !== '' && lng !== '')) {
+                    return (lat === '' ? '纬度' : '经度') + '为空';
+                }
+            })(jQuery("#extcontent-form"));
+            if (err) {
+                return ShowAlert(err, -1);
+            }
+
+            onSchoolRangeSave();//划片范围
+            onCounterpartSave();//对口学校
+
+            if (listfieldyeartags.length > 0) {
+                for (var i = 0; i < listfieldyeartags.length; i++) {
+                        var target = listfieldyeartags[i];
+                         for (var i = 0; i < listfieldyeartags.length; i++) {
+
+                        var target = listfieldyeartags[i];
+                        //删除操作不判断
+                        if (target.isvalid) { }
+                        else {
+                            for (var j = 0; j < listfieldyeartags.length; j++) {
+                                    //删除操作不判断
+                                    var ntarget = listfieldyeartags[j];
+                                    if (undefined != target.isvalid) { }
+                                    else {
+                                        if (target.year == ntarget.year && target.field == ntarget.field && i != j) {
+                                            ShowAlert("不能添加相同年份的数据,错误位置:" + getfieldname(target.field));
+                                            listfieldyeartags = [];
+                                            return false;
+                                        }
+                                    }
+                                }
+                        }
+                    }
+                }
+                //jQuery("#extcontent-form").append("<input id='field_year_tag' type='hidden' name='FieldYearTagList' value=''/>");
+                //jQuery("#field_year_tag").val(JSON.stringify(listfieldyeartags));
+            }
+
+            //获取年份字段更改记录
+            jsonObj.yearslist = YearsField.getYearslistChanges(jsonObj.yearslist, listfieldyeartags, jQuery('.hid_json_value'));
+
+            debugger;
+            //视频
+            jsonObj.Types = [],jsonObj.Videos = [], jsonObj.Covers = [], jsonObj.VideoDescs = [];
+            jsonObj.Videos = [];
+            jQuery.each(ui_batch_uploadVideo, function (_, x) {
+                debugger;
+                var items = x.obj.getData();
+                for (var i = 0, len = items.length; i < len; i++) {
+                    debugger;
+                    if (!jQuery.trim(items[i].videoDesc)) err = '请输入视频封面信息';
+                    jsonObj.Types.push(x.type);
+                    jsonObj.Videos.push(items[i].videoUrl);
+                    jsonObj.Covers.push(items[i].cover);
+                    jsonObj.VideoDescs.push(items[i].videoDesc);
+
+                }
+            });
+
+            // 图片
+            jsonObj.imgs = [];
+            jQuery.each(ui_batch_uploadBrand, function (_, x) {
+                var items = x.obj.getData();
+                for (var i = 0, len = items.length; i < len; i++) {
+                    if (!jQuery.trim(items[i].desc)) {
+                        err = '请输入图片信息';
+                        return false;
+                    }
+                }
+                jsonObj.imgs.push({ type: x.type, items: items });
+            });
+            if (err) {
+                return ShowAlert(err, -1);
+            }            
+
+            Loading("正在保存表单！"); debugger;
+            jQuery("#extcontent-form").ajaxSubmit({
+                data: jsonObj,
+                success: function (data) {
+                    if (data.state == 200) {
+                        //取消loading
+                        CloseLoading();
+                        //取消onbeforeunload事件
+                        window.onbeforeunload = undefined;
+                        jQuery(window).attr('location', data.result);
+                    }
+                    else {
+                        CloseLoading();
+                        ShowAlert(data.message);
+                    }
+                }
+            });
+        }
+
+        //添加学部成绩的年份
+        function AddYear() {
+             var year = jQuery.trim(jQuery("#root-year").val());
+             if (!year) {
+                 ShowAlert("请选择年份！", -1);
+                return;
+            }
+            if (achYears.indexOf(year) == -1) {
+                achYears.push(year);
+                var html = '<div class="form-group"><label class="form-control-label"> ' + year + '</label ><div class="row"><div class="col-md-4 ach-form" data-extid="@(ViewBag.ExtId)" data-year="' + year + '"><section class="card"><div class="card-body text-secondary"> 编辑成绩 </div></section></div><div class="col-md-3 ach-del" data-year="' + year + '" data-id="@(ViewBag.ExtId)"><section class="card"><div class="card-body text-secondary text-danger"><i class="fa fa-times-circle"></i>&nbsp;&nbsp;清空成绩</div></section></div></div><input type="hidden" class="c_value" name="' + year + '_completion" value="0"></div >';
+                jQuery("#achievement-content").append(html);
+                _isonlyjump = undefined;
+              } else {
+                  ShowAlert("该年份已经存在！");
+              }
+        }
+
+        function AddAchLink() {
+            var html = '<div class="row form-group"><div class="col-md-10"><input class="form-control JsonArray" required data-placement="bottom" name="Link" placeholder="(请输入相关的文章链接)" value="" /></div></div>';
+            jQuery(".ach-card #ArticleList").append(html);
+            _isonlyjump = undefined;
+        }
+
+        //添加分数线
+        function AddLine() {
+            jQuery("#achcontent-form #FractionalineContent").append(' <div class="form-group"><div class="col-md-5"><input class="form-control  JsonArray"  placeholder="请输入分数线的名字" required data-placement="bottom" name="Name" value="" /></div><div class="col-md-5 form-inline"><input type="number" name="Point" value="" class="form-control JsonArray" placeholder="请输入分数" data-placement="bottom" required digits min="0"  ></div><div class="col-md-2"> <a class="fa fa-minus-circle text-danger" href="javascript:void(0)" onclick="DelLine(this)"></a></div>');
+            _isonlyjump = undefined;
+        }
+
+
+        //删除分数线
+        function DelLine(obj) {
+            jQuery(obj).parent().parent().remove();
+            _isonlyjump = undefined;
+        }
+        //添加开放日
+        function AddOpenHour() {
+            var html = '<div class="form-group" ><div class="col-md-5"><input class="form-control c_ignore" name="OpenHourName" placeholder="请输入时间线的名字" value="" /></div><div class="col-md-4"><div class="col-md-4 form-inline"> <input type="text"  value="" placeholder="请输入时间" name="OpenHourTime" class="form-control datetimepicker4 c_ignore"></div></div><div class="col-md-3"><a href= "javascript:void(0)" onclick="DelLine(this)" ><i class="fa fa-times-circle text-danger"></i></a></div><br><br><hr style="width:850PX;height:20px;" /></div>';
+            jQuery("#OpenHourContent").append(html);
+            jQuery('.datetimepicker4').datetimepicker({
+                format: 'YYYY-MM-DD',
+                locale: moment.locale('zh-cn'),
+            });
+            _isonlyjump = undefined;
+        }
+        //添加行事日历
+        function AddCalendar() {
+            var html = '<div class="form-group" ><div class="col-md-5"><input class="form-control c_ignore" required name="CalendarName" placeholder="请输入行事日历的名字" data-placement="bottom"  value="" /></div><div class="col-md-4"><div class="col-md-6 form-inline"> <input type="text" value="" name="CalendarTime" required data-placement="bottom" class="form-control datetimepicker4 c_ignore" placeholder="请输入时间"></div></div><div class="col-md-3"><a href="javascript:void(0)" onclick="DelLine(this)" ><i class="fa fa-times-circle text-danger"></i></a ></div><br><br><hr style="width:850PX;height:20px;" /></div>';
+            jQuery("#CalendarContent").append(html);
+            jQuery('.datetimepicker4').datetimepicker({
+                format: 'YYYY-MM-DD',
+                locale: moment.locale('zh-cn'),
+            });
+            _isonlyjump = undefined;
+         }
+
+        function InitSelect2() {
+            //对口学校搜索
+            jQuery(".counterschool" ).select2({
+                    ajax: {
+                        url: "@Url.Action("SearchSachSchool")",
+                        dataType: 'json',
+                        type: 'get',
+                        data: function (params) {
+                            return {
+                            "top": 10,
+                            "isCollage": "@(Model.Grade== (byte)iSchool.Domain.Enum.SchoolGrade.SeniorMiddleSchool)",
+                            "grade":@(Model.Grade==(byte)iSchool.Domain.Enum.SchoolGrade.JuniorMiddleSchool?Model.Grade-1: Model.Grade+1),
+                            "data[q]": params.term
+                            };
+                        },
+                        processResults: function (data) {        //data返回数据
+                            var options = new Array();
+                            jQuery(data.results).each(function (i, o) {
+                                options.push({
+                                    //获取select2个必要的字段，id与text
+                                    id: o.id,         //取出items中Code赋值给id
+                                    text: o.text    //取出items中CodeName赋值给text
+                                });
+                            });
+                            return {
+                                results: options        //返回数据
+                            };
+                        },
+                        cache: true
+                    },
+                    placeholder: "输入学校名字搜索...",
+                    allowClear: false,    //选中之后，可手动点击删除
+                    escapeMarkup: function (markup) { return markup; }, // 字符转义处理自定义格式化防止xss注入
+                    formatResult: function formatRepo(repo) { return repo.text; }, // 函数用来渲染结果
+                    formatSelection: function formatRepoSelection(repo) { return repo.text; } // 函数用于呈现当前的选择
+            });
+
+        }
+
+        function SelectOnChange(input_act_add) {
+            //对口学校选中值变化
+            jQuery(".selonchange").on("change", function () {
+                CounterpartMoreInputChange(jQuery(this), input_act_add);
+                _isonlyjump = undefined;
+            });
+        }
+
+        //对口学校select选择框选中项变化
+        function CounterpartMoreInputChange(currentController, input_act_add) {
+            _isonlyjump = undefined;
+            //新增项，编辑也是新增状态
+            var inputitemState = act_update;
+            if (input_act_add) { inputitemState = input_act_add };
+
+            //先获取隐藏json
+            var currentInput = jQuery(currentController);
+            var selKey = currentInput.find("option:selected").text();
+            var selValue = currentInput.find("option:selected").val();
+
+            //全部年份字段都不允许保存空值
+            if (selKey == null || selKey == "" || selKey == undefined) {
+                return;
+            }
+            var isNew = true;
+            //分隔输入框的name属性
+            var arrStr = currentInput.attr("name").split('_');//示例：多输入框name结构Year_Counterpart_Index  arrStr[2]为输入项的序号
+            var field = arrStr[1];
+            var year = jQuery("select[name='" + field + "']").val();
+            var key = field + "_" + year;
+
+            //增删改查状态维护
+            ////更新按钮状态 已编辑1 act_update
+            jQuery("#" + key + "").attr('data-input', act_update)
+            //多输入项，单个输入项的状态维护more-input-state,值是数组，按照输入项顺序存储状态[];分新增和编辑两种情况
+
+            var hidJson = jQuery("#jsonhid_Year_" + field + "").val();
+            var json = JSON.parse(hidJson);
+            jQuery.each(json, function (index, data) {
+                if (data.key == key) {
+                    isNew = false;
+                    //更新json值
+                    jQuery.each(data.value, function (i, value) {
+                        if (value.field == field) {
+
+                            try {
+                                this.content[arrStr[2]].Key = selKey;
+                                this.content[arrStr[2]].Value = selValue;
+                            }
+                            catch{
+                                    var item = {
+                                        Key: selKey,
+                                        Value: selValue
+                                    };
+                                    this.content.push(item);
+                            }
+                            this.act = act_update;
+                            //维护输入项状态
+                            var arrState = JSON.parse(jQuery("#" + key + "").attr('more-input-state'));
+                            arrState[arrStr[2]] == act_add ? act_add : inputitemState;
+                            jQuery("#" + key + "").attr('more-input-state', JSON.stringify(arrState));
+                        }
+                    });
+                }
+            });
+
+            //给json追加一条记录
+            if (isNew) {
+                //当前年份按钮增加维护输入项的状态  inputitemcount 输入项的项数
+                var contentcount = parseInt(jQuery("#" + key + "").attr('inputitemcount'));
+                MoreInputState_First(contentcount, arrStr[2], key, inputitemState);
+                AppentItemToJson(field, key, year, act_update, null, json, contentcount);
+            }
+
+            //更新隐藏json控件的value
+            FormatJsonString(field, json);
+
+        }
+
+        //更多数据 加载school文章
+        jQuery(function () {
+            function init() {
+                jQuery('#div_sgArticle a[data-dt-idx]').on('click', function () {
+                    var a = $(this), pi = parseInt(a.attr('data-dt-idx'), 10);
+                    if (pi < 1) return false;
+                    if (pi == data.currentPageIndex) return false;
+                    if (pi > data.totalPageCount) return false;
+                    load(pi);
+                });
+            }
+            function load(i) {
+                var o = {};
+                o.pageIndex = i;
+                o.pageSize = 10;
+                o.eId = '@ViewBag.ExtId';
+                jQuery.postJSON('/audit/GetSchoolArticlePageList', o, function (res) {
+                    jQuery('#div_sgArticle').html(res);
+                    init();
+                });
+            }
+            init();
+        });
+
+
+
+         //---------以下都是年份标签字段改版使用的----------------
+        //0：删除；1：已编辑；2：初始值(没变更)；3：新增
+        var act_delete = 0, act_update = 1, act_select = 2, act_add = 3;
+        var pagecacheinputId = "dbdataofyearfield", eid = "@ViewBag.ExtId";
+
+        //【编辑内容】 当内容框被编辑时，更新隐藏json值、btn的状态 多年份字段添加data-update="Y"属性，防止非多年份字段触发执行该逻辑
+    jQuery("input,textarea").filter('[data-update]').on("change", function () {
+        _isonlyjump = undefined;
+            var currentInput = jQuery(this);
+            var currentValue = currentInput.val();
+
+            //全部年份字段都不允许保存空值
+            if (currentValue == null || currentValue == "" || currentValue == undefined) {
+                return;
+            }
+            if (currentInput.attr("type") == "number") {
+
+                if (!ISPositiveInteger(currentValue)) {
+                    currentInput.focus();
+                    ShowAlert("数字框的值为正数", -1);
+                    return;
+                }
+            }
+            var isNew = true;
+            var dbField = currentInput.attr("name").split('_')[1];
+            var field = dbField;
+            if (field == "MaxAge") { field = "Age" }
+            var year = jQuery("select[name='" + field + "']").val();
+            var key = field + "_" + year;
+            //更新按钮状态 已编辑1
+            jQuery("#" + key + "").attr('data-input', act_update)
+            //获取隐藏json
+            var hidJson = jQuery("#jsonhid_Year_" + field + "").val();
+            var json = JSON.parse(hidJson);
+            jQuery.each(json, function (index, data) {
+                if (data.key == key) {
+                    isNew = false;
+                    //更新json值
+                    jQuery.each(data.value, function (i, value) {
+
+                        if (value.field == dbField) {
+                            this.content = currentValue;
+                            this.act = act_update;
+                        }
+                    });
+                }
+            });
+            //给json追加一条记录
+            if (isNew) {
+                var arrValue = [jQuery("input[name='Year_Age']").val(), jQuery("input[name='Year_MaxAge']").val(), currentValue];
+                AppentItemToJson(dbField, key, year, act_update, arrValue, json)
+            }
+
+            //更新隐藏json控件的value
+            FormatJsonString(field, json);
+
+        });
+
+        //【展示内容】  点击年份标签按钮时，
+        jQuery(".btnyearclick").on("click", function () {
+
+            var yearBtn = jQuery(this);
+            var feild = yearBtn.attr("id").split("_")[0];
+
+            //首先设置样式
+            //1、统一处理非选中年份按钮样式
+            var btns = getFieldButtons(yearBtn);
+            jQuery.each(btns, function (index, item) {
+                var dinput = jQuery(item).attr('data-input');
+                if (dinput != act_delete.toString()) {
+                    jQuery(item).attr('class', 'btnyearclick btn btnCommon');
+                    jQuery(item).removeAttr('disabled');
+                }
+            });
+            //2、设置选中年份按钮样式
+            //不允许点击，防止多次重复请求
+            yearBtn.attr('class', 'btnyearclick btn btn-red');
+            yearBtn.attr('disabled', 'disabled');
+            //隐藏已编辑标签
+            jQuery("#span_" + feild + "").attr("hidden", "hidden");
+
+            //最后加载数据：data-input=2_,动态去请求数据库；data-input=1_，直接读取页面隐藏的json
+            var act = yearBtn.attr('data-input');
+            var field_year = yearBtn.attr('data-extid');
+
+            if (act == act_select.toString()) {
+                LoadDBData(field_year);
+            }
+            else if (act == act_update.toString()) {
+                //显示已编辑 1：已编辑 @*span_@(listAge.Field)*@
+                jQuery("#span_" + feild + "").removeAttr("hidden");
+                LoadHidData(field_year);
+            }
+
+            //显示输入项
+            jQuery("#show_input_item_" + feild).removeAttr("hidden");
+        });
+
+        //【删除内容】 当展示的删除被点击时，则清空展示标签的所有值，并把相应的按钮变为灰色，不可用
+        function DelAndClear(obj) {
+            var r = confirm("你确定要删除该项吗?")
+            if (r) {
+                _isonlyjump = undefined;
+                var strName = jQuery(obj).attr("data-input");
+                var arrName = strName.split("|");
+                var field = arrName[0];
+                var year = jQuery("[name='" + field + "']").val();
+                var currentBtnId = field + "_" + year;
+
+                //1、更新隐藏json的对应值
+                var hidJson = jQuery("#jsonhid_Year_" + field).val();
+                var json = JSON.parse(hidJson);
+                var arrValue = [jQuery("[name='" + arrName[1] + "']").val(), jQuery("[name='" + arrName[2] + "']").val(), jQuery("[name='" + arrName[1] + "']").val()]
+                var isNew = true;
+                jQuery.each(json, function (index, data) {
+                    if (data.key == currentBtnId) {
+                        isNew = false;
+                        jQuery.each(data.value, function (i, item) {
+                            item.act = act_delete;
+                       });
+                   }
+                });
+                //追加一条删除记录
+                if (isNew) {
+                    AppentItemToJson(field, currentBtnId, year, act_delete, arrValue, json);
+                }
+
+                //2.1、年份按钮变更：样式变为灰色 不可编辑 状态为0
+                jQuery("#" + currentBtnId).attr("disabled", "disabled").attr("class", "btnyearclick btn btn-grey").attr("data-input", act_delete);
+                //2.2、隐藏已编辑按钮
+                jQuery("#span_" + field).attr("hidden", "hidden");
+                //2.3、隐藏输入项
+                jQuery("#show_input_item_" + field).attr("hidden", "hidden");
+
+                //3、清空值
+                jQuery.each(arrName, function (index, name) {
+                    jQuery("[name='" + name + "']").val('');
+                });
+                //3.1、清空点选标签
+                if (field == "Target" || field == "Subjects") {
+                    jQuery("#" + arrName[1]).html("");
+                }
+                _isonlyjump = undefined;
+                //更新隐藏json控件的value
+                FormatJsonString(field, json);
+            }
+        }
+
+        //格式化字符串，并更新隐藏Json文本框的value
+        function FormatJsonString(field, json) {
+            jQuery("#jsonhid_Year_" + field + "").val(JSON.stringify(json));
+            _isonlyjump = undefined;
+        }
+
+        //更新点选标签已选标签展示
+        function UpdateTagShow(jsonData,tageShowIdPostfix, tagType) {
+            var html = "";
+            jQuery.each(jsonData, function (index) {
+                html += '<div class="col-md-auto"><section class="card  float-left " ><div class="card-body text-secondary" data-tagid="' + jsonData[index].Value + '">' + jsonData[index].Key + '</div></section ></div >';
+            });
+            var input = tageShowIdPostfix;// 展示标签div的后缀并且是隐藏input的id  Target_1000,Target,Subjects,Subjects_1000
+            var tagType = tagType;//标签类型
+            //如果是招生对象
+            var temp = input.split("_");
+            if (temp[1]) {
+                jQuery("#tag-list-" + tagType + "-" + temp[1]).html(html);
+            }
+            else
+                jQuery("#tag-list-" + tagType).html(html);
+
+            jQuery("#" + input).val(JSON.stringify(jsonData));
+            _isonlyjump = undefined;
+        }
+
+        function ShowYareTagContent(obj) {
+            var yearBtn = jQuery(obj);
+
+            //首先设置样式
+            var btns = yearBtn.parent().children('button');
+            jQuery.each(btns, function (index, item) {
+                var dinput = jQuery(item).attr('data-input');
+                if (dinput != act_delete.toString()) {
+                    jQuery(item).attr('class', 'btn btnCommon');
+                }
+            });
+            yearBtn.attr('class', 'btn btn-red');
+
+            //然后根据按钮状态，显示已编辑 1：已编辑
+
+            //最后加载数据：data-input=2_,动态去请求数据库；data-input=1_，直接读取页面隐藏的json
+            var strArr = yearBtn.attr('data-input');
+            var field_year = yearBtn.attr('data-extid');
+            if (strArr == act_select.toString()) {
+                LoadDBData(field_year);
+            }
+            else if (strArr == act_update.toString()) {                
+                _isonlyjump = undefined;
+                LoadHidData(field_year);
+            }
+
+        }
+
+        //加载数据库对应年份数据
+        function LoadDBData(field_year)
+        {
+            var strArr = field_year.split('_');
+            var currentSelect = jQuery("select[name='" + strArr[0] + "']");
+            currentSelect.val(strArr[1]);
+            var fieldNames = currentSelect.attr("data-input");
+            var list = fieldNames.split('|');
+            var year = strArr[1];
+
+            //get pagecache
+            var cachedata = QueryPageCacheByBtnId(field_year, pagecacheinputId);
+            //get api-data
+            if (cachedata == null) {
+                var json = { "fieldName": fieldNames, "eid": eid, "year": year };
+                jQuery.get("@Url.Action("GetSchoolYearFieldContentByCondition", "School")", json, function (data) {
+                    //show
+                    var arrValue = ShowContent(field_year, null, data);
+                    //dbdata to page-cache
+                    DbDataToPageCache(pagecacheinputId, list[0], year, arrValue);
+                });
+            }
+            else {
+                //show
+                ShowContent(field_year, cachedata, null);
+            }
+        }
+
+        //show-- dbdata or cachedata --content
+        function ShowContent(field_year, cachedata, dbdata) {
+
+            var strArr = field_year.split('_');
+            var currentSelect = jQuery("select[name='" + strArr[0] + "']");
+            currentSelect.val(strArr[1]);
+            var fieldNames = currentSelect.attr("data-input");
+            var list = fieldNames.split('|');
+            var tageShowIdPostfix = currentSelect.attr("tage_show_id_postfix");
+            var tagType = currentSelect.attr("data-tag");
+            var isDataTag = (tagType == undefined || tagType == "") ? false : true;//是否是点选标签
+            var preid = currentSelect.attr("preid");//ue编辑器相关变量pre-id
+
+            var arrValue = ["", "", null];
+            //展示值 文本框类
+            var list = fieldNames.split('|');
+            for (var i = 0; i < list.length; i++) {
+                var dataValue = cachedata == null ? dbdata.result[list[i]] : cachedata[i].content;
+                try { arrValue[2] = JSON.parse(dataValue); }
+                catch{ arrValue[2] = dataValue; }
+
+                //点选标签
+                if (isDataTag) {
+                    if (dataValue == undefined) {
+                        UpdateTagShow(null, tageShowIdPostfix, tagType);
+                    }
+                    else {
+                        UpdateTagShow(arrValue[2], tageShowIdPostfix, tagType);
+                    }
+                }
+                //ue编辑器
+                else if (preid) {
+
+                    //方案一：只是替换值方案
+                    var ueValue = jQuery("#" + preid).innerHTML = dataValue;
+                    ue.setContent(ueValue == undefined ? "" : ueValue);
+                }
+                //其他
+                else {
+                    var _name = list[i];
+                    if (_name == "Counterpart") {
+                        //数据库只要一个字段，界面展示两个字段
+                        OneFieldShowMore2(field_year, _name, dataValue, true);
+                    }
+                    jQuery("[name='Year_" + list[i] + "']").val(dataValue);
+                }
+            }
+        }
+
+
+        //多输入项的年份字段
+        //数据库只要一个字段，界面展示多个控件
+        function OneFieldShowMore2(currentBtnId, field, dataValue, isDB) {
+            jQuery("#" + field + "_Content").html('');
+            jQuery(".updateaddinputitem").remove();
+            var content = null;
+            if (isDB) { try { content = JSON.parse(dataValue); } catch{ content = dataValue; } }
+            else content = dataValue;
+            var inputItemCount = 0;
+            var html = '';
+            jQuery.each(content, function (index, item) {
+                ++inputItemCount;
+                html += GetInputItemHtmlByField2(currentBtnId, index, field, item);
+
+            });
+
+            //动态渲染输入项
+            jQuery("#" + field + "_Content").append(html);
+            InitSelect2();
+            SelectOnChange();
+
+            //编辑模式的添加按钮，每个年份按钮对应一个
+            var addhtml = '<button name="addinputBtn_' + currentBtnId + '"  type = "button" inputitemcount=' + inputItemCount + ' currentBtnId="' + currentBtnId + '" field="' + field + '" isfirst="true"  onclick = "Update_AddInputItem2(this)" style = "margin-left:5px;margin-top:15px;width:25%;border:1px solid #ced4da;border-radius:0.25rem;" class="btn btn-outline-secondary btn-lg btn-block updateaddinputitem" > <i class="fa fa-plus"></i></button >';
+            jQuery("#" + field + "_Content").parents(".notnull").after(addhtml);
+
+            //当前年份按钮记录输入项的项数
+            jQuery("#" + currentBtnId).attr('inputitemcount', inputItemCount);
+        }
+
+        //根据Field获取动态加载的html
+        function GetInputItemHtmlByField2(currentBtnId, index, field, item) {
+            var html = '';
+            //var select = '<select  data-placeholder="选择一个学校" name="Year_' + field + '_' + index + '" class="counterschool selonchange" tabindex="1"><option value = "' + item.Value + '" selected>' + item.Key + '</option ></select >';
+            //html = '<div class="form-group" style="margin:5px; margin-bottom:50px;margin-left:-15px; " id="show_input_item_' + field + '_' + index + '"><div class="col-md-6"  style="margin-top:7px;">' + select + '</div><div class="col-md-2" style="margin-top:7px;"></div><div class="col-md-4"  style="margin-top:7px;"><a href="javascript:void(0)" currentbtnid="' + currentBtnId + '" index="' + index + '"   onclick="DelInputItem2(this)"><i class="fa fa-times-circle text-danger"></i></a></div></div>';
+
+
+            html = '<div class="form-group" style="margin:0px; " id="show_input_item_' + field + '_' + index + '"><div style="margin-top:7px;"><select  data-placeholder="选择一个学校" name="Year_' + field + '_' + index + '" class="counterschool selonchange" tabindex="1"><option value = "' + item.Value + '" selected>' + item.Key + '</option ></select >&nbsp;&nbsp;&nbsp;<a href="javascript:void(0)" name="a_' + currentBtnId + '" currentbtnid="' + currentBtnId + '" index="' + index + '"   onclick="DelInputItem2(this)"><i class="fa fa-times-circle text-danger"></i></a></div></div>';
+
+
+            var str_inputItemState = jQuery("#" + currentBtnId).attr('more-input-state');
+
+            if (str_inputItemState) {
+                var arr_inputItemState = JSON.parse(str_inputItemState);
+                //已删除的输入项，则不显示
+                if (arr_inputItemState[index] == act_delete.toString()) {
+                    html = '';
+                }
+                //已编辑
+                if (arr_inputItemState[index] == act_update.toString()) html = html.replace("</i></a></div></div>", "</i></a><span>已编辑</span></div></div>");
+                ////新增
+                //else if (arr_inputItemState[index] == act_add.toString()) html = html.replace("</i></a></div></div>", "</i></a><span>新增项</span></div></div>");
+
+            }
+            return html;
+        }
+
+        //编辑状态，通过“+”添加输入项
+        function Update_AddInputItem2(obj) {
+            _isonlyjump = undefined;
+            var currentTag = jQuery(obj);
+            var currentBtnId = currentTag.attr('currentBtnId'), field = currentTag.attr('field');
+            var index = currentTag.attr('inputitemcount');//编辑总项数，也是新增的开始下标;
+            var inputitemtatolcount = currentTag.attr('inputitemcount');//编辑总项数，新增项也累计到一起
+
+            var html = '';
+            html = '<div class="form-group" style="margin:0px; margin-top:8px;" id="show_input_item_' + field + '_' + index + '"><div><select style="margin-top:7px;"  data-placeholder="选择一个学校" name="Year_' + field + '_' + index + '" class="counterschool selonchange" tabindex="1"><option value = "" selected></option ></select >&nbsp;&nbsp;&nbsp;<a style="margin-top:7px;" name="a_' + currentBtnId + '" href="javascript:void(0)" currentbtnid="' + currentBtnId + '" index="' + index + '"   onclick="DelInputItem2(this)"><i class="fa fa-times-circle text-danger"></i></a></div></div>';
+
+            jQuery("#" + field + "_Content").append(html);
+            InitSelect2();
+            SelectOnChange(act_add);
+
+            currentTag.attr('isfirst', false);
+
+            //维护年份按钮的相关属性
+            var currentBtn = jQuery("#" + currentBtnId);
+            ++inputitemtatolcount;
+            currentBtn.attr('inputitemcount', inputitemtatolcount);
+            currentTag.attr('inputitemcount', inputitemtatolcount);
+
+            //状态属性为空，则为首次维护状态
+            var state = currentBtn.attr('more-input-state');
+            if (state) {
+                var newState = JSON.parse(state);
+                newState.push(act_add);
+                currentBtn.attr('more-input-state', JSON.stringify(newState));
+
+            }
+            else {
+                MoreInputState_First(inputitemtatolcount, index, currentBtnId, act_add);
+            }
+        }
+
+        //删除输入项
+        function DelInputItem2(obj) {
+            //删除时，在当前年份按钮中添加维护的属性 添加：delcount--删除数属性；维护：more-input-state--输入项状态数组、inputitemcount--输入项总项数
+            //删除时，a标签添加的属性 index--当前输入项的序号、currentbtnid--当前年份按钮Id
+            var r = confirm("你确定要删除该项吗?")
+            if (r) {
+                _isonlyjump = undefined;
+                var currentALable = jQuery(obj);
+                var currentBtnId = currentALable.attr("currentbtnid");
+                var currentBtn = jQuery("#" + currentBtnId)
+                var tatolcount = parseInt(currentBtn.attr('inputitemcount'));
+                var arr_fieldandyear = currentBtnId.split('_');
+                var field = arr_fieldandyear[0];
+                var currentIndex = parseInt(currentALable.attr('index'));//删除的下标
+
+                //1.1、删除该输入项
+                currentALable.parent().parent().remove();
+
+                //重洗删除项后面的相关下标和总项数-1
+                var needUpdateChildrenNodes = jQuery("#Counterpart_Content").children(".form-group");
+                jQuery.each(needUpdateChildrenNodes, function (index) {
+                    if (index >= currentIndex) {
+                        var nextOldIndex = index + 1;
+                        jQuery("#show_input_item_" + field + "_" + nextOldIndex).attr('id', 'show_input_item_' + field + '_' + index);
+                        jQuery("[name=Year_" + field + "_" + nextOldIndex + "]").attr('name', 'Year_' + field + '_' + index);
+                        jQuery("a[name=a_" + currentBtnId + "]").attr('index', index);//a标签--index
+                    }
+                });
+                //+按钮的--inputitemcount
+                jQuery("[name=addinputBtn_" + currentBtnId + "]").attr('inputitemcount', tatolcount - 1);
+
+                //年份按钮--总项数-1；状态集合移除删除项
+                currentBtn.attr('inputitemcount', tatolcount - 1);
+                var states = currentBtn.attr('more-input-state');
+                if (states) {
+                    var arr_states = JSON.parse(states);
+                    //arr_states[currentIndex] = act_delete;
+                    arr_states.splice(currentIndex, 1);
+                    currentBtn.attr('more-input-state', JSON.stringify(arr_states));
+                }
+                else {
+                    var arrState = [];
+                    for (var i = 0; i < tatolcount - 1; i++) {
+                        arrState.push(act_select);
+                    }
+                    jQuery("#" + currentBtnId + "").attr('more-input-state', JSON.stringify(arrState))
+                }
+
+                var act = act_update;
+                //总项数=1，即为删除最后一项
+                if (tatolcount==1) {
+                    //年份按钮变更：样式变为灰色 不可编辑 状态为0
+                    currentBtn.attr("disabled", "disabled").attr("class", "btnyearclick btn btn-grey").attr("data-input", act_delete);
+                    act = act_delete;
+                }
+
+                //然后更新隐藏json的act为0
+                var hidJson = jQuery("#jsonhid_Year_" + field).val();
+                var json = JSON.parse(hidJson);
+                var isNew = true;
+                jQuery.each(json, function (index, data) {
+                    if (data.key == currentBtnId) {
+                        isNew = false;
+                        jQuery.each(data.value, function (i, item) {
+                            item.act = act;
+                            item.content.splice(currentIndex, 1);
+                        });
+                    }
+                });
+                if (isNew) {
+                    AppentItemToJson2(field, currentBtnId, arr_fieldandyear[1], act, json,tatolcount-1);
+                }
+                jQuery("#jsonhid_Year_" + field).val(JSON.stringify(json));
+
+                DelPageCacheByBtnId(currentBtnId, pagecacheinputId);
+            }
+        }
+
+
+        //给Json数组添加元素 field--字段名,key--当前年份btnId,year--当前年份,act--当前年份btn需变更的状态(0:删除；1:已编辑),arrValue--内容数组,json--
+    function AppentItemToJson2(field, key, year, act, json, inputitemcount) {
+
+            //因为年龄段由两个年份字段控制，所有需要同时加入
+            if (field == "Counterpart") {
+                var content = [];
+                for (var i = 0; i < inputitemcount; i++) {
+                    var selectObj = jQuery('[name=Year_' + field + '_' + i + ']').find("option:selected");
+                    var item = {
+                        Key: selectObj.text(),
+                        Value: selectObj.val()
+                    };
+                    content.push(item);
+                }
+
+                var item = {
+                    key: key,
+                    value: [
+                        {
+                            year: year,
+                            content: content,
+                            field: field,
+                            act: act
+                        }
+                    ]
+                };
+                json.push(item);
+            }
+        }
+
+
+        //加载隐藏Json对应年份数据
+        function LoadHidData(field_year)
+        {
+            var strArr = field_year.split('_');
+            var currentSelect = jQuery("select[name='" + strArr[0] + "']");
+            currentSelect.val(strArr[1]);
+            var fieldNames = currentSelect.attr("data-input");
+            var tageShowIdPostfix = currentSelect.attr("tage_show_id_postfix");
+            var tagType = currentSelect.attr("data-tag");
+            var isDataTag = (tagType == undefined || tagType=="" ) ? false : true;//是否是点选标签
+
+            var preid = currentSelect.attr("preid"); //ue编辑器相关变量pre-id
+
+            var jsonHid = jQuery("#jsonhid_Year_" + strArr[0] + "").val()
+            var json = JSON.parse(jsonHid);
+
+            jQuery.each(json, function (index,data) {
+                if (data.key == field_year) {
+                    //展示值
+                    var list = fieldNames.split('|');
+                    for (var i = 0; i < list.length; i++) {
+                        var dataValue = data.value[i];
+
+                        //点选标签类
+                        if (isDataTag) {
+                            var content = dataValue == [] ? [] : dataValue.content;
+                            UpdateTagShow(content, tageShowIdPostfix, tagType);
+                        }
+                        //富文本类
+                        else if (preid) {
+                            var ueValue = jQuery("#" + preid).innerHTML = dataValue.content;
+                            ue.setContent(ueValue == undefined ? "" : ueValue);
+                        }
+                        //文本框类
+                        else {
+                            var _name = list[i];
+                            OneFieldShowMore2(field_year, _name, dataValue.content);
+                            jQuery("[name='Year_" + list[i] + "']").val(dataValue.content);
+                        }
+                    }
+                }
+                });
+        }
+        //---------以上都是年份标签字段改版使用的----------------
+
+
+    </script>
+
+
+}

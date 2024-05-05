@@ -1,0 +1,28 @@
+﻿@{
+    var sid = ViewBag.sid;
+    var eid = ViewBag.ExtId != null ? ViewBag.ExtId : ViewBag.eid;
+}
+
+<div class="card-header" style="border-top:1px solid rgba(0,0,0,.125);">
+    <h4><strong>算法指标</strong></h4>
+</div>
+<div class="card-body">
+    <div class="row form-group">
+        <div class="col-md-6">
+            <a href="/school/alg1?sid=@sid&extid=@eid">社会</a>
+        </div>
+        <div class="col-md-6"></div>
+    </div>
+    <div class="row form-group">
+        <div class="col-md-6">
+            <a href="/school/alg2?sid=@sid&extid=@eid">经济</a>    
+        </div>
+        <div class="col-md-6"></div>
+    </div>
+    <div class="row form-group">
+        <div class="col-md-6">
+            <a href="/school/alg3?sid=@sid&extid=@eid">个人</a>
+        </div>
+        <div class="col-md-6"></div>
+    </div>
+</div>

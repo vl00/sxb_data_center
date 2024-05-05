@@ -1,0 +1,10 @@
+﻿@using Microsoft.Extensions.Configuration;
+@{
+    Layout = "_Layout";
+    var config = Context.RequestServices.GetService(typeof(IConfiguration)) as IConfiguration;
+    ViewBag.StaticFile = "https://cos.sxkid.com/v4source/h5/js/ajax/libs";
+    //ViewBag.StaticFile = "https://cdn.bootcdn.net/ajax/libs";
+    //ViewBag.StaticFile = "https://cdnjs.cloudflare.com/ajax/libs";
+    var bgDataUrl = config.GetSection("AppSettings").GetValue<string>("BgDataUrl");
+    ViewBag.BgDataUrl = bgDataUrl;
+}

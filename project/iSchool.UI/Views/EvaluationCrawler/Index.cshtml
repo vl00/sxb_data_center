@@ -1,0 +1,329 @@
+﻿@using iSchool.Organization.Appliaction.ViewModels
+@using X.PagedList.Mvc.Core;
+@using X.PagedList;
+@using X.PagedList.Mvc.Common;
+@using iSchool.Organization.Appliaction.Service.EvaluationCrawler;
+@using iSchool.Infrastructure;
+@using iSchool.Organization.Domain.Enum;
+@model IPagedList<CrawlerItem>
+@{
+    ViewData["Title"] = "抓取评测管理";
+    ViewData["orgId"] = null;
+
+}
+@section css{
+    <link href="@(ViewBag.StaticFile)/bootstrap-datetimepicker/4.17.47/css/bootstrap-datetimepicker.min.css" rel="stylesheet">
+    <style>
+        .dataTables_paginate .pagination li.active span {
+            background: #272c33;
+            border-color: #272c33;
+            color: #fff;
+        }
+
+        .typeahead {
+            z-index: 8000;
+        }
+
+        .inline-form-control {
+            display: inline-block;
+            width: 100%;
+            height: calc(1.5em + .75rem + 2px);
+            padding: .375rem .75rem;
+            font-size: 1rem;
+            font-weight: 400;
+            line-height: 1.5;
+            color: #495057;
+            background-color: #fff;
+            background-clip: padding-box;
+            border: 1px solid #ced4da;
+            border-radius: .25rem;
+            transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+        }
+
+        .a-href {
+            cursor: pointer;
+        }
+        .sorting, .td-text-center {
+            text-align: center;
+        }
+
+        .popover-body {
+            max-height: 500px;
+            overflow-y: scroll;
+        }
+
+        .pointer {
+            cursor: pointer;
+        }
+    </style>
+}
+
+<form action="@(Url.Action("Index"))" method="get">
+    
+    @*条件搜索*@
+    <div class="card">
+        <div class="card-body">
+            <div class="row form-group">
+                <div class="col-md-2">
+                    <label class=" form-control-label">类型</label>
+                    <select name="Type" id="Type" asp-items="@ViewBag.GrabTypeList" class="form-control">
+                        <option value="" disabled selected hidden>请选择</option>
+                        <option value="0">全部</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class=" form-control-label">时间</label>
+                    <div class="form-inline">
+                        <input type="text" value=""  style="width: 120px;"  id="StartTime" name="StartTime" placeholder="请选择时间" class="form-control datetimepicker4">
+                        <label class="form-control-label">-</label>
+                        <input type="text" value=""  style="width: 120px;"  id="EndTime" name="EndTime" placeholder="请选择时间" class="form-control datetimepicker4">
+                    </div>
+                </div>
+                <div class="col-md-1" style="padding-top:33px">
+                    <button class="btn btn-primary btn-sm" type="submit">确定</button>                 
+                </div>
+                <div class="col-md-6"></div>
+            </div>
+        </div>
+    </div>
+</form>
+<div class="card">
+    <div class="card-header">抓取评测列表</div>
+    <div class="card-body">
+        <div class="row">
+            @*抓取评测列表--表头*@
+            <div class="col-sm-12">
+                <table id="bootstrap-data-table-export" class="table table-striped table-bordered dataTable no-footer" role="grid" aria-describedby="bootstrap-data-table-export_info">
+                    <thead>
+                        <tr role="row">
+                            <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Position: activate to sort column ascending" style="width: 30%;">
+                                内容
+                            </th>
+                            <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Office: activate to sort column ascending" style="width: 15%;">
+                                来源
+                            </th>
+                            <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" style="width: 15%;">
+                                类型
+                            </th>
+                            <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" style="width: 15%;">
+                                抓取时间
+                            </th>
+                            <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" style="width: 8%;">
+                                编辑
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr role="row" class="odd hover-box">
+                                <td style="word-break:break-all;text-overflow:ellipsis;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;">
+                                    <lable title="" class="pointer" data-container="body" data-toggle="popover" data-placement="right" data-content="@item.Content">
+                                        @(item.Content.Replace("<br/>", "").Substring(0, item.Content.Replace("<br/>", "").Length < 20 ? item.Content.Replace("<br/>", "").Length : 20) + (item.Content.Replace("<br/>", "").Length >20 ?"...":""))
+                                    </lable>
+                                </td>
+                                <td class="td-text-center">@item.Source</td>
+                                <td class="td-text-center">@(EnumUtil.GetDesc((GrabTypeEnum)item.Type))</td>
+                                <td class="td-text-center">@(item.CreateTime.ToString("yyyy-MM-dd HH:mm:ss"))</td>
+                                <td class="td-text-center">
+                                    <a href="@Url.Action("EditShow", new { id = item.Id ,queryJson = ViewBag.queryJson,page=ViewBag.page})" data-id="" class="text-info">编辑</a>
+                                    <a>|</a>
+                                    <a href="javascript:void(0)" data-id="@item.Id" class="text-info add-update-Btn" onclick="DelEvltCrawler(this)">删除</a>
+                                </td>
+                            </tr>
+
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+        @*分页*@
+        <div class="row">
+            @*page2、翻页时请求后台方法及传递查询参数*@
+            <div class="col-sm-12 col-md-2">
+                <div class="dataTables_info" id="bootstrap-data-table-export_info" role="status" aria-live="polite">
+                    总共@(Model.PageCount)页
+                </div>
+            </div>
+            <div class="col-sm-12 col-md-6">
+                <div class="dataTables_paginate paging_simple_numbers" id="bootstrap-data-table-export_paginate">
+                    @Html.PagedListPager(Model, page => Url.Action("Index", new
+                    {
+                        //左边的要与action的请求参数一致
+                        page = page,
+                        Type = ((CaptureEvaluationListQuery)ViewBag.query).Type,
+                        StartTime = ((CaptureEvaluationListQuery)ViewBag.query).StartTime,
+                        EndTime = ((CaptureEvaluationListQuery)ViewBag.query).EndTime,
+
+                    }),
+                         new X.PagedList.Mvc.Common.PagedListRenderOptionsBase
+                         {
+                             ContainerDivClasses = new[] { "" },
+                             LiElementClasses = new[] { "page-item", "paginate_button" },
+                             PageClasses = new[] { "page-link" },
+                             MaximumPageNumbersToDisplay = 8,
+                         })
+                </div>
+            </div>
+            <div class="col-sm-12 col-md-4">
+                <div style="margin:0 1em;">
+                    @Html.PagedListGoToPageForm(Model, Url.Action("Index", new
+                    {
+                        Type = ((CaptureEvaluationListQuery)ViewBag.query).Type,
+                        StartTime = ((CaptureEvaluationListQuery)ViewBag.query).StartTime,
+                        EndTime = ((CaptureEvaluationListQuery)ViewBag.query).EndTime,
+                    }), new GoToFormRenderOptions
+                    {
+                        InputFieldName = "page",
+                        InputFieldType = "number",
+                        InputFieldClass = "inline-form-control",
+                        InputWidth = 70,
+                        LabelFormat = " 转到",
+                        SubmitButtonFormat = "确定",
+                        SubmitButtonClass = "btn btn-primary btn-sm btn-pager-skip",
+                        SubmitButtonWidth = 50,
+                    })
+                </div>
+            </div>
+        </div>
+    </div>
+    <input type="hidden" id="hide_query" value="@ViewBag.queryJson" />
+</div>
+
+@section Scripts{
+    <script src="@(ViewBag.StaticFile)/moment.js/2.18.1/moment-with-locales.min.js"></script>
+    <script src="@(ViewBag.StaticFile)/bootstrap-datetimepicker/4.17.47/js/bootstrap-datetimepicker.min.js"></script>
+    <script src="@(ViewBag.StaticFile)/bootstrap-3-typeahead/4.0.2/bootstrap3-typeahead.min.js"></script>
+
+    <script type="text/javascript">
+    jQuery(function () {
+            jQuery('a[a-href]').on('click', function () {
+                window.location.href = jQuery(this).attr('a-href');
+            });
+
+            //jQuery('.datetimepicker4').datetimepicker({
+            //    format: 'YYYY-MM-DD',
+            //    locale: moment.locale('zh-cn')
+            //});
+
+        //时间
+        var datetime = (function () {
+
+            jQuery('.datetimepicker4').datetimepicker({
+                format: 'YYYY-MM-DD',
+                locale: moment.locale('zh-cn')
+            }).bind('dp.change', function (e) {
+                var d = new Date(e.date);
+                var timeId = jQuery(this).attr("id")
+                var time = jQuery(this).val();
+                if (timeId == "StartTime") {//设置结束时间的最小值为开始时间
+                    jQuery("#EndTime").data("DateTimePicker").minDate(time);
+
+                } else if (timeId == "EndTime") {//设置开始时间的最大值为结束时间
+                    jQuery("#StartTime").data("DateTimePicker").maxDate(time);
+
+                }
+            });
+
+
+
+        })();
+
+
+            //初始化
+            init();
+
+            //page1、 page skip get searchdata from FormTable
+        jQuery('.btn-pager-skip').on('click', function () {
+            debugger;
+                //1、获取查询hide json值
+            var form = jQuery(this).parents('form').eq(0), u = form.attr('action');
+
+            window.location.href = u+u.indexOf('?') > -1 ? '&page=' : '?page='  + form.find('[name=page]').val();
+
+            initSearchParments();
+            return false;
+            });
+
+
+        })
+
+        function DelEvltCrawler(obj) {
+            var $this = jQuery(obj);
+            var id = $this.attr("data-id");
+            var status = $this.text();
+            showConfirm('确定要删除此评测？', function () {
+                Loading("正在更新数据！");
+                jQuery.post("@Url.Action("DelEvltCrawler")", { "id": id}, function (data) {
+                    if (data.status == 200) {
+                        ShowAlert('操作成功', 1000, function () {
+                            //jQuery("#searchBtn").click();
+                            window.location.reload();
+                        });
+                    } else {
+                        ShowAlert(data.msg);
+                        CloseLoading();
+                    }
+                });
+            });
+        }
+
+        //文字弹出
+        jQuery(function () {
+          
+            jQuery("[data-toggle='popover']").popover().on("mouseenter", function () {
+                var _this = this;
+                jQuery(this).popover("show");
+                jQuery(this).siblings(".popover").on("mouseleave", function () {
+                    jQuery(_this).popover('hide');
+                });
+            }).on("mouseleave", function () {
+                var _this = this;
+                setTimeout(function () {
+                    jQuery(".popover").mouseleave(function () {                       
+                        jQuery(this).popover("hide");
+                    })
+                    if (!jQuery(".popover:hover").length) {
+                        jQuery(_this).popover("hide")
+                    }
+                }, 0);
+            });
+        });
+
+
+
+        jQuery('.datetimepicker4').datetimepicker({
+            format: 'YYYY-MM-DD',
+            locale: moment.locale('zh-cn')
+        });
+
+        function matchReg(str) {
+            let reg = /<\/?.+?\/?>/g;
+            console.log(str.replace(reg, ''));
+        }
+
+        function init() {
+            debugger;
+            initSearchParments();
+            var action = jQuery(".PagedList-goToPage").attr("action"); //+ '?Type=' + queryjson.Type + '&StartTime=' + jQuery("#StartTime").val() + '&EndTime=' + jQuery("#EndTime").val();
+        jQuery(".PagedList-goToPage").attr("action", action);
+
+        }
+        function initSearchParments() {
+            //1、获取查询hide json值
+        var queryjson = JSON.parse(jQuery("#hide_query").val());
+
+        //2、把查询条件的值赋值给相应查询框
+        if (queryjson.Type != null) {
+            jQuery("#Type").val("" + queryjson.Type);
+        }
+        if (queryjson.StartTime != null) {
+            jQuery("#StartTime").val("@(((CaptureEvaluationListQuery)ViewBag.query).StartTime!=null? ((CaptureEvaluationListQuery)ViewBag.query).StartTime.Value.ToString("yyyy-MM-dd"):"")");
+        }
+        if (queryjson.EndTime != null) {
+            jQuery("#EndTime").val("@(((CaptureEvaluationListQuery)ViewBag.query).EndTime!=null? ((CaptureEvaluationListQuery)ViewBag.query).EndTime.Value.ToString("yyyy-MM-dd"):"")");
+            }
+        }
+    </script>
+}

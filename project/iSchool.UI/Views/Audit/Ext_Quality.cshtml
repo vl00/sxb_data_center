@@ -1,0 +1,100 @@
+﻿@using iSchool.Domain.Enum;
+@using iSchool.Infrastructure;
+@using iSchool.Domain.Modles;
+@using Newtonsoft.Json.Linq;
+@using iSchool.Application.ViewModels;
+@using static iSchool.Infrastructure.ObjectHelper;
+@{
+    var _model = Model as iSchool.Application.Service.Audit.SchoolExtQyResult_Quality;
+    _model.Data = _model.Data ?? new iSchool.Domain.SchoolExtQuality();
+    IEnumerable<UploadImgDto> schextImgs = Model.SchoolImages ?? Enumerable.Empty<UploadImgDto>();
+
+    IEnumerable<VideosInfo> schoolVideos = Model.SchoolVideos ?? Enumerable.Empty<VideosInfo>();
+}
+
+<div id="quality-Step6" class="card">
+    <div class="card-header">
+        <div class="col-6">师资力量及教学质量</div>
+        <div class="col-4">&nbsp;&nbsp;</div>
+        <div class="col-2">@(Math.Round((_model.Data?.Completion ?? 0f) * 100, 2, MidpointRounding.AwayFromZero))%</div>
+    </div>
+    <div class="card-body">
+        <h6 class="text-danger">
+            *注意：标星号的字段将不列入完成度统计中
+        </h6>
+        @*校长风采*@
+    <div class="form-group">
+        <label class="form-control-label">校长风采</label>
+        @*校长风采--图片*@
+        <div class="row" ui-batch-uploadImg="@(SchoolImageEnum.Principal.ToInt())" data-canadd="false" data-title="@(EnumUtil.GetDesc(SchoolImageEnum.Principal))图片上传">
+            <pre data-data style="display:none;">    
+@((schextImgs.FirstOrDefault(_ => _.Type == (byte)SchoolImageEnum.Principal)?.Items ?? Enumerable.Empty<UploadImgItemDto>()).ToJsonString(true))                        
+                </pre>
+        </div>
+
+        @*校长风采--视频*@
+        <div id="div_vdo" ui-batch-uploadVideo="@((int)VideoType.Principal)" data-title="@(EnumUtil.GetDesc(VideoType.Principal))">
+            <pre data-data style="display:none;">@(schoolVideos.ToJsonString(true))</pre>
+        </div>
+    </div>
+        <div class="form-group">
+            <label class="form-control-label">教师风采<i class="fa fa-star"></i></label>
+            <div class="row" ui-batch-uploadImg="@(SchoolImageEnum.Teacher.ToInt())"  data-canadd="false"  data-title="@(EnumUtil.GetDesc(SchoolImageEnum.Teacher))图片上传">
+                <pre data-data style="display:none;">      
+@((schextImgs.FirstOrDefault(_ => _.Type == (byte)SchoolImageEnum.Teacher)?.Items ?? Enumerable.Empty<UploadImgItemDto>()).ToJsonString(true))                         
+                            </pre>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-control-label">学校荣誉<i class="fa fa-star"></i></label>
+            <div class="row" ui-batch-uploadImg="@(SchoolImageEnum.SchoolHonor.ToInt())" data-canadd="false"   data-title="@(EnumUtil.GetDesc(SchoolImageEnum.SchoolHonor))图片上传">
+                <pre data-data style="display:none;">    
+@((schextImgs.FirstOrDefault(_ => _.Type == (byte)SchoolImageEnum.SchoolHonor)?.Items ?? Enumerable.Empty<UploadImgItemDto>()).ToJsonString(true))                            
+                                </pre>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-control-label">学生荣誉<i class="fa fa-star"></i></label>
+            <div class="row" ui-batch-uploadImg="@(SchoolImageEnum.StudentHonor.ToInt())" data-canadd="false"   data-title="@(EnumUtil.GetDesc(SchoolImageEnum.StudentHonor))图片上传">
+                <pre data-data style="display:none;">    
+@((schextImgs.FirstOrDefault(_ => _.Type == (byte)SchoolImageEnum.StudentHonor)?.Items ?? Enumerable.Empty<UploadImgItemDto>()).ToJsonString(true))    
+                                </pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    jQuery(function () {
+        //只读所有输入框
+        ReadOnlyInput();
+        //根据学校类型hide显示项
+        hide_with_dataExt();
+
+        var vds = jQuery('#extContent_quality video');
+        vds.on('playing', function () {
+            var self = this;
+            vds.each(function () {
+                self !== this && this.pause();
+            });
+        });
+
+
+        // init图片上传ui组件
+        jQuery.each(jQuery('#quality-Step6 [ui-batch-uploadImg]'), function (_, x) {
+            x = jQuery(x);
+            jQuery.batchUploadImg(jQuery.extend({}, imgOption, {
+                el: x,
+            }));
+        });
+        // init视频上传ui组件
+        jQuery.each(jQuery('#quality-Step6 [ui-batch-uploadVideo]'), function (_, x) {
+            x = jQuery(x);
+            jQuery.batchUploadVideo(jQuery.extend({}, videoOption, {
+                el: x,
+            }));
+        });
+
+
+    });
+</script>

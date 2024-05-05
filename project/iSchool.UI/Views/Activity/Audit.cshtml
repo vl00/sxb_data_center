@@ -1,0 +1,388 @@
+﻿@using iSchool.Organization.Appliaction.ViewModels;
+@using iSchool.Infrastructure.Dapper;
+@using iSchool.Organization.Appliaction.Service.Organization;
+@using iSchool.Infrastructure;
+@using iSchool.Organization.Domain
+@using iSchool.Organization.Domain.Enum;
+@using iSchool.Organization.Appliaction.OrgService_bg.Activitys;
+@{
+    ViewData["Title"] = "活动审核";
+
+    var init_activitys = (ViewBag.Activitys as AuditLsActiQueryResult)?.Activitys ?? new PagedList<Activity> { CurrentPageItems = new Activity[0] };
+    var init_pi = Context.Request.Query["pageIndex"];
+}
+@section css{
+    <link href="~/css/jsselect/select.css" rel="stylesheet" />
+    <style>
+        .typeahead {
+            z-index: 8000;
+        }
+
+        .a-default {
+            cursor: default;
+        }
+        .a-href {
+            cursor: pointer;
+        }
+
+        .table thead th {
+           /* padding: 0;*/
+            vertical-align: middle;
+        }
+        .table td {
+            padding: 0.4em;
+            vertical-align: middle;
+        }
+    </style>
+}
+
+@*条件搜索*@
+<div id="div_search" class="card">
+    <div class="card-body">
+        <div class="row form-group">
+            <div class="col-md-2">
+                <label class="form-control-label">状态</label>
+                <select name="sel_status" class="form-control" prop="Status">
+                    <option value="0">所有</option>
+                    @foreach (var x in EnumUtil.GetDescs<ActiEvltAuditStatus>().Where(_ => _.Value != ActiEvltAuditStatus.Not))
+                    {
+                    <option value="@(x.Value.ToInt())">@(x.Desc)</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-control-label">关联活动</label>
+                <select name="sel_ActivityId" class="form-control" prop="ActivityId">
+                    <option value="_">所有</option>
+                    @foreach (var x in init_activitys.CurrentPageItems)
+                    {
+                    <option value="@(x.Id)" data-budget="@(x.Budget)">@(x.Title)</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-control-label">关联专题</label>
+                <div prop="SpecialIds" multiple="1" style="margin:1px;"></div>
+            </div>
+            <div class="col-md-2">
+                <label class="form-control-label">用户名</label>
+                <input type="text" class="form-control" prop="UserName" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-control-label">评测标题</label>
+                <input type="text" class="form-control" prop="EvltTitle" />
+            </div>
+        </div>
+        <div class="row form-group">
+            <div class="col-md-10"></div>
+            <div class="col-md-2">
+                <button id="btn1" class="btn btn-primary btn-sm" type="button">筛选</button>
+                &nbsp;&nbsp;&nbsp;&nbsp;
+                <button id="btn2" class="btn btn-primary btn-sm" type="button">导出</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="div_pglist" class="card">
+    <div class="card-body">
+        @*列表*@
+        <div id="tb" style="min-height:100px;overflow: scroll;"></div>
+    </div>
+</div>
+<script id="tmpl-audit-notpass-win" type="text/template">
+    <div class="card">
+        <div class="card-header">
+            <div class="row">
+                <h3>驳回</h3>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <label>审核不通过提示</label><br />
+                <textarea id="auditcontent" rows="3" class=" form-control"></textarea>
+            </div>
+            <div class="row">
+                <select id="sel_reply" class="form-control" style="margin:5px 0;">
+                    <option value="">请选择</option>
+                    <option value="1">111</option>
+                    <option value="2">222</option>
+                    <option value="3">333</option>
+                </select>
+            </div>
+        </div>
+        <div class="card-footer" style="text-align:center;">
+            <button class="btn btn-primary" id="btn_notpass">确定</button>
+            <span style="margin:0 10px;"></span>
+            <button class="btn btn-primary" id="btn_close">关闭</button>
+        </div>
+    </div>    
+</script>
+<script id="tmpl-mobile-excp-win" type="text/template">
+    <div class="card">
+        <div class="card-header">
+            <div style="text-align:center;">手机号冲突</div>
+        </div>
+        <div class="card-body">
+            <div style="text-align:center;">
+                当前测评关联手机号已关联其他账号并参与活动,请联系用户修改手机号.
+            </div>
+        </div>
+        <div class="card-footer" style="text-align:center;">
+            <button class="btn btn-primary" id="btn_notpass">审核不通过</button>
+            <span style="margin:0 10px;"></span>
+            <button class="btn btn-primary" id="btn_close">确定</button>
+        </div>
+    </div>
+</script>
+
+@section Scripts{
+    <script src="@(ViewBag.StaticFile)/moment.js/2.18.1/moment-with-locales.min.js"></script>
+    <script src="@(ViewBag.StaticFile)/bootstrap-3-typeahead/4.0.2/bootstrap3-typeahead.min.js"></script>
+    <script src="~/js/jqselect/mySelect.v2.js"></script>
+    <script src="~/js/jq.postJSON.js"></script>
+    <script type="text/javascript">
+        var sel_SpecialIds;
+        var $mdu = new HuLyegaJS.event();
+
+        (function ($, fn) {
+            $(function () { return fn($); });
+        })(jQuery, function ($) {
+            // 活动
+            (function () {       
+                var idx_activity_changed = 0;
+                $('[prop=ActivityId]').on('change', function () {
+                    var self = $(this);
+                    $mdu.fire('activity_changed', self.val());
+                    //;
+                    var idx = (idx_activity_changed++) + 1;
+                    if (self.val() == '_') {
+                        set_right_title('');
+                    } else {
+                        set_right_title('');
+                        $.get('/activity/GetActivityPayMoney?activityId=' + self.val()).then(function (res) {
+                            if (res.status != 200) return ShowAlert('网络异常');
+                            if (idx != idx_activity_changed) return;
+                            var budget = res.data.budget - res.data.payOutMoney;
+                            set_right_title(budget != '' ? ('活动奖金预算：' + budget + '元') : '');
+                        });
+                    }                    
+                });
+            })();
+
+            // 专题
+            (function () {
+                var idx_activity_changed = 0;
+                sel_SpecialIds = $('[prop=SpecialIds]').mySelect({
+                    separator: ';',
+                    searchable: false
+                });
+                // 活动改变 联动 改变专题
+                $mdu.on('activity_changed', function (_, activityId) {
+                    if (!activityId || activityId == '_') {
+                        sel_SpecialIds.reset();
+                    }
+                    var idx = (idx_activity_changed++) + 1;
+                    $.get('/activity/AuditLsSpcl?activityId=' + activityId).then(function (res) {
+                        if (res.status != 200) return ShowAlert('网络异常');
+                        if (idx != idx_activity_changed) return;
+                        sel_SpecialIds.reset($.map(res.data.spcls, function (x) {
+                            return { text: x.item2, value: x.item1 };
+                        }));
+                    });
+                });
+                $mdu.on('get_ui_data', function (_, o) {
+                    o[sel_SpecialIds.ele.attr('prop')] = sel_SpecialIds.getSelectedValues();
+                });
+            })();
+
+            // page list load 
+            // + export excel
+            (function (o, b_btn1, b_btn2) {
+                o.pageIndex = o.pageIndex || 1;
+                o.pageSize = o.pageSize || 10;
+
+                // export excel
+                $('#btn2').on('click', function () {
+                    if (b_btn2) return; 
+                    get_ui_data_to_o($.extend({}, o));
+                    o.pageIndex = 1; o.pageSize = 1000000;
+                    b_btn2 = 2; debugger;                    
+                    $.postJSON('/Activity/ExportXlsxP', o).then(function (res) {
+                        b_btn2 = 0;
+                        if (res.status != 200) {
+                            return ShowAlert(res.msg, -1);
+                        }
+                        var id = res.data;
+                        window.location.href = '/home/getxlsx?id=' + id;
+                    });
+                });
+
+                // search
+                $('#btn1').on('click', function () {
+                    if (b_btn1) return;                    
+
+                    // get ui's data to o
+                    get_ui_data_to_o(o);
+
+                    // post request 
+                    b_btn1 = 1, HuLyegaJS.openLoading('#tb', '正在加载列表中'); debugger;
+                    $.postJSON('/Activity/AuditLsPager', o).then(
+                        function (res) {
+                            b_btn1 = undefined, HuLyegaJS.closeLoading('#tb');
+                            $('#tb').html(res);
+                            re_init_tb();
+                        }, function () {
+                            b_btn1 = undefined, HuLyegaJS.closeLoading('#tb');                            
+                        }
+                    );
+                });
+                function get_ui_data_to_o(o) {
+                    $('[prop]').each(function () {
+                        var self = $(this);
+                        o[self.attr('prop')] = self.val();
+                    });
+                    $mdu.fire('get_ui_data', o);
+                }
+                function re_init_tb() {
+                    HuLyegaJS.slimPager('#tb .tb-pager', function (pi) {
+                        $mdu.fire('reload-tb', pi);
+                    });
+                    window.history.replaceState(null, '', '?pageIndex=' + o.pageIndex);
+                }
+
+                // init or reload
+                $mdu.on('reload-tb', function (_, pi) {
+                    if (pi) o.pageIndex = pi;
+                    $('#btn1').trigger('click');
+                });                
+                setTimeout(function () {
+                    $mdu.fire('reload-tb', '@(init_pi)');
+                }, 100);
+            })({});
+
+            // 操作
+            (function (b_evlt, b_audit, b_off) {
+                // 查看评测                
+                $mdu.on('load-evaluation', function (_, a) {
+                    if (b_evlt) return;
+                    b_evlt = 1;
+                    var a = $(a);
+                    var json = JSON.parse(a.find('pre').html());
+                    $.get("/Evaluation/Indexwin", json, function (data) {
+                        HuLyegaJS.win({
+                            noheader: true,
+                            nofooter: true,
+                            autoDispose: true,
+                            width: 900,
+                            body: data,
+                            title: '评测详情',
+                            onclosed: function () {
+                                b_evlt = undefined;
+                            }
+                        });
+                    });
+                    
+                });
+                // 审核成功|驳回
+                $mdu.on('doaudit', function (e, aebId, evltId, ispass) {
+                    var o = {};
+                    o.AebId = aebId;
+                    o.EvltId = evltId;
+                    o.ispass = ispass;
+                    if (ispass) {
+                        return showConfirm('确定要 审核通过 ？', function () { do_http_request(); });
+                    } 
+                    //
+                    function on_notpass(prev_msg) {
+                        HuLyegaJS.win({
+                            noheader: true,
+                            nofooter: true,
+                            autoDispose: true,
+                            width: 500,
+                            body: $('#tmpl-audit-notpass-win').html(),
+                            title: '驳回',
+                            onshown: function () {
+                                var self = this;
+                                if (prev_msg) $('#auditcontent').val(prev_msg);
+                                $('#btn_notpass').on('click', function () {
+                                    showConfirm('确定要 审核不通过 ？', function () {
+                                        o.ispass = !1;
+                                        o.Adesc = $('#auditcontent').val();
+                                        o.Areply = $('#sel_reply').val() || null;
+                                        self.close();
+                                        do_http_request();
+                                    });
+                                });
+                                $('#btn_close').on('click', function () {
+                                    self.close();
+                                });
+                            }
+                        });                    
+                    }
+                    on_notpass();                    
+                    //
+                    function do_http_request() {
+                        if (b_audit) return;
+                        b_audit = 1, Loading('正在审核中'); debugger;
+                        $.postJSON('/activity/audit/', o, function (res) {
+                            b_audit = 0, CloseLoading();
+                            if (res.status != 200) {
+                                return ShowAlert(res.msg, -1);
+                            }                            
+                            var d = res.data;
+                            if (!d.errcode) {
+                                $mdu.fire('reload-tb');
+                                ShowAlert('操作成功');
+                            } else if (d.errcode == 2) {
+                                on_mobile_excp();
+                            } else {
+                                return ShowAlert(d.errmsg, -1);
+                            }
+                        });
+                    }
+                    function on_mobile_excp() {
+                        HuLyegaJS.win({
+                            noheader: true,
+                            nofooter: true,
+                            autoDispose: true,
+                            backdrop: 'static',
+                            width: 550,
+                            body: $('#tmpl-mobile-excp-win').html(),
+                            onshown: function () {
+                                var self = this;
+                                $('#btn_notpass').on('click', function () {
+                                    self.close();
+                                    on_notpass('手机号冲突');
+                                });
+                                $('#btn_close').on('click', function () {
+                                    self.close();
+                                });
+                            }
+                        });                
+                    }
+                });
+                // 下架
+                $mdu.on('evlt-offline', function (e, evltId) {
+                    showConfirm('确定要下架该评测？', function () {
+                        if (b_off) return;
+                        b_off = 1, Loading('下架中'); debugger;
+                        $.post("/Evaluation/OffOrOnTheShelf", { "id": evltId, "status": 1 }, function (data) {
+                            b_off = 0, CloseLoading(); debugger;
+                            if (data.status == 200) {
+                                ShowAlert('操作成功', 1000);
+                                $mdu.fire('reload-tb');
+                            } else {
+                                ShowAlert(data.msg);                                
+                            }
+                        });
+                    });
+                });
+            })();
+        });
+
+        // 用于设置预算?
+        function set_right_title(str) {
+            jQuery('#right-panel .page-header .page-title ol.breadcrumb').text(str || '');
+        }
+    </script>
+}

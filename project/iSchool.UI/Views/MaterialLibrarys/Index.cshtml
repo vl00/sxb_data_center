@@ -1,0 +1,164 @@
+﻿@using iSchool.Organization.Appliaction.ViewModels;
+@using iSchool.Infrastructure.Dapper;
+@using iSchool.Infrastructure;
+@using iSchool.Organization.Domain.Enum;
+@{
+    ViewData["Title"] = "素材管理";
+}
+
+@section css{
+    <link rel="stylesheet" href="~/lib/datatables.net-bs4/css/dataTables.bootstrap4.min.css" />
+    <link href="@(ViewBag.StaticFile)/bootstrap-datetimepicker/4.17.47/css/bootstrap-datetimepicker.min.css" rel="stylesheet">
+    <style>
+        .ifa {
+            font-size: 25px;
+        }
+        .a-href {
+            cursor: pointer;
+        }
+    </style>
+}
+
+@{
+    <div class="card">
+        <div class="card-body">
+            <div class="row form-group">
+                <div class="col-md-4">
+                    <label class=" form-control-label">发布时间</label>
+                    <div class="row">
+                        <div class="col-md-5">
+                            <input type="text" value="" class="form-control datetimepicker4" prop="StartTime">
+                        </div>
+                        <label class="form-control-label">-</label>
+                        <div class="col-md-5">
+                            <input type="text" value="" class="form-control datetimepicker4" prop="EndTime">
+                        </div>
+                        <div class="col-md-1"></div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class=" form-control-label">商品名称</label>
+                    <input type="text" class="form-control" prop="CourseName" />
+                </div>
+                <div class="col-md-4">
+                    <label class=" form-control-label">素材标题</label>
+                    <input type="text" class="form-control" prop="MeterialName" />
+                </div>
+            </div>
+            <div class="row form-group">
+                <div class="col-md-9"></div>
+                <div class="col-md-3">
+                    <button id="btn_search" class="btn btn-primary">搜索</button>
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    <button id="btn_add" class="btn btn-primary" onclick="gotoaddup()">添加</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            @* 列表 *@
+            <div id="div_tb">@{ await Html.RenderPartialAsync("Index.page", (object)ViewBag.MeterialPgList); }</div>
+        </div>
+    </div>
+}
+
+@section Scripts{
+    <script src="@(ViewBag.StaticFile)/moment.js/2.18.1/moment-with-locales.min.js"></script>
+    <script src="@(ViewBag.StaticFile)/bootstrap-datetimepicker/4.17.47/js/bootstrap-datetimepicker.min.js"></script>
+    <script src="~/js/jq.postJSON.js"></script>
+    <script>
+        var reload_table; // 刷新table
+        var args_tb = {};
+
+        (function (fn) {
+            jQuery(function () { fn(jQuery) });
+        })(function ($) {
+            $('.ifa').css('font-size', '25px');
+
+            $('.datetimepicker4').datetimepicker({
+                format: 'YYYY-MM-DD',
+                locale: moment.locale('zh-cn')
+            });
+
+            // table
+            (function (tb, o) {
+                o.pageIndex = 1;
+                o.pageSize = 10;
+                function init_tb(str) {
+                    $(tb.id).find('.table-div').html('');
+                    var etb = $(str);
+                    $.each(etb.find('tbody tr'), function (i, tr) {
+                        tr = $(tr);
+                        var ss = tr.find('th').remove();
+                        if (i == 0) {
+                            var tr0 = $('<tr></tr>').prependTo(etb.find('thead'));
+                            tr0.prepend(ss);
+                        }
+                    });
+                    $(tb.id).find('.table-div').append(etb);
+                }
+                function init() {
+                    init_tb($(tb.id).find('script').html());
+                    $(tb.id).find('a[data-dt-idx]').on('click', function () {
+                        var a = $(this), i = a.attr('data-dt-idx');
+                        if (o.pageIndex == i) return;
+                        load(i);
+                    });
+                    $(tb.id).find('.btn-skip').on('click', function () {
+                        var pi = parseInt($(tb.id).find('.span-skip input').val(), 10), maxi = parseInt($(tb.id).find('.span-skip').attr('data-totalPageCount'), 10);
+                        pi = pi < 1 ? 1 : pi > maxi ? maxi : pi;
+                        if (o.pageIndex == pi) return;
+                        load(pi);
+                    });
+                }
+                function load(pi) {
+                    o.pageIndex = pi || o.pageIndex;
+                    $.post(tb.url, o, function (str) {
+                        $(tb.id).html(str);
+                        init();
+                    });
+                }
+                init();
+                reload_table = load;
+            })({ id: '#div_tb', url: '@Url.Action("IndexPage")' }, args_tb);
+
+            // search
+            $('#btn_search').on('click', function () {
+                $('[prop]').each(function (_, ele) {
+                    ele = $(ele);
+                    args_tb[ele.attr('prop')] = ele.val();
+                });
+                reload_table(1);
+            });
+        });
+
+        // 上下架
+        function doOnlineOrOffOnline(ele) {
+            var $ = jQuery;
+            ele = $(ele);
+            var o = {
+                status: ele.text() == '下架' ? 0 : 1,
+                id: ele.attr('mid')
+            };
+            $.post('@Url.Action("UpStatus")', o, function (res) {
+                if (!res.succeed) {
+                    return ShowAlert(res.msg, -1);
+                }
+                ShowAlert('操作成功');
+                reload_table();
+            });
+        }
+
+        // 跳转编辑页
+        function gotoaddup(ele) {
+            var $ = jQuery;
+            ele = !ele ? undefined : $(ele);
+            if (ele) {
+                return window.location.href = '@Url.Action("Detail")' + '?id=' + ele.attr('mid');
+            }
+            window.location.href = '@Url.Action("Detail")';
+        }
+
+    </script>
+}

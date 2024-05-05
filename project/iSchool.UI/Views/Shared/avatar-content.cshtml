@@ -1,0 +1,59 @@
+﻿@*
+    for 批量上传图片窗口
+
+    //!! 不传参数model会查找父视图的Model
+    @await Html.PartialAsync("avatar-content", new
+    {
+        Id = "avatar-content"
+    })
+*@
+@using static iSchool.Infrastructure.ObjectHelper;
+@{ 
+    var id = Tryv(() => (string)Model?.Id, "avatar-content");
+}
+<div class="modal fade" id="@(id)" aria-hidden="true" aria-labelledby="avatar-modal-label" role="dialog">
+    <div class="modal-dialog modal-lg avatar-modal">
+        <div class="modal-content">
+            <!-- 模态框头部 -->
+            <form class="avatar-form">
+                <div class="modal-header">
+                    <h4 class="modal-title">上传图片</h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <!-- 模态框主体 -->
+                <div class="modal-body">
+                    <div class="avatar-body">
+                        <div class="avatar-upload">
+                            <input class="avatar-src" name="avatar_src" type="hidden" />
+                            <input class="avatar-data" name="avatar_data" type="hidden" />
+                            <label for="avatarInput" style="width:30em;color:red;">此裁剪工具仅用于缩略图裁剪，画廊模式内的图片为完整图片。</label>
+                            <input class="avatar-input" accept="image/*" name="avatar_file" type="file">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="avatar-wrapper"></div>
+                            </div>
+                            <div class="col-md-4 card-body nav flex-column justify-content-center bg-light text-center" style="margin-top:15px;">
+                                <div>
+                                    <span class="text-body">预览略缩图</span>
+                                </div>
+                                <div class="avatar-preview preview-lg"><img src="~/images/schooldefaultlogo.png" /></div>
+                                <div class="avatar-preview preview-md"><img src="~/images/schooldefaultlogo.png" /></div>
+                                <div class="avatar-preview preview-sm"><img src="~/images/schooldefaultlogo.png" /></div>
+                            </div>
+                        </div>
+                        <div>
+                            <input type="text" name="desc" class="form-control mt-3" placeholder="请输入图片信息，最多可输入xx个字符。" maxlength="14">
+                        </div>
+                        <div class="loading" aria-label="Loading" role="img" tabindex="-1"></div>
+                    </div>
+                </div>
+                <!-- 模态框底部 -->
+                <div class="modal-footer">
+                    <button type="submit" id="delext-btn" class="btn btn-secondary">确定</button>
+                    <button type="button" class="btn btn-secondary avatar-save" data-dismiss="modal">关闭</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

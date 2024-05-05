@@ -1,0 +1,476 @@
+﻿@using iSchool;
+@using iSchool.Domain.Enum;
+@using iSchool.Infrastructure;
+@using Newtonsoft.Json.Linq;
+@using static iSchool.Infrastructure.ObjectHelper;
+@using iSchool.Application.ViewModels;
+@{
+    var _model = Model as iSchool.Application.Service.Audit.SchoolExtQyResult_Ext;
+
+    string fmtWebSite(string str)
+    {
+        if (string.IsNullOrEmpty(str)) return str;
+        if (str.StartsWith("http://", StringComparison.OrdinalIgnoreCase)) return str;
+        if (str.StartsWith("https://", StringComparison.OrdinalIgnoreCase)) return str;
+        return "http://" + str;
+    }
+}
+<style>
+    .benmedia .down {
+        width: 94px;
+        font-size: 14px;
+        height: 30px;
+        overflow: hidden;
+    }
+
+        .benmedia .down a {
+            color: #0598fa;
+            display: inline-block;
+            width: 92px;
+            height: 28px;
+            line-height: 28px;
+            text-align: center;
+            border: 1px solid #0598fa;
+            border-radius: 2px;
+            margin-left: 35px;
+        }
+
+    .file_icon {
+        width: 26px;
+        height: 26px;
+        background: url("images/qitageshi.png") no-repeat center center;
+        font-size: 14px;
+        display: inline-block;
+        margin-left: 17px;
+        margin-top: 12px;
+    }
+
+    .fileindent {
+        display: inline-block;
+        margin-left: 35px;
+        line-height: 40px;
+    }
+
+    .fileicon_ai {
+        background-image: url("../images/uploader/ai.png");
+    }
+
+    .fileicon_doc {
+        background-image: url("../images/uploader/doc.png");
+    }
+
+    .fileicon_docx {
+        background-image: url("../images/uploader/doc.png");
+    }
+
+    .fileicon_jpg {
+        background-image: url("../images/uploader/jpg.png");
+    }
+
+    .fileicon_pdf {
+        background-image: url("../images/uploader/pdf.png");
+    }
+
+    .fileicon_png {
+        background-image: url("../images/uploader/png.png");
+    }
+
+    .fileicon_ppt {
+        background-image: url("../images/uploader/ppt.png");
+    }
+
+    .fileicon_psd {
+        background-image: url("../images/uploader/psd.png");
+    }
+
+    .fileicon_xls {
+        background-image: url("../images/uploader/xls.png");
+    }
+
+    .fileicon_txt {
+        background-image: url("../images/uploader/txt.png");
+    }
+
+    .fileicon_qitageshi {
+        background-image: url("../images/uploader/qitageshi.png");
+    }
+
+    .hide {
+        display: none;
+    }
+</style>
+
+
+@*学校概况 预先加载 *@
+<pre id="json_ext" style="display:none;">@_model.Data.ToJsonString()</pre>
+<div class="card">
+    <div class="card-header">基本信息</div>
+    <div class="card-body">
+        <div class="form-group">
+            <label class="control-label mb-1">学部ID</label>
+            <div>@_model.Data.Id</div>
+        </div>
+        <div class="form-group">
+            <label class="control-label mb-1">学部/分部名称</label>
+            <input type="text" readonly="readonly" class="form-control" value="@_model.Data.Name" />
+        </div>
+        <div class="form-group">
+            <label class="control-label mb-1">别称</label>
+            <input type="text" readonly="readonly" class="form-control" value="@_model.Data.NickName" />
+        </div>
+        <div class="form-group">
+            <label class="control-label mb-1">学部总类型</label>
+            <div>@(new SchFType0(_model.Data.SchFtype).GetDesc() ?? "无效的总类型")</div>
+        </div>
+        <div class="form-group">
+            <label class="control-label mb-1">学部/分校招生年级</label>
+            <select name="select" id="sel_Grade" class="form-control" disabled="disabled">
+                <option value="@_model.Data.Grade">@EnumUtil.GetDesc((SchoolGrade)_model.Data.Grade)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="control-label mb-1">学部/分校办学类型</label>
+            <select name="select" id="sel_Type" class="form-control" disabled>
+                <option value="@_model.Data.Type">@EnumUtil.GetDesc((SchoolType)_model.Data.Type)</option>
+            </select>
+        </div>
+        @if (Equals(_model.Data.Grade, (byte)SchoolGrade.Kindergarten) && Equals(_model.Data.Type, (byte)SchoolType.Private))
+        {
+            <div class="form-group">
+                <div class="col-3">是否普惠学校</div>
+                <div class="col-2"></div>
+                <div class="col-7">
+                    <label class="form-check-label">
+                        <input type="radio" disabled name="@nameof(_model.Data.Discount)" @(_model.Data.Discount == true ? "checked" : "") />是
+                    </label>
+                    &nbsp;&nbsp;
+                    <label class="form-check-label">
+                        <input type="radio" disabled name="@nameof(_model.Data.Discount)" @(_model.Data.Discount == false ? "checked" : "") />否
+                    </label>
+                </div>
+            </div>
+        }
+        @if (Equals((byte)SchoolType.Private, _model.Data.Type) && !Equals(_model.Data.Grade, (byte)SchoolGrade.Kindergarten))
+        {
+            <div class="form-group">
+                <div class="col-3">是否双语学校</div>
+                <div class="col-2"></div>
+                <div class="col-7">
+                    <label class="form-check-label">
+                        <input type="radio" disabled name="@nameof(_model.Data.Diglossia)" @(_model.Data.Diglossia == true ? "checked" : "") />是
+                    </label>
+                    &nbsp;&nbsp;
+                    <label class="form-check-label">
+                        <input type="radio" disabled name="@nameof(_model.Data.Diglossia)" @(_model.Data.Diglossia == false ? "checked" : "") />否
+                    </label>
+                </div>
+            </div>
+        }
+        @if (Equals(_model.Data.Grade, (byte)SchoolGrade.SeniorMiddleSchool) && _model.Data.Type.In((byte)SchoolType.International, (byte)SchoolType.ForeignNationality))
+        {
+            <div class="form-group">
+                <div class="col-3">是否中国国籍学校</div>
+                <div class="col-2"></div>
+                <div class="col-7">
+                    <label class="form-check-label">
+                        <input type="radio" disabled name="@nameof(_model.Data.Chinese)" @(_model.Data.Chinese == true ? "checked" : "") />是
+                    </label>
+                    &nbsp;&nbsp;
+                    <label class="form-check-label">
+                        <input type="radio" disabled name="@nameof(_model.Data.Chinese)" @(_model.Data.Chinese == false ? "checked" : "") />否
+                    </label>
+                </div>
+            </div>
+        }
+        <div class="form-group" style="clear: both; margin-top: 3em;">
+            <label class="control-label mb-1">学部标签</label>
+            <div>
+                <input tags="1" type="text" class="form-control" value="@string.Join(",", _model.TagNames)" style="display:none;" readonly="readonly" />
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="control-label mb-1">高德ID</label>
+            <input type="text" class="form-control" readonly="readonly" value="@(_model.Data.ClaimedAmapEid)" />
+        </div>
+        <div class="form-group">
+            <label class="control-label mb-1">数据来源</label>
+            <div>
+                @{
+                    var jsrc = Tryv(() => JArray.Parse(_model.Data.Source), new JArray());
+                }
+                @foreach (var a in jsrc)
+                {
+                    <p style="margin-bottom:0;max-width:1000px;">
+                        <a href="@fmtWebSite((string)a)" target="_blank">@a</a>
+                    </p>
+                }
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-md-6 col-sm-12" style="padding-left:0px">
+                <div class="bencard h-100" style="border:1px solid rgba(0,0,0,.125)">
+                    <div class="card-header">
+                        附件列表
+                    </div>
+
+                    <ul class="list-unstyled p-2 d-flex flex-column col" id="files">
+                        @if (_model.Data != null && !string.IsNullOrEmpty(_model.Data.SourceAttachments))
+                        {
+                            var list = JsonSerializationHelper.JSONToObject<List<SoureAttach>>(_model.Data.SourceAttachments);
+                            list.ForEach(x => x.icon = EnumUtil.GetAttachIcon(x.uri.Split(".").Last().ToLower()));
+                            foreach (var item in list)
+                            {
+                                <li class="benmedia">
+                                    <div class="media-body mb-1">
+                                        <p class="mb-2">
+                                            <span class="file_icon @item.icon"></span>
+                                            <span class="fileindent">@item.uri.Split("/").Last()</span><span class="cancel" data-uri="@item.uri"></span>
+                                            @if (item.type == 2)//其他
+                                            {
+                                                <span class="down"><a href="@item.uri" target="_blank" rel="nofollow">下载文件</a></span>
+                                            }
+                                            else
+                                            { <span class="down"><a href="@item.uri" target="_blank" rel="nofollow">查看图片</a></span>
+
+                                            }
+
+                                        </p>
+
+                                        <hr class="mt-1 mb-1" />
+                                    </div>
+                                </li>
+
+                            }
+                        }
+                        else
+                        {
+                            <li class="text-muted text-center empty"></li>
+                        }
+
+
+                    </ul>
+                </div>
+            </div><div style="clear:both"></div>
+        </div>
+        <div class="form-group">
+            <label class="control-label mb-1">微信公众号</label>
+            <div>
+                <input type="text" readonly="readonly" class="form-control" placeholder="(多个微信公众号用英文逗号隔开)" value="@_model.Data.Weixin" />
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="control-label mb-1">学部简介</label>
+            <div><textarea name="extintro" readonly="readonly" id="textarea-input" rows="4" placeholder="" class="form-control">@(_model.Data.ExtIntro==null?string.Empty: _model.Data.ExtIntro)</textarea></div>
+        </div>
+    </div>
+</div>
+@await Html.PartialAsync("Image_Video_js")
+<script type="text/javascript">
+    var dataExt = undefined;
+    var ignore_text = '<span style="color:red;display:block;">该字段与所选学校类型无关</span>';
+    var ignore_div = '<span style="color:red;display:block;">该版块与所选学校类型无关</span>';
+
+    jQuery(function () {
+
+        dataExt = JSON.parse(jQuery('#json_ext').html());
+
+        jQuery('#extContent_ext [tags]').each(function () {
+            var p = jQuery(this);
+            p.tagsinput();
+            p.prev().removeClass('bootstrap-tagsinput').find("input").remove();
+        });
+
+        //只读所有输入框
+        ReadOnlyInput();
+        //根据学校类型hide显示项
+        hide_with_dataExt();
+    });
+
+    //根据学校类型hide显示项
+    function hide_with_dataExt_core() {
+
+        // 隐藏 学年总费用
+        if (!SchUtils.Canshow2('学费', dataExt))
+            jQuery('#div_allTuition').replaceWith(ignore_text);
+
+        // 隐藏 走读/寄宿
+        if (!SchUtils.Canshow2('e2.lodging', dataExt))
+            jQuery('#div_Lodging').replaceWith(ignore_text);
+
+        // 隐藏 学校特色课程或项目
+        if (!SchUtils.Canshow2('e2.characteristic+e2.project', dataExt))
+            jQuery('#div_CharacteristicProject').replaceWith(ignore_text);
+
+        // 隐藏 外教占比
+        if (!SchUtils.Canshow2('外教占比', dataExt))
+            jQuery('#div_ForeignTea').replaceWith(ignore_text);
+
+        // 隐藏 外教人数
+        if (!SchUtils.Canshow2('外教人数', dataExt))
+            jQuery('#div_ForeignTeaCount').replaceWith(ignore_text);
+
+        // 隐藏 学校认证
+        if (!SchUtils.Canshow2('学校认证', dataExt))
+            jQuery('#div_schoolAuth').replaceWith(ignore_text);
+
+        // 隐藏 出国方向
+        if (!SchUtils.Canshow2('出国方向', dataExt))
+            jQuery('#div_sgAbroad').replaceWith(ignore_text);
+
+        // 隐藏 线上体验课程
+        if (!SchUtils.Canshow2('线上体验课程', dataExt))
+            jQuery('#div_videos').replaceWith(ignore_text);
+
+        ////国际幼儿园,公办幼儿园 隐藏 开发日菜单
+        //if (dataExt.Grade == '@SchoolGrade.Kindergarten.ToInt()' && (dataExt.Type == '@SchoolType.International.ToInt()' || dataExt.Type == '@SchoolType.Public.ToInt()'))
+        //    jQuery('#custom-nav-openday').html(ignore_div);
+        //普通公办小学 隐藏 探校活动及开放日
+        if (!SchUtils.Canshow2('开放日', dataExt))
+            jQuery('#div_openday').replaceWith(ignore_text);
+
+        // 隐藏 学校行事历
+        if (!SchUtils.Canshow2('学校行事历', dataExt))
+            jQuery('#div_sgCalendar').replaceWith(ignore_text);
+
+        @*//
+         /// 升学成绩 每年的字段显示控制在 ~/Views/Audit/GetSchoolAchievementInfo.cshtml
+        //*@
+        // 幼儿园|小学 隐藏 升学成绩
+        if (!SchUtils.Canshow2('sa.link', dataExt) && (dataExt.Grade == '@SchoolGrade.Kindergarten.ToInt()' || dataExt.Grade == '@SchoolGrade.PrimarySchool.ToInt()'))
+            jQuery('#div_sgAchievement').html(ignore_text);
+
+        // 隐藏 划片范围
+        if (!SchUtils.Canshow2('划片范围', dataExt))
+            jQuery('#div_moredataRange').replaceWith(ignore_text);
+
+        // 隐藏 对口学校
+        if (!SchUtils.Canshow2('对口学校', dataExt))
+            jQuery('#div_Counterpart').replaceWith(ignore_text);
+
+        //附近学位房 ????
+
+        // 隐藏 课后管理
+        if (!SchUtils.Canshow2('课后管理', dataExt))
+            jQuery('#div_Afterclass').replaceWith(ignore_text);
+
+        // 隐藏 招生年龄
+        if (!SchUtils.Canshow2('e3.age+e3.maxage', dataExt))
+            jQuery('#div_zsAge').replaceWith(ignore_text);
+
+        //隐藏 招录比例
+        if (!SchUtils.Canshow2('招录比例', dataExt))
+            jQuery('#div_zsProportion').replaceWith(ignore_text);
+
+        //隐藏 录取分数线
+        if (!SchUtils.Canshow2('录取分数线', dataExt))
+            jQuery('#div_zsPoint').replaceWith(ignore_text);
+
+        //隐藏 招生日期表
+        if (!SchUtils.Canshow2('e3.Date', dataExt))
+            jQuery('#div_zsrecdata').replaceWith(ignore_text);
+
+        //隐藏 报名所需资料
+        if (!SchUtils.Canshow2('e3.data', dataExt))
+            jQuery('#div_dAuditcontent').replaceWith(ignore_text);
+
+        //隐藏 报名方式
+        if (!SchUtils.Canshow2('e3.Contact', dataExt))
+            jQuery('#div_zsContact').replaceWith(ignore_text);
+
+
+        //隐藏 入学考试
+        if (!SchUtils.Canshow2('往期入学考试内容', dataExt))
+            jQuery('#div_Pastexam').replaceWith(ignore_text);
+
+
+        //隐藏 考试科目
+        if (!SchUtils.Canshow2('e3.Subjects', dataExt))
+            jQuery('#div_zsSubjects').replaceWith(ignore_text);
+
+
+        //隐藏 奖学金计划
+        if (!SchUtils.Canshow2('e3.Scholarship', dataExt))
+            jQuery('#div_Scholarship').replaceWith(ignore_text);
+
+
+        //隐藏 课程设置
+        if (!SchUtils.Canshow2('e4.Courses', dataExt))
+            jQuery('#div_Courses').replaceWith(ignore_text);
+
+        //隐藏 课程特色
+        if (!SchUtils.Canshow2('e4.Characteristic', dataExt))
+            jQuery('#div_Characteristic').replaceWith(ignore_text);
+
+        //公办民办幼儿园 隐藏 课程认证
+        if (!SchUtils.Canshow2('e4.Authentication', dataExt))
+            jQuery('#div_kcAuth').replaceWith(ignore_text);
+
+        //隐藏 申请费用
+        if (!SchUtils.Canshow2('e5.Applicationfee', dataExt))
+             jQuery('#div_Applicationfee').replaceWith(ignore_text);
+
+        //隐藏 学费
+        if (!SchUtils.Canshow2('e5.Tuition', dataExt))
+             jQuery('#div_allTuition').replaceWith(ignore_text);
+
+        //隐藏 其它费用
+        if (!SchUtils.Canshow2('e5.Otherfee', dataExt))
+            jQuery('#div_Otherfee').replaceWith(ignore_text);
+
+        //隐藏 学校荣誉
+        if (!SchUtils.Canshow2('学校荣誉', dataExt))
+            jQuery('#div_Schoolhonor').replaceWith(ignore_text);
+
+        //隐藏 学生荣誉
+         if (!SchUtils.Canshow2('学生荣誉', dataExt))
+            jQuery('#div_Studenthonor').replaceWith(ignore_text);
+
+        //隐藏 社团活动
+        if (!SchUtils.Canshow2('社团活动', dataExt))
+            jQuery('#div_shCommunity').replaceWith(ignore_text);
+
+        //隐藏 各年级课程表
+        if (!SchUtils.Canshow2('各个年级课程表', dataExt))
+            jQuery('#div_shTimetables').replaceWith(ignore_text);
+
+        //隐藏 作息时间表
+        if (!SchUtils.Canshow2('作息时间表', dataExt))
+            jQuery('#div_shSchedule').replaceWith(ignore_text);
+
+        //公办小学初中高中 隐藏 校车路线
+        if (!SchUtils.Canshow2('校车路线', dataExt))
+            jQuery('#div_shDiagram').replaceWith(ignore_text);
+
+        //-----------------------------------------------------------------------------------------------------------------------------------------
+
+        //非国际幼儿园, 公办民办小学初中高中 隐藏 alg1 外教人数
+        if ((dataExt.Grade == '@SchoolGrade.Kindergarten.ToInt()' && dataExt.Type != '@SchoolType.International.ToInt()') || (dataExt.Type == '@SchoolType.Public.ToInt()' || dataExt.Type == '@SchoolType.Private.ToInt()'))
+            jQuery('#div_alg1FgnTeacherCount').replaceWith(ignore_text);
+        //幼儿园, 国际小学 隐藏 alg1 本科及研究生以上
+        if (dataExt.Grade == '@SchoolGrade.Kindergarten.ToInt()' || (dataExt.Grade == '@SchoolGrade.PrimarySchool.ToInt()' && dataExt.Type == '@SchoolType.International.ToInt()'))
+            jQuery('#div_alg1UndergduateOverCount').replaceWith(ignore_text);
+        //幼儿园, 国际小学初中 隐藏 alg1 研究生以上
+        if (dataExt.Grade == '@SchoolGrade.Kindergarten.ToInt()' || ((dataExt.Grade == '@SchoolGrade.PrimarySchool.ToInt()' || dataExt.Grade == '@SchoolGrade.JuniorMiddleSchool.ToInt()') && dataExt.Type == '@SchoolType.International.ToInt()'))
+            jQuery('#div_alg1GduateOverCount').replaceWith(ignore_text);
+        //幼儿园, 非公办小学初中高中 隐藏 alg1 教师荣誉
+        if (dataExt.Grade == '@SchoolGrade.Kindergarten.ToInt()' || dataExt.Type != '@SchoolType.Public.ToInt()')
+            jQuery('#div_added_TeacherPower').replaceWith(ignore_text);
+
+        //非(公办民办初中) 隐藏 alg3 中考平均分
+        if (!(dataExt.Grade == '@SchoolGrade.JuniorMiddleSchool.ToInt()' && (dataExt.Type == '@SchoolType.Public.ToInt()' || dataExt.Type == '@SchoolType.Private.ToInt()')))
+            jQuery('#div_alg3ExtamAvgscore').replaceWith(ignore_text);
+        //非(公办民办高中) 隐藏 alg3 状元人数
+        if (!(dataExt.Grade == '@SchoolGrade.SeniorMiddleSchool.ToInt()' && (dataExt.Type == '@SchoolType.Public.ToInt()' || dataExt.Type == '@SchoolType.Private.ToInt()')))
+            jQuery('#div_alg3No1Count').replaceWith(ignore_text);
+        //非(公办民办初中, 高中) 隐藏 alg3 保送人数
+        if (!(dataExt.Grade == '@SchoolGrade.SeniorMiddleSchool.ToInt()' || (dataExt.Grade == '@SchoolGrade.JuniorMiddleSchool.ToInt()' && (dataExt.Type == '@SchoolType.Public.ToInt()' || dataExt.Type == '@SchoolType.Private.ToInt()'))))
+            jQuery('#div_alg3CmstuCount').replaceWith(ignore_text);
+        //非(民办初中, 高中) 隐藏 alg3 自主招生
+        if (!(dataExt.SchFtype == 'lx320' || dataExt.SchFtype == 'lx420'))
+            jQuery('#div_alg3RecruitCount').replaceWith(ignore_text);
+    }
+
+
+
+
+</script>

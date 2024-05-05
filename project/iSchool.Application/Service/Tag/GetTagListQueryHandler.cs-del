@@ -1,0 +1,189 @@
+﻿using iSchool.Application.ViewModels;
+using iSchool.Domain;
+using iSchool.Domain.Repository.Interfaces;
+using MediatR;
+using System;
+using System.Linq;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using iSchool.Infrastructure.Cache;
+using Enyim.Caching;
+using Microsoft.Extensions.Caching.Memory;
+using iSchool.Infrastructure;
+
+namespace iSchool.Application.Service
+{
+    public class GetTagListQueryHandler : IRequestHandler<GetTagListQuery, List<TagDto>>
+    {
+        internal const string _key = @"taglist";
+        const double _mlen = 0.5 * 1024 * 1024;
+        static readonly object sync = new object();
+
+        CacheManager cacheManager;
+        Infrastructure.ILog log;
+        IMemoryCache memoryCache;
+        IRepository<Tag> _tagRepository;
+
+        public GetTagListQueryHandler(IRepository<Tag> tagRepository, CacheManager cacheManager, Infrastructure.ILog log, IMemoryCache memoryCache)
+        {
+            _tagRepository = tagRepository;
+            this.cacheManager = cacheManager;
+            this.log = log;
+            this.memoryCache = memoryCache;
+        }
+
+        Tag[] GetTags(GetTagListQuery req)
+        {
+            Tag[] ress = null;
+            string json = null;
+            string[] ss = null;
+            int c = 0;
+
+            if (!req.IsCache)
+            {
+                lock (sync)
+                {
+                    goto_db();
+                    memoryCache.Set(CacheManager.StrToMD5(_key), ress, TimeSpan.FromMinutes(15));
+                }
+                goto _set2cahce;
+            }
+
+            ress = memoryCache.Get<Tag[]>(CacheManager.StrToMD5(_key));
+            if (ress != null) return ress;
+
+            try
+            {
+                c = retry_to_do(() => Convert.ToInt32(cacheManager.GetStr($"{_key}_count") ?? "0"), 2, 500);
+
+                IEnumerable<Task<string>> do_read_cache()
+                {
+                    for (var i = 0; i < c; i++)
+                    {
+                        var _i = i;
+                        yield return Task.Factory.StartNew(() => retry_to_do(() => cacheManager.GetStr($"{_key}_{_i}"), 2, 500));
+                    }
+                }
+                ss = Task.WhenAll(do_read_cache()).GetAwaiter().GetResult();
+                json = string.Join("", ss);
+
+                if (!string.IsNullOrEmpty(json))
+                {
+                    return ress = json.ToObject<Tag[]>();
+                }
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex);
+            }
+
+            lock (sync)
+            {
+                ress = memoryCache.Get<Tag[]>(CacheManager.StrToMD5(_key));
+                if (ress != null) return ress;
+
+                goto_db();
+
+                memoryCache.Set(CacheManager.StrToMD5(_key), ress, TimeSpan.FromMinutes(15));
+            }
+
+            _set2cahce:
+            try
+            {
+                json = ress.ToJsonString();
+                ss = split_str(json, out c);
+
+                IEnumerable<Task> do_write_cache()
+                {
+                    for (var i = 0; i < c; i++)
+                    {
+                        var _i = i;
+                        yield return Task.Factory.StartNew(() => retry_to_do(() => cacheManager.Add($"{_key}_{_i}", ss[_i]), 2, 500));
+                    }
+                    yield return Task.Factory.StartNew(() => retry_to_do(() => cacheManager.Add($"{_key}_count", c.ToString()), 2, 500));
+                }
+                Task.WhenAll(do_write_cache()).Wait();
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex);
+            }
+
+            return ress;
+
+            void goto_db()
+            {
+                ress = _tagRepository.GetAll(p => p.IsValid == true).ToArray();
+            }
+        }
+
+        public Task<List<TagDto>> Handle(GetTagListQuery request, CancellationToken cancellationToken)
+        {
+            var tags = GetTags(request);
+
+            var types = tags.Select(p => new { p.SpellCode, p.Type })
+                .Distinct().OrderBy(p => p.SpellCode);
+
+            List<TagDto> dto = new List<TagDto>();
+
+            foreach (var item in types)
+            {
+                dto.Add(new TagDto
+                {
+                    SpellCode = item.SpellCode,
+                    Type = item.Type,
+                    Tags = tags
+                    .Where(p => p.SpellCode == item.SpellCode && p.Type == item.Type)
+                    .OrderBy(p => p.CreateTime)
+                    .Select(p => new TagItem
+                    {
+                        SpellCode = item.SpellCode,
+                        CreateTime = p.CreateTime,
+                        Name = p.Name,
+                        Id = p.Id,
+                        Subdivision = p.Subdivision,
+                    }).ToList()
+                });
+
+            }
+            return Task.FromResult(dto);
+        }
+
+        T retry_to_do<T>(Func<T> func, int c, int ms)
+        {
+            c = c < 1 ? 1 : c;
+            for (var i = 1; i <= c; i++)
+            {
+                try
+                {
+                    return func();
+                }
+                catch (Exception ex)
+                {
+                    if (i == c) throw ex;
+                    else Task.Delay(ms).Wait();
+                }
+            }
+
+            return default;
+        }
+
+        static string[] split_str(string str, out int c)
+        {
+            c = (int)Math.Ceiling(str.Length / _mlen);
+            var n = (int)_mlen;
+
+            var x = 0;
+            var ss = new string[c];
+            for (var i = 0; i < c; i++)
+            {
+                if (i == c - 1) ss[i] = str.Substring(x);
+                else ss[i] = str.Substring(x, n);
+                x += n;
+            }
+
+            return ss;
+        }
+    }
+}

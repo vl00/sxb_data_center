@@ -1,0 +1,207 @@
+﻿<div class="modal-header" style="text-align:center">
+    <h5 class="modal-title" id="scrollmodalLabel">物流详情</h5>
+    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+
+<!-- 模态框主体 -->
+<div class="modal-body" id="TagPanel-Modal">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        .timeLine {
+            margin: 0px auto 0;
+            overflow: hidden;
+            position: relative;
+            background-color: #e9ecef;
+        }
+
+            .timeLine li {
+                background: url(/images/logistics/back3.png) repeat-y 179px 0;
+                padding-bottom: 30px;
+                zoom: 1;
+                display: flex;
+            }
+
+                .timeLine li:after {
+                    content: " ";
+                    display: block;
+                    height: 0;
+                    clear: both;
+                    visibility: hidden;
+                }
+
+                .timeLine li:last-child {
+                    background: none !important;
+                }
+
+                .timeLine li p {
+                    /*background: url(/images/logistics/icon1.jpg) no-repeat right 0;*/
+                    display: inline-block;
+                    width: 188px;
+                    font-size: 16px;
+                    text-align: center;
+                    padding-right: 10px;
+                    color: grey;
+                }
+
+                .timeLine li .img {
+                    width: 20px;
+                    height: 20px;
+                    margin-left: -19px;
+                    background: #e9ecef;
+                }
+
+                .timeLine li .lastimg {
+                    width: 26px;
+                    height: 26px;
+                    margin-left: -21px;
+                    background: #e9ecef;
+                }
+
+                .timeLine li p span {
+                    display: block;
+                    color: grey;
+                    font-size: 12px;
+                }
+
+                .timeLine li .con {
+                    width: calc(100% - 230px);
+                    display: inline-block;
+                    padding-left: 5px;
+                }
+
+                    .timeLine li .con img {
+                        max-width: 100%;
+                    }
+
+            /*  最后一个信息或者收获信息 */
+            .timeLine .lastornew, .timeLine .lastornew p, .timeLine .lastornew p span {
+                color: salmon;
+            }
+
+
+            /* .on  */
+            .timeLine li.on {
+                background: url(/images/logistics/back3.png) repeat-y 179px 0;
+            }
+
+                .timeLine li.on p {
+                    /*background: url(/images/logistics/icon2.jpg) no-repeat 172px 0;*/
+                    color: #1db702;
+                }
+
+                    .timeLine li.on p span {
+                        color: #a8dda3;
+                    }
+
+                /* .on 下面的li  */
+                .timeLine li.on ~ li {
+                    background: url(/images/logistics/back3.png) repeat-y 179px 0;
+                }
+
+                    .timeLine li.on ~ li p {
+                        /*background: url(/images/logistics/icon3.jpg) no-repeat 172px 0;*/
+                        color: #c3c3c3;
+                    }
+
+                        .timeLine li.on ~ li p span {
+                            color: #d0d0d0;
+                        }
+    </style>
+    <div class="form-group row">
+        <div class="col-md-3">
+            兑换码：<label>@(ViewBag.DHCode)</label>
+        </div>
+    </div>
+    @if (!ViewBag.Succeed)
+    {
+        <div class="form-group row">
+            <div class="col-md-12">
+                <label style="color:red;">@(ViewBag.ErrMesg)</label>
+            </div>
+        </div>
+    }
+    else
+    {
+       
+        <div class="form-group row">
+            <div class="col-md-4">
+                快递公司：<label>@(ViewBag.LogisticsDetails?.CompanyName)</label>
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-md-4">
+                快递单号：<label>@(ViewBag.LogisticsDetails?.Nu)</label>
+            </div>
+        </div>
+        @if (ViewBag.LogisticsItems?.Count==0)
+        {
+            <div class="form-group row">
+                <div class="col-md-4">
+                    <label>暂无轨迹信息</label>
+                </div>
+            </div>
+        }
+        else
+        {
+            <ul class="timeLine">
+                <br />
+                <br />
+                @for (int i = 0; i < ViewBag.LogisticsItems?.Count; i++)
+                {
+                    var data = ViewBag.LogisticsItems[i];
+                    if (i == 0 && ViewBag.LogisticsDetails?.IsCompleted == true)//已收货
+                    {
+                        <li class="lastornew">
+                            <p>
+                                @(data.Time.Substring(0, 10))
+                                <span>@(data.Time.Substring(10))</span>
+                            </p>
+                            <img class="lastimg" src="~/images/logistics/shouhuo.png" />
+                            <div class="con">@(data.Desc)</div>
+                        </li>
+                    }
+                    else if (i == 0 && ViewBag.LogisticsDetails?.IsCompleted == false)//未收货的最新状态
+                    {
+                        <li class="lastornew">
+                            <p>
+                                @(data.Time.Substring(0, 10))
+                                <span>@(data.Time.Substring(10))</span>
+                            </p>
+                            <img class="img" src="~/images/logistics/newupdate.png" />
+                            <div class="con">@(data.Desc)</div>
+                        </li>
+                    }
+                    else//物流进程
+                    {
+                        <li>
+                            <p>
+                                @(data.Time.Substring(0, 10))
+                                <span>@(data.Time.Substring(10))</span>
+                            </p>
+                            <img class="img" src="~/images/logistics/update.png" />
+                            <div class="con">@(data.Desc)</div>
+                        </li>
+
+                    }
+                }
+
+
+            </ul>
+        }
+
+    }
+
+
+    @*<div class="modal-footer">
+            <div class="col-12  text-center">
+                <button type="button" id="tagpanel_save" class="btn btn-secondary " data-dismiss="modal">确定</button>
+            </div>
+        </div>*@
+</div>
+

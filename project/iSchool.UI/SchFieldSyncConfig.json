@@ -1,0 +1,377 @@
+{  
+  "Tab": [
+    {
+      "Name": "内容数据",
+      "Index": 1,
+      "Id": "custom-nav-contact-tab"
+    },
+    {
+      "Name": "院校总评",
+      "Index": 2,
+      "Id": "custom-nav-home-tab"
+    },
+    {
+      "Name": "学校视频",
+      "Index": 3,
+      "Id": "custom-nav-video-tab"
+    },
+    {
+      "Name": "师资力量及教学质量",
+      "Index": 4,
+      "Id": "custom-nav-teaching-tab"
+    },
+    {
+      "Name": "硬件设施及学生生活",
+      "Index": 5,
+      "Id": "custom-nav-hardware-tab"
+    },
+    {
+      "Name": "开放日及行事历",
+      "Index": 6,
+      "Id": "custom-nav-openday-tab"
+    }
+  ],
+  "Fields": [
+    {
+      "Name": "openhours",
+      "Text": "开放日",
+      "TextFormat": "textdatetime",
+      "DBtable": "SchoolExtContent",
+      "DBfield": [ "openhours" ],
+      "TabIndex": 6,
+      "DataType": 2,
+      "Sort": 1
+    },
+
+    {
+      "Name": "calendar",
+      "Text": "学校行事历",
+      "TextFormat": "textdatetime",
+      "DBtable": "SchoolExtContent",
+      "DBfield": [ "calendar" ],
+      "TabIndex": 6,
+      "DataType": 2,
+      "Sort": 2
+    },
+
+    {
+      "Name": "region",
+      "Text": "地区",
+      "TextFormat": "reginclickon",
+      "DBtable": "SchoolExtContent",
+      "DBfield": [ "province", "city", "area" ],
+      "TabIndex": 1,
+      "DataType": 1,
+      "Sort": 1
+    },
+    {
+      "Name": "LatLong",
+      "Text": "经纬度",
+      "TextFormat": "latlongdigital",
+      "DBtable": "SchoolExtContent",
+      "DBfield": [ "longitude", "latitude" ],
+      "TabIndex": 1,
+      "DataType": 6,
+      "Sort": 2
+    },
+    {
+      "Name": "Address",
+      "Text": "地址",
+      "TextFormat": "text",
+      "DBtable": "SchoolExtContent",
+      "DBfield": [ "address" ],
+      "TabIndex": 1,
+      "DataType": 8,
+      "Sort": 2
+    },
+    {
+      "Name": "tel",
+      "Text": "电话",
+      "TextFormat": "text",
+      "DBtable": "SchoolExtContent",
+      "DBfield": [ "tel" ],
+      "TabIndex": 1,
+      "DataType": 8,
+      "Sort": 3
+    },
+    {
+      "Name": "lodging",
+      "Text": "走读/寄宿",
+      "TextFormat": "clickon",
+      "DBtable": "SchoolExtContent",
+      "DBfield": [ "lodging", "sdextern" ],
+      "TabIndex": 1,
+      "Data": [
+        {
+          "Key": "未收录",
+          "Value": "0"
+        },
+        {
+          "Key": "走读",
+          "Value": "1"
+        },
+        {
+          "Key": "寄宿",
+          "Value": "2"
+        },
+        {
+          "Key": "可走读、寄宿",
+          "Value": "3"
+        }
+      ],
+      "DataType": 2,
+      "Sort": 4
+    },
+    {
+      "Name": "studentcount",
+      "Text": "学生人数",
+      "TextFormat": "digital",
+      "DBtable": "SchoolExtContent",
+      "DBfield": [ "studentcount" ],
+      "TabIndex": 1,
+      "DataType": 1,
+      "Sort": 5,
+      "Unit": "人"
+    },
+    {
+      "Name": "teachercount",
+      "Text": "教师人数",
+      "TextFormat": "digital",
+      "DBtable": "SchoolExtContent",
+      "DBfield": [ "teachercount" ],
+      "TabIndex": 1,
+      "DataType": 1,
+      "Sort": 6,
+      "Unit": "人"
+    },
+    {
+      "Name": "authentication",
+      "Text": "学校认证",
+      "TextFormat": "tagcheckon",
+      "DBtable": "SchoolExtContent",
+      "DBfield": [ "authentication" ],
+      "DataType": 4,
+      "TabIndex": 1,
+      "Sort": 7,
+      "TagType": 2
+    },
+    {
+      "Name": "abroad",
+      "Text": "出国方向",
+      "TextFormat": "tagcheckon",
+      "DBtable": "SchoolExtContent",
+      "DBfield": [ "abroad" ],
+      "DataType": 4,
+      "TabIndex": 1,
+      "Sort": 8,
+      "TagType": 3
+    },
+    {
+      "Name": "canteen",
+      "Text": "有没饭堂",
+      "TextFormat": "clickon",
+      "DBtable": "SchoolExtContent",
+      "DBfield": [ "canteen" ],
+      "TabIndex": 1,
+      "Sort": 9,
+      "DataType": 3,
+      "Data": [
+        {
+          "Key": "未收录",
+          "Value": "0"
+        },
+        {
+          "Key": "有",
+          "Value": "true"
+        },
+        {
+          "Key": "无",
+          "Value": "false"
+        }
+      ]
+    },
+    {
+      "Name": "meal",
+      "Text": "伙食情况",
+      "TextFormat": "editor",
+      "DBtable": "SchoolExtContent",
+      "DBfield": [ "meal" ],
+      "TabIndex": 1,
+      "DataType": 2,
+      "Sort": 10
+    },
+    {
+      "Name": "project",
+      "Text": "学校特色课程或项目",
+      "TextFormat": "characteristiceditor",
+      "DBtable": "SchoolExtContent",
+      "DBfield": [ "characteristic", "project" ],
+      "DataType": 0,
+      "TabIndex": 1,
+      "Sort": 13,
+      "TagType": 8
+
+
+    },
+    {
+      "Name": "SeniorTea",
+      "Text": "高级教师数量",
+      "TextFormat": "digital",
+      "DBtable": "SchoolExtContent",
+      "DBfield": [ "seniortea" ],
+      "DataType": 1,
+      "TabIndex": 2,
+      "Sort": 1,
+      "Unit": "人"
+
+    },
+    {
+      "Name": "characteristicTea",
+      "Text": "特级教师数量",
+      "TextFormat": "digital",
+      "DBtable": "SchoolExtContent",
+      "DBfield": [ "characteristictea" ],
+      "DataType": 1,
+      "TabIndex": 2,
+      "Sort": 2,
+      "Unit": "人"
+
+    },
+    {
+      "Name": "foreignTeaCount",
+      "Text": "外教人数",
+      "TextFormat": "digital",
+      "DBtable": "SchoolExtContent",
+      "DBfield": [ "foreignteacount" ],
+      "DataType": 1,
+      "TabIndex": 2,
+      "Sort": 3,
+      "Unit": "人"
+
+    },
+    {
+      "Name": "creationdate",
+      "Text": "建校时间",
+      "TextFormat": "datetime",
+      "DBtable": "SchoolExtContent",
+      "DBfield": [ "creationdate" ],
+      "TabIndex": 2,
+      "DataType": 5,
+      "Sort": 4
+    },
+    {
+      "Name": "acreage",
+      "Text": "建筑面积",
+      "TextFormat": "digital",
+      "DBtable": "SchoolExtContent",
+      "DBfield": [ "acreage" ],
+      "TabIndex": 2,
+      "DataType": 6,
+      "Sort": 5,
+      "Unit": "平方米"
+
+    },
+    {
+      "Name": "InterviewVideos",
+      "Text": "学校专访",
+      "TextFormat": "video",
+      "DBtable": "SchoolVideo",
+      "DBfield": [ "videourl" ],
+      "VideoType": 2,
+      "TabIndex": 3,
+      "DataType": 0,
+      "Sort": 1
+    },
+    {
+      "Name": "ExperienceVideos",
+      "Text": "线上体验课程",
+      "TextFormat": "video",
+      "DBtable": "SchoolVideo",
+      "DBfield": [ "videourl" ],
+      "VideoType": 3,
+      "TabIndex": 3,
+      "DataType": 0,
+      "Sort": 2
+    },
+    {
+      "Name": "Principal",
+      "Text": "校长风采",
+      "TextFormat": "editorvideo",
+      "DBtable": "SchoolExtQuality",
+      "DBfield": [ "principal", "videos" ],
+      "TabIndex": 4,
+      "DataType": 2,
+      "Sort": 1
+    },
+    {
+      "Name": "Teacher",
+      "Text": "教师风采",
+      "TextFormat": "editor",
+      "DBtable": "SchoolExtQuality",
+      "DBfield": [ "teacher" ],
+      "TabIndex": 4,
+      "DataType": 2,
+      "Sort": 2
+    },
+    {
+      "Name": "Schoolhonor",
+      "Text": "学校荣誉",
+      "TextFormat": "editor",
+      "DBtable": "SchoolExtQuality",
+      "DBfield": [ "schoolhonor" ],
+      "TabIndex": 4,
+      "DataType": 2,
+      "Sort": 3
+    },
+    {
+      "Name": "Studenthonor",
+      "Text": "学生荣誉",
+      "TextFormat": "editor",
+      "DBtable": "SchoolExtQuality",
+      "DBfield": [ "studenthonor" ],
+      "TabIndex": 4,
+      "DataType": 2,
+      "Sort": 4
+    },
+    //{
+    //  "Name": "Hardware",
+    //  "Text": "硬件设施",
+    //  "TextFormat": "editor",
+    //  "DBtable": "SchoolExtLife",
+    //  "DBfield": [ "hardware" ],
+    //  "TabIndex": 4,
+    //  "DataType": 2,
+    //  "Sort": 4
+    //},
+    {
+      "Name": "Hardware",
+      "Text": "硬件设施",
+      "TextFormat": "editor",
+      "DBtable": "SchoolExtLife",
+      "DBfield": [ "hardware" ],
+      "DataType": 2,
+      "TabIndex": 5,
+      "Sort": 1
+    },
+    {
+      "Name": "Community",
+      "Text": "社团活动",
+      "TextFormat": "editor",
+      "DBtable": "SchoolExtLife",
+      "DBfield": [ "community" ],
+      "TabIndex": 5,
+      "DataType": 2,
+      "Sort": 2
+    },
+    {
+      "Name": "Diagram",
+      "Text": "校车路线",
+      "TextFormat": "editor",
+      "DBtable": "SchoolExtLife",
+      "DBfield": [ "diagram" ],
+      "TabIndex": 5,
+      "DataType": 2,
+      "Sort": 3
+    }
+  ]
+}

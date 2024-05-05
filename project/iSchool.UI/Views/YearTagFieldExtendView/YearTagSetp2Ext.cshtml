@@ -1,0 +1,191 @@
+﻿
+@{
+    Layout = null;
+}
+<style>
+    .col-md-auto {
+        padding-left: 0px;
+    }
+    .ioc-gray {
+        color: #6c757d !important;
+    }
+</style>
+<script src="@(ViewBag.StaticFile)/jquery/3.2.1/jquery.min.js"></script>
+<script>
+    jQuery(function () { jQuery(".yeartag").yearTagSelect(); });
+    var listfieldyeartags = [];
+    ////添加其他年份下拉框
+    function listyearhtml(parentid, template) {
+        var yeartemplate = jQuery('#' + parentid + '_year').text();
+        template = template.replace("%%year%%", yeartemplate);
+        return template;
+    }
+</script>
+<!--划片范围start-->
+<script type="text/html" id="school-range-template">
+    <div class="div-addyear schoolrange_container notnull" style="margin-bottom:20px;margin-left:5px">
+        <div>
+            <div class="row" style="align-items:baseline;margin:10px;margin-left:-5px">
+                <div class="col-md-2">%%year%%</div>
+                <div class="col-md-9"></div>
+                <div class="col-md-1"><a href="javascript:void(0);" onclick="DelSchoolRange(this)"><i class="fa fa-times-circle text-danger"></i></a></div>
+            </div>
+        </div>
+        <textarea class="form-control c_ignore" checkednull="" rows="3" style="width:40%;margin:10px;" name="Year_Range_New"></textarea>
+    </div>
+</script>
+<script>
+    var SchoolRangecount = 1;
+    function AddSchoolRange(parentid) {
+        if (SchoolRangecount < 4) {
+            ++SchoolRangecount;
+            var template = jQuery('#school-range-template').text();
+            template = listyearhtml(parentid, template);
+            jQuery("#" + parentid).before(template);
+            jQuery(".yeartag").yearTagSelect();
+        }
+        else {
+            confirm("单次添加年份上限是3");
+            return;
+        }
+
+    }
+    function DelSchoolRange(target) {
+        var r = confirm("你确定要删除该项吗?")
+        if (r) {
+            --SchoolRangecount;
+            var container = jQuery(target).parent().parent().parent().parent();
+            var fee = container.data("primarykey");
+            if (fee) {//旧数据删除
+                listfieldyeartags.push({ id: fee, isvalid: false });
+
+            }
+            container.remove();
+        }
+    }
+    function onSchoolRangeSave() {
+        jQuery(".schoolrange_container").each(function myfunction() {
+            var target = jQuery(this);
+            var year = target.find("select").val();
+            var uc = target.find("[name=Year_Range_New]");
+            if (uc.length < 1) return;
+            var range = uc.val();           
+            var primaryKey = target.data("primarykey");
+            if (primaryKey) //修改操作
+            {
+                listfieldyeartags.push({ id: primaryKey, year: year, field: "Range", content: range });
+            }
+            else {
+                listfieldyeartags.push({ year: year, field: "Range", content: range });
+            }
+        });
+    }
+</script>
+<!--划片范围end-->
+<!--对口学校--多输入项--start-->
+<script type="text/html" id="counterpart-template">
+    <div class="counterpart_year_tag div-addyear notnull" style="margin-bottom:20px;margin-left:5px">
+        <div class="form-inline" style="margin:10px;margin-left:-5px">
+            <div class="col-md-2">%%year%%</div>
+            <div class="col-md-9"></div>
+            <div class="col-md-1"><a href="javascript:void(0)" onclick="DelCounterpart(this)"><i class="fa fa-times-circle text-danger ioc-gray"></i></a></div>
+        </div>
+        <div class="form-inline keyandvlue" style="margin:10px;">
+            <select data-placeholder="选择一个学校" checkednull="" name="Year_CounterPart_New" class="counterschool c_ignore" tabindex="1">
+                <option value=""></option>
+            </select>
+            <a href="javascript:void(0)" style="margin-left:30px;" onclick="DelAddInputItem(this)"><i class="fa fa-times-circle text-danger"></i></a>
+        </div>
+        <div class="form-inline addhtml">
+            <div class="col-md-3"><button type="button" onclick="AddInputItem(this)" style="margin-left:-5px;margin-bottom:10px;border:1px solid #ced4da;border-radius:0.25rem;" class="btn btn-outline-secondary btn-lg btn-block"><i class="fa fa-plus"></i></button></div>
+            <div class="col-md-9"></div>
+        </div>
+
+    </div>
+</script>
+<script type="text/html" id="counterpart-inputitem-template">
+    <div class="form-inline keyandvlue" style="margin:10px;">
+        <select data-placeholder="选择一个学校" checkednull="" name="Year_CounterPart_New" class="counterschool c_ignore" tabindex="1">
+            <option value=""></option>
+        </select>
+        <a href="javascript:void(0)" style="margin-left:30px;" onclick="DelAddInputItem(this)"><i class="fa fa-times-circle text-danger"></i></a>
+    </div>
+</script>
+<script>
+    var counterpartcount = 1
+    function AddCounterpart(parentid) {
+
+        if (counterpartcount < 4) {
+            ++counterpartcount;
+            var template = jQuery('#counterpart-template').text();
+            template = listyearhtml(parentid, template);
+            jQuery("#" + parentid).before(template);
+            InitSelect2();
+        }
+        else {
+            confirm("单次添加年份上限是3个");
+            return;
+        }
+    }
+
+    function AddInputItem(obj) {
+        var template = jQuery('#counterpart-inputitem-template').text();
+        jQuery(obj).parents('.addhtml').before(template);
+        InitSelect2();
+    }
+
+    function DelCounterpart(target) {
+        var r = confirm("你确定要删除该项吗?")
+        if (r) {
+            --counterpartcount;
+            jQuery(target).parent().parent().parent().remove();
+        }
+    }
+
+    function DelAddInputItem(obj) {
+        var r = confirm("你确定要删除该项吗?")
+        if (r) {
+            jQuery(obj).parents(".keyandvlue").remove();
+        }
+    }
+
+    function onCounterpartSave() {
+
+        jQuery(".counterpart_year_tag").each(function myfunction() {
+            var target = jQuery(this);
+
+            var year = target.find("select").val();
+            
+            //等待原型，再优化
+            var connent = [];
+            //方案一：每次添加其他年，只有一个输入项并允许同年份多次添加的方案
+            var ismoresameYear = false;
+            var listIndex = null;
+            jQuery.each(listfieldyeartags, function (index, item) {
+                if (item.year == year && item.field == "Counterpart") {
+                    connent = item.connent;
+                    ismoresameYear = true;
+                    listIndex = index;
+                }
+            });
+
+            //方案二： 添加输入项的方案
+            var arrchild = target.children(".keyandvlue");
+            jQuery.each(jQuery(arrchild), function (index, item) {                
+                var key = jQuery(item).find("select[name=Year_CounterPart_New] option:selected").text();
+                var value = jQuery(item).find("select[name=Year_CounterPart_New] option:selected").val();
+                if (key.length > 0 && value.length > 0) {
+                    connent.push({ Key: key, Value: value });
+                }
+            });
+            if (ismoresameYear) {
+                listfieldyeartags[listIndex].connent = connent;
+            }
+            else {
+                listfieldyeartags.push({ year: year, field: "Counterpart", content: connent });
+            }
+        });
+
+    }
+</script>
+<!--对口学校end-->

@@ -1,0 +1,784 @@
+﻿@using iSchool.Organization.Appliaction.ViewModels
+@using iSchool.Infrastructure;
+@using iSchool.Organization.Domain.Enum;
+@model OrgAddOrEditShowDto
+@{
+    ViewData["Title"] = "品牌新增/编辑";
+}
+
+@section css
+{
+    <link href="@(ViewBag.StaticFile)/bootstrap-tagsinput/0.8.0/bootstrap-tagsinput.css" rel="stylesheet">
+    <link href="@(ViewBag.StaticFile)/cropper/4.0.0-beta/cropper.min.css" rel="stylesheet">
+
+    <link href="~/lib/cropper/main.css" rel="stylesheet">
+    <link href="https://cdn.bootcss.com/bootstrap-datetimepicker/4.17.47/css/bootstrap-datetimepicker.min.css" rel="stylesheet">
+
+    <link href="https://cdn.bootcss.com/bootstrap-tagsinput/0.8.0/bootstrap-tagsinput.css" rel="stylesheet">
+
+    <link href="~/css/jsselect/select.css" rel="stylesheet" />
+    <style type="text/css">
+        /*tags样式*/
+        .label-info {
+            display: inline-block;
+            padding: 2px 4px;
+            font-size: 11.844px;
+            font-weight: bold;
+            line-height: 14px;
+            text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+            white-space: nowrap;
+            vertical-align: baseline;
+            background-color: #3a87ad;
+            margin-right: 2px;
+            color: white;
+        }
+
+        .bootstrap-tagsinput {
+            background-color: #fff;
+            border: 1px solid #ccc;
+            box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+            /*display: inline-block;*/
+            /*padding: 4px 6px;*/
+            padding: .375rem .75rem;
+            color: #555;
+            vertical-align: middle;
+            border-radius: 4px;
+            max-width: 100%;
+            line-height: 22px;
+            cursor: text;
+            width: 100%;
+        }
+
+        .str {
+            width: 150px;
+            height: 200px;
+            border: solid 1px #e3e3e3;
+            padding: 5px;
+            margin-top: 10px
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            border-radius: 40px;
+            -moz-border-radius: 40px; /* 老的 Firefox */
+        }
+
+        .typeahead {
+            z-index: 1051;
+        }
+
+        .a-href {
+            cursor: pointer;
+        }
+
+        .c_contain {
+        }
+
+        .c_value {
+        }
+
+        .select2-dropdown, .select2 {
+            width: 200px !important;
+        }
+
+        .counterpart-content select, .ach-panel-content select {
+            width: 200px !important;
+        }
+
+        .deletebutten {
+            position: absolute;
+            display: block;
+            width: 5px;
+            height: -6px;
+            top: 0px;
+            right: 88px;
+        }
+
+        .side-bar {
+            position: fixed;
+            bottom: 100px;
+            right: 25px;
+            font-size: 0;
+            line-height: 0;
+            z-index: 100;
+        }
+
+            .side-bar a {
+                width: 66px;
+                height: 66px;
+                display: inline-block;
+                margin-bottom: 2px;
+            }
+
+
+            .side-bar .icon-right {
+                background-position: 0 -62px;
+            }
+
+        #auditcard {
+            width: 500px;
+        }
+
+        @if (!Context.HasCtrlActQyx("school", "ExtFieldsSync", ".sync"))
+        {
+            <text >
+        .sync {
+            display: none;
+        }
+
+            </text>
+        }
+
+        .margin-top {
+            margin-top: 2%;
+        }
+        .margin-left {
+            margin-left: 5%;
+        }
+
+        .font-size {
+            font-size:20px;
+        }
+
+        .img-margin-left {
+            margin-left: 3%;
+        }
+        .downloadpic{
+            font-size:1px;
+        }
+        .Comments {
+            width: 90%;
+        }
+
+    </style>
+}
+
+<div class="card">
+    <div class="card-header">
+        <div class="form-inline">
+            <div class="text-left col-md-6">@(Model.IsAdd? "新增机构" : "编辑机构")</div>
+            <div class="text-right col-md-6">
+                <a href="@Url.Action("Index", new { queryJson = ViewBag.queryJson,page=ViewBag.page })" data-id="" class="text-info">返回列表</a>
+            </div>
+        </div>
+
+    </div>
+    <div class="card-body">
+        @*机构名称*@
+        <div class="form-group">
+            <div class="form-inline">
+                <label class="control-label mb-1"><span style="color:red;">*</span>机构名称：</label>
+                <div class="col-md-6">
+                    <input type="text" name="Name" id="Name" class="form-control" value="@Model.Name" style="width:100%;" />
+                </div>
+
+            </div>
+        </div>
+
+        @*副标题*@
+        <div class="form-group">
+            <div class="form-inline">
+                <label class="control-label mb-1"><span style="color:red;">*</span>副标题：&nbsp;&nbsp;&nbsp;</label>
+                <div class="col-md-6">
+                    <input type="text" name="Desc" id="Desc" placeholder="请输入副标题1" class="form-control" value="@Model.Desc" style="width:100%;" />
+                </div>
+            </div>
+            <div class="form-inline" style="margin-top:1%;">
+                <div class="col-md-6" style="margin-left:6.3%;">
+                    <input type="text" name="SubDesc" id="SubDesc" placeholder="请输入副标题2" class="form-control" value="@Model.SubDesc" style="width:100%;" />
+                </div>
+            </div>
+        </div>
+
+        @*LOGO*@
+        <div class="form-group">
+            <div id="img-list" class="form-inline">
+                <label class="control-label mb-1"><span style="color:red;">*</span>LOGO：&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
+                <div class="col-md-2">
+                    <div class="form-inline">
+                        @if (string.IsNullOrEmpty(Model.LOGO))
+                        {
+                            <img id="LOGO" hidden="hidden" style="width:100px;height:100px;" src="">
+                        }
+                        else
+                        {
+                            <img id="LOGO" style="width:100px;height:100px;" src="@Model.LOGO">
+                        }
+
+                    </div>
+                </div>
+                @*//上传按钮*@
+                <div class="col-md-2">
+                    <input type="file" id="@Model.Id" hidden="hidden" class="c_ignore updateFile" name="files" multiple accept="jpg,png" title="只允许上传Mp4格式的视频!视频大小不能超过40M" />
+                    <input type="button" id="uploadlogo" style="width: 100px; height: 100px; font-size: 50px;" class="uploadvideo-btn btn  btn-info btn-block c_ignore updateBtn" data-video="@Model.Id" data-input="InterviewVideos" value="+" />
+                </div>
+            </div>
+        </div>
+
+        @*品牌分类  multiple="multiple"*@
+        <div class="form-group">
+            <div class="form-inline">
+
+                <label class="control-label mb-1">
+                    <span style="color:red;">*</span>品牌分类：
+                </label>
+                <div class="mb-auto" id="StepGoup">
+                    @if (Model.BrandTypes != null)
+                    {
+                        foreach (var brandtype in Model.BrandTypes)
+                        {
+                            <div class="steps form-inline">
+                                <div id="@(Guid.NewGuid().ToString())" class="Setp1Select selectPickerWrapper" data-select="Setp1Select" data-id="@brandtype.Selected_d1.Code">
+                                    <select class="div_Setp1Select_select hidden">
+                                        @foreach (var item in brandtype.D1s)
+                                        {
+                                            if (item.Code == brandtype.Selected_d1.Code)
+                                            {
+                                                <option data-id="duihao-checked" value="@item.Code">@item.Name</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="@item.Code">@item.Name</option>
+
+                                            }
+                                        }
+                                    </select>
+                                </div>
+                                <div id="@(Guid.NewGuid().ToString())" class="Setp2Select selectPickerWrapper" data-select="Setp2Select" data-id="@brandtype.Selected_d2.Code">
+                                    <select class="div_Setp2Select_select hidden">
+                                        @foreach (var item in brandtype.D2s)
+                                        {
+                                            if (item.Code == brandtype.Selected_d2.Code)
+                                            {
+                                                <option data-id="duihao-checked" value="@item.Code">@item.Name</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="@item.Code">@item.Name</option>
+
+                                            }
+                                        }
+                                    </select>
+                                </div>
+                                <div id="@(Guid.NewGuid().ToString())" class="Setp3Select selectPickerWrapper" data-select="Setp3Select" data-id="@brandtype.Selected_d3.Code">
+                                    <select class="div_Setp3Select_select hidden">
+                                        @foreach (var item in brandtype.D3s)
+                                        {
+                                            if (item.Code == brandtype.Selected_d3.Code)
+                                            {
+                                                <option data-id="duihao-checked" value="@item.Code">@item.Name</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="@item.Code">@item.Name</option>
+
+                                            }
+                                        }
+                                    </select>
+                                </div>
+                                <a href="javascript:void(0);" id="" class="fa fa-minus-circle text-danger del-property-item " onclick="DelStep(this)"></a>
+                            </div>
+                            <br />
+                        }
+                    }
+                </div>
+            </div>
+            <a href="javascript:void(0)" class="margin-left addnotice" onclick="AddStep(this)" data-index="11" style="border-bottom: 1px solid #00a0ff; color: #00a0ff;">添加分类</a>
+        </div>
+        @*使用年龄段*@
+        <div class="form-group">
+            <div class="form-inline">
+                <label class="control-label mb-1"><span style="color:red;">*</span>年龄范围：</label>
+                <div class="col-md-4" style="margin-left:-1%;">
+                    <input type="text" name="MinAge" id="MinAge" placeholder="请输入最小年龄" class="form-control" value="@Model.MinAge" style="width:55%;" />
+                </div>
+                <div class="col-md-4" style="margin-left:-15.5%;">
+                    <input type="text" name="MaxAge" id="MaxAge" placeholder="请输入最大年龄" class="form-control" value="@Model.MaxAge" style="width:55%;" />
+                </div>
+            </div>
+            @*<div class="form-inline">
+                    <label class="control-label mb-1">使用年龄段：</label>
+                    <div id="div_Ages" class="selectPickerWrapper" multiple="multiple">
+                        <select id="div_Ages_select" class="hidden">
+                            @if (Model.ListSelectAges?.Any() == true)
+                            {
+                                foreach (var item in Model.ListSelectAges)
+                                {
+                                    if (Model.OldAges?.Any() == true && Model.OldAges.Contains(item))
+                                    {
+                                        <option data-id="duihao-checked" value="@item.Value">@item.Text</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@item.Value">@item.Text</option>
+                                    }
+
+                                }
+                            }
+                        </select>
+                    </div>
+                </div>*@
+        </div>
+
+        @*教学模式*@
+        <div class="form-group">
+            <div class="form-inline">
+                <label class="control-label mb-1"><span style="color:red;">*</span>教学模式：</label>
+                <div id="div_TeachModes" class="selectPickerWrapper" multiple="multiple">
+                    <select id="div_TeachModes_select" class="hidden">
+                        @if (Model.ListSelectModes?.Any() == true)
+                        {
+                            if (Model.IsAdd)//新增
+                            {
+
+                                foreach (var item in Model.ListSelectModes)
+                                {
+                                    <option value="@item.Value">@item.Text</option>
+                                }
+                            }
+                            else //编辑
+                            {
+                                var oldModes = string.IsNullOrEmpty(Model.Modes) ? null : JsonSerializationHelper.JSONToObject<List<string>>(Model.Modes);
+                                foreach (var item in Model.ListSelectModes)
+                                {
+                                    if (oldModes != null && oldModes.Contains(item.Value))
+                                    {
+                                        <option value="@item.Value" data-id="duihao-checked">@item.Text</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@item.Value">@item.Text</option>
+                                    }
+
+                                }
+                            }
+
+                        }
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        @*机构简介*@
+        <div class="form-group">
+            <div class="form-inline">
+                @*<span style="color:red;">*</span>*@
+                <label class="control-label mb-1" style="">简介：&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
+                <div class="col-md-10">
+                    <div class="border uecontent" id="content" name="content" style="min-height:50px">
+                        <script id="editor1" type="text/plain" style="width:100%;height:200px;">
+                        </script>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        @*操作按钮*@
+        <div class="text-center">
+            @*border-color:#b9c0c7;background-color:#b9c0c7;*@
+            <button id="save" class="btn btn-primary btn-sm font-size" type="button" style="width:10%;height:2em; ">确定</button>
+            <a href="@Url.Action("Index", new { queryJson = ViewBag.queryJson,page=ViewBag.page })" data-id="" class="text-info">返回列表</a>
+        </div>
+
+    </div>
+</div>
+
+
+
+@*需要预定义ue编辑器*@
+<div class="border uecontent" id="preUE" hidden="hidden" placeholder="(提示:请录入图片和文字材料)" style="min-height:50px">
+    <script id="editor1" type="text/plain" style="width:100%;height:200px;">
+    </script>
+</div>
+<pre style="display:none;" id="tmp_Meal">@Html.Raw(Model == null ? "" : Model.Intro)</pre>
+
+
+
+@section Scripts{
+    @*单选、复选、搜索下拉框*@
+    <script src="~/js/jqselect/select.js"></script>
+
+    @*数据补全*@
+    <script src="@(ViewBag.StaticFile)/bootstrap-3-typeahead/4.0.2/bootstrap3-typeahead.min.js"></script>
+    @*taginput*@
+    <script src="@(ViewBag.StaticFile)/bootstrap-tagsinput/0.8.0/bootstrap-tagsinput.min.js"></script>
+
+    @*editor 富文本编辑器*@
+    <script type="text/javascript" charset="utf-8" src="~/ueditor/ueditor.config.nostyle4cccv1.js"></script>
+    <script type="text/javascript" charset="utf-8" src="~/ueditor/editor_api.js"></script>
+
+
+    <script src="~/js/jquery-validate.bootstrap-tooltip.min.js"></script>
+    <script src="~/assets/js/GetFormJson.js"></script>
+    <script src="~/assets/js/Completion.js"></script>
+    <script src="~/js/jq.postJSON.js"></script>
+    <script src="~/js/Math.uuid.js"></script>
+    <script type="text/javascript">
+
+         //ue编辑器
+        var ue = UE.getEditor('editor1', {
+            configPath: 'ueditor/config.json',
+            initialContent: "",
+            theme: 'tt',
+            elementPathEnabled: !1,
+            imageScaleEnabled: !1,
+            imagePopup: !1,
+            tableDragable: !1,
+            wordCount: !1,
+            autoHeight: false,
+            toolbars: [["source", "h2", "bold", "underline", "italic", "strikethrough", "forecolor", "blockquote", "horizontal", "justifyleft", "justifycenter", "justifyright", "link", "unlink", "|", "insertimage", "|", "selectall", "removeformat", "undo", "redo"]],
+            removeFormatTags: "b,big,code,del,dfn,em,font,i,ins,kbd,q,samp,small,span,strike,strong,sub,sup,tt,u,var,blockquote,h1,h2,h3,h4,h5,h6",
+            autotypeset:
+            {
+                mergeEmptyline: !0,
+                removeClass: !1,
+                removeEmptyline: !0,
+                pasteFilter: !0,
+                clearFontSize: !0,
+                clearFontFamily: !0
+            },
+        });
+        ue.ready(function () {
+            jQuery(this.container).click(function (e) {
+                e.stopPropagation()
+            });
+            ue.execCommand('serverparam', 'contentID', '@(Model.Id)');
+            ue.execCommand('serverparam', 'contentType', 'school_v3');
+            ue.execCommand('cleardoc');
+            ue.execCommand("insertHtml", '');
+            //用于跳转判断
+            isInit = true;
+            ue.setContent(jQuery('#tmp_Meal').html());
+        });
+        jQuery('.uecontent').click(function (e) {
+            e.stopPropagation();
+            var jQuerytarget = jQuery(this);
+            //解决多个ueditor切换后工具栏和输入框分离
+            jQuery('.edui-editor-toolbarbox').attr('style', '');
+            var content = jQuerytarget.html();
+            var currentParnet = ue.container.parentNode.parentNode;
+            var currentContent = ue.getContent();
+            jQuerytarget.html('');
+            jQuerytarget.append(ue.container.parentNode);
+            ue.reset();
+            setTimeout(function () {
+                //用于跳转判断
+                isInit = true;
+                ue.setContent(content);
+            }, 200)
+            jQuery(currentParnet).html(currentContent);
+            return false;
+        });
+        (function (b) {
+            ue.ready(function () {
+                if (b) return;
+                b = true, bind_toolbar_event();
+            });
+            function bind_toolbar_event() {
+                //ue 清除格式事件
+                jQuery('.edui-editor').on('click', '.edui-for-removeformat', function () {
+                    //用于跳转判断
+                    isInit = true;
+                    ue.setContent(rmStyle(ue.getContent()));
+                });
+            }
+        })();
+
+        //上传图片
+        jQuery(function () {
+            //1、上传
+        //上传logo--选择图片
+        jQuery('.updateBtn').click(function () {
+                return jQuery('#' + jQuery(this).attr('data-video')).click(); //注意这句，主要是需要return点击事件返回值
+            });
+        //上传logo--自动上传
+        jQuery('.updateFile').on("change", function () {
+
+                var fileinput = jQuery(this);//上传文件
+                var videoInput = fileinput.attr('id');
+                var $videoInput = document.getElementById(videoInput);
+                if ($videoInput.files.length == 0) {
+                    return;
+                }
+                var formData = new FormData();
+                for (var i = 0; i < $videoInput.files.length; i++) {
+                    formData.append(videoInput, $videoInput.files[i]);
+                }
+                Loading("正在上传图片！");
+                 jQuery.ajax({
+                    url: "@ViewBag.OrgeEvltCrawlerUploadUrl",
+                    type: "post",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    cache: false
+                }).done(function (res) {
+                    debugger;
+                    if (res.status == 200) {
+                        ShowAlert('上传成功', 1000, function () {
+                            fileinput.val('');
+                                debugger;
+                            var url = res.data.src;
+                            var url_s = res.data.src_s;
+                            jQuery("#LOGO").attr("src",url).removeAttr("hidden");
+
+                        });
+
+                    } else {
+                        ShowAlert("上传失败:"+res.msg, -1);
+                        CloseLoading();
+                    }
+                    CloseLoading();
+                }).fail(function (res) {
+                    ShowAlert("网络异常:"+res.msg, -1);
+                    CloseLoading();
+                });
+        })
+
+            //最小年龄-控制为正整数
+            HuLyegaJS.decimalInput({
+                ele: '[name="MinAge"]',
+                decimalPlaces: 0
+            });
+            //最大年龄-控制为正整数
+            HuLyegaJS.decimalInput({
+                ele: '[name="MaxAge"]',
+                decimalPlaces: 0
+            });
+
+            //最大年龄大于或者等于最小年龄
+            jQuery("#MaxAge,#MinAge").on("blur", function () {
+                var $maxage = jQuery("#MaxAge");
+                var $minage = jQuery("#MinAge");
+                var maxage = parseInt($maxage.val());
+                var minage = parseInt($minage.val());
+                if (maxage < minage) {
+                    ShowAlert("最大年龄不能小于最小年龄，请重新填写！", 3000);
+                    jQuery(this).focus();
+                    return;
+                }
+            });
+        });
+
+
+
+
+
+        //初始话选择下拉框
+        jQuery("#div_TeachModes div[class=select-picker-search-checked]").text("请选择（可多选）");
+        //jQuery("#div_OrgTypes div[class=select-picker-search-checked]").text("请选择（可多选）");
+
+        var SetpGroup = jQuery("#StepGoup .selectPickerWrapper");
+        SetpGroup.each(function (index, select) {
+            jQuery(select).mySelect();
+        });
+        jQuery("#div_TeachModes").mySelect();//
+
+        //保存抓取评测
+        jQuery("#save").on("click", function () {
+            var data = GetFormData();//获取表单数据
+            if (!(data.Name.trim())) {
+                ShowAlert("机构名称不能为空！");
+                jQuery("#Name").focus();
+                return;
+            }
+            if (!(data.Desc.trim())) {
+                ShowAlert("副标题1不能为空！");
+                jQuery("#Desc").focus();
+                return;
+            }
+            if (!(data.SubDesc.trim())) {
+                ShowAlert("副标题2不能为空！");
+                jQuery("#SubDesc").focus();
+                return;
+            }
+            if (!(data.LOGO.trim())) {
+                ShowAlert("LOGO不能为空");
+                return;
+            }
+            //if (data.Types == "[]" && data.GoodthingTypes == "[]" ) {
+            //    ShowAlert("品牌分类不能为空");
+            //    return;
+            //}
+            if (data.BrandTypes.length == 0) {
+                ShowAlert("品牌分类不能为空");
+                return;
+            }
+
+            if (!(data.MinAge.trim())) {
+                ShowAlert("最小年龄不能为空");
+                jQuery("#MinAge").focus();
+                return;
+            }
+            if (!(data.MaxAge.trim())) {
+                ShowAlert("最大年龄不能为空");
+                jQuery("#MaxAge").focus();
+                return;
+            }
+            if (parseInt(data.MaxAge) < parseInt(data.MinAge)) {
+                ShowAlert("最大年龄不能小于最小年龄，请重新填写！");
+                jQuery("#MaxAge").focus();
+                return;
+            }
+            if (data.Modes=="[]") {
+                ShowAlert("教学模式不能为空");
+                return;
+            }
+            showConfirm(data.IsAdd == "False" ?"确定修改该机构?":"确定新增该机构?", function () {
+                Loading("正在更新数据！");
+                jQuery("#save").attr('disabled', 'disabled');
+                jQuery.post("@Url.Action("SaveOrg")", data, function (result) {
+                    debugger;
+                    if (result.status ==200) {
+                        ShowAlert("保存成功！", 1000, function () {
+                            jQuery("#div_GoodTypes_hidden").val("");
+                            jQuery("#div_TeachModes_hidden").val("");
+                            window.location.reload();
+                        });
+                        debugger;
+                    }
+                    else {
+                        ShowAlert(result.msg, -1);
+                        CloseLoading();
+                        jQuery("#save").removeAttr('disabled');
+                    }
+                });
+            })
+        });
+
+        //三级联动效果
+        jQuery("#StepGoup").on('click', ".select-picker-options-list-item", function () {
+            var _this = jQuery(this);
+            var select = _this.attr("id");
+            var step = jQuery(_this.parents(".selectPickerWrapper")[0]).attr("data-select");
+            if (step == "Setp3Select") {
+                return;
+            }
+            jQuery.getJSON("/api/bg/MallFenleis/GetNomals?code=" + select, function (res) {
+                if (res.status != 200) {
+                    ShowAlert("请求分类接口错误：" + res.msg, -1);
+                } else {
+                    if (step == "Setp1Select") {
+                        //一级分类
+                        var step2 = jQuery(jQuery(_this.parents(".selectPickerWrapper")[0]).siblings(".Setp2Select")[0]);
+                        step2.setMySelectData({ "data": res.data.d2s, "code": res.data.selected_d2 == null ? null : res.data.selected_d2.code });
+                        var step3 = jQuery(jQuery(_this.parents(".selectPickerWrapper")[0]).siblings(".Setp3Select")[0]);
+                        step3.setMySelectData({ "data": res.data.d3s, "code": res.data.selected_d3 == null ? null : res.data.selected_d3.code });
+                    } else {
+                        //二级分类
+                        var parent = jQuery(jQuery(_this.parents(".selectPickerWrapper")[0]).siblings(".Setp3Select")[0]);
+                        parent.setMySelectData({ "data": res.data.d3s, "code": res.data.selected_d3 == null ? null: res.data.selected_d3.code });
+
+                    }
+                }
+            });
+
+        });
+        ////二级变更时
+        //jQuery("#StepGoup .Setp2Select").on('click', " .select-picker-options-list-item", function () {
+        //    var _this = jQuery(this);
+        //    var select = _this.attr("id");
+        //    jQuery.getJSON("/api/bg/MallFenleis/GetNomals?code=" + select, function (res) {
+        //            console.log(res);
+        //            if (res.status != 200) {
+        //                ShowAlert("请求三级分类失败:" + res.msg, -1);
+        //            } else {
+
+        //            }
+        //     });
+        //});
+
+        //删除科目组
+        function DelStep(btn) {
+            jQuery(btn).parent(".steps").remove();
+        }
+        //添加科目组
+        function AddStep(btn) {
+            var html = '<div class="steps form-inline"><div id="' + Math.uuid() + '" class="Setp1Select selectPickerWrapper" data-select="Setp1Select"> <select class="div_Setp1Select_select hidden">';
+            @foreach (var item in ViewBag.Setp1.D1s)
+            {
+                @:html += '<option  value="@item.Code">@item.Name</option>';
+            }
+            html += "</select></div>";
+            html += '<div id="'+ Math.uuid()+'" class="Setp2Select selectPickerWrapper" data-select="Setp2Select" > <select class="div_Setp2Select_select hidden">';
+            html += "</select></div>";
+            html += '<div id="' + Math.uuid()+'" class="Setp3Select selectPickerWrapper" data-select="Setp3Select" > <select class="div_Setp2Select_select hidden">';
+            html += "</select></div>";
+            html += '<a href="javascript:void(0);" id="" class="fa fa-minus-circle text-danger del-property-item " onclick="DelStep(this)"></a>';
+            html += '</div><br/>';
+            jQuery("#StepGoup").append(html);
+            var steps = jQuery("#StepGoup .steps").last();
+            steps.find(".selectPickerWrapper").each(function (index, select) {
+                jQuery(select).mySelect();
+            });
+        }
+
+
+
+
+        //获取表单数据
+        function GetFormData() {
+            var Id = '@Model.Id';
+            var IsAdd = '@Model.IsAdd';
+            var Name = jQuery("#Name").val();
+            var Desc = jQuery("#Desc").val();
+            var SubDesc = jQuery("#SubDesc").val();
+            var LOGO = jQuery("#LOGO").attr("src");
+
+            var MinAge = jQuery("#MinAge").val();
+            var MaxAge = jQuery("#MaxAge").val();
+
+            var Intro = ue.getContent();//正文
+
+            var strmodes = jQuery("#div_TeachModes_hidden").val().split(',');
+            var Modes = [];//教学模式
+            jQuery(strmodes).each(function (index, data) {
+                if (data != "")
+                    Modes.push(parseInt(data));
+            });
+
+
+
+            ////div_GoodTypes
+            //var strGoodsTypes = jQuery("#div_GoodTypes_hidden").val().split(',');
+            //var GoodsTypes = [];//好物分类
+            //jQuery(strGoodsTypes).each(function (index, data) {
+            //    if (data != "")
+            //        GoodsTypes.push(parseInt(data));
+            //});
+
+            //三级分类的数据
+            var brandTypes = [];
+            jQuery(".Setp3Select_hidden").each(function (index, data) {
+                var val = jQuery(data).val();
+                if (val != null && val > 0) {
+                    brandTypes.push(val);
+                }
+            });
+            jQuery.unique(brandTypes.sort());
+
+
+            var data =
+            {
+                "Id": Id,
+                "IsAdd": IsAdd,
+                "Name": Name,
+                "Desc": Desc,
+                "SubDesc": SubDesc,
+                "LOGO": LOGO,
+                //"Types": JSON.stringify(Types),
+                //"GoodthingTypes": JSON.stringify(GoodsTypes),
+                "MinAge": MinAge,
+                "MaxAge": MaxAge,
+                "Modes": JSON.stringify(Modes),
+                "Intro": Intro,
+                "BrandTypes": brandTypes
+            };
+            return data;
+        }
+
+
+    </script>
+}

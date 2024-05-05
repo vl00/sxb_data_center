@@ -1,0 +1,625 @@
+﻿@using iSchool.Application.ViewModels;
+@using iSchool.Domain.Enum;
+@using iSchool.Infrastructure;
+@{
+    ViewData["Title"] = "数据管理";
+    ViewBag.TagType = (ViewBag.TagType ?? 0) <= 0 ? 2 : ViewBag.TagType;
+
+    var tagsEnum = EnumUtil.GetDescs<TagType>();
+    var tag2cgyList = ViewBag.Tag2cgyList as IEnumerable<iSchool.Application.Service.Tag2Cgy>;
+}
+@section css{
+    <link href="@(ViewBag.StaticFile)/bootstrap-datetimepicker/4.17.47/css/bootstrap-datetimepicker.min.css" rel="stylesheet">
+    <style type="text/css">
+        #taglist .deletebutten {
+            right: 0.2em;
+        }
+
+        #rank-content .deletebutten {
+            right: 15%;
+        }
+
+        .deletebutten {
+            position: absolute;
+            display: block;
+            width: 5px;
+            height: 5px;
+            top: 0px;
+        }
+
+        #taglist .col-md-11 h5 {
+            background-color: #f8f9fa;
+        }
+        
+        .tags-item {
+			position: relative;
+			margin: 0 0.5em 0.5em 0;
+			display: inline-block;
+        }
+
+        .badge-light {
+            color: #212529;
+            background-color:#e9ecef;
+        }
+
+        .tag2cgy_btn {
+            cursor: pointer;
+        }
+    </style>
+}
+<div class="col-sm-12">
+    <div class="card">
+        <div class="card-body">
+            <div class="custom-tab">
+                <nav>
+                    <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                        <a class="nav-item nav-link active show" id="custom-nav-home-tab" data-toggle="tab" href="#custom-nav-home" role="tab" aria-controls="custom-nav-home" aria-selected="false">标签库</a>
+                        <a class="nav-item nav-link  " id="custom-nav-collage-tab" data-toggle="tab" href="#custom-nav-collage" role="tab" aria-controls="custom-nav-collage" aria-selected="false">大学名录</a>
+                    </div>
+                </nav>
+                <div class="tab-content pl-3 pt-2" id="nav-tabContent">
+                    @*标签库*@
+                    <div class="tab-pane fade active show" id="custom-nav-home" role="tabpanel" aria-labelledby="custom-nav-home-tab">
+                        <ul class="nav nav-pills mb-3" id="tag1-tab">
+                            @foreach (var (e, desc) in tagsEnum)
+                            {
+                                @if (!Equals((int)e, 1))
+                                {
+                                    <li class="nav-item">
+                                        <a class="nav-link @(Equals((int)e, ViewBag.TagType) ? "active show" : "")" href="@Url.Action("Data", "Home", new { tagtype = (int)e })" role="tab" aria-selected="@(((int)e == 1).ToString().ToLower())" data-type="@((int)e)">@desc</a>
+                                    </li>
+                                }
+                            }
+                        </ul>
+                        @*二级分类*@
+                        <div class="row">
+                            <h5 style="padding:5px 15px;display:inline-block;">标签分类</h5>
+                        </div>
+                        <ul class="nav nav-pills mb-3" role="tablist" id="tag2-tab">
+                            @foreach (var tag2cgy in tag2cgyList)
+                            {
+                                <li class="nav-item tags-item">
+                                    <div class="nav-link tag2cgy_btn @(Equals(tag2cgy.Id, 0) ? "active show" : "")" data-toggle="pill" aria-selected="@(tag2cgy.Id)" data-cgyId="@(tag2cgy.Id)">
+                                        <span>@(tag2cgy.Name)</span>
+                                        @if (tag2cgy.Id != 0 && tag2cgy.Id != null)
+                                        {
+                                            <a data-cgyId="@(tag2cgy.Id)" href="javascript:;;" class="delcgy2 fa fa-minus-circle text-danger deletebutten" style="display:none;right:0.1em;"></a>
+                                        }
+                                    </div>
+                                </li>
+                            }
+                            @if (Context.HasCurrQyx(".qx-CreateTag"))
+                            {
+                                <span id="div_doTagBind" class="qx qx-delTag" style="display:none;">
+                                    <button id="bindTag0" class="btn btn-secondary" style="margin-left:5px;">添加标签到此分类</button>
+                                </span>
+                            }
+                        </ul>
+                        @if (Context.HasCurrQyx(".qx-CreateTag"))
+                        {
+                            <h6 class="text-danger">删除标签分类，会将原有分类下标签移至【其他】分类，请谨慎操作！</h6>
+                            <br />
+                            <div class="row qx createTag2cgy">
+                                <div class="col-md-6">
+                                    <input type="text" id="newCgy2" placeholder="请输入分类名" class="form-control" />
+                                </div>
+                                <div class="col-md-6">
+                                    <button type="button" id="btn-CreateTag2Cgy" class="btn btn-primary">创建分类</button>
+                                </div>
+                            </div>
+                            <br />
+                        }
+                        @*标签*@
+                        <div class="row">
+                            <h5 style="padding:5px 15px;display:inline-block;">标签目录</h5>
+                        </div>
+                        <div class="row form-group">
+                            <div class="col-md-8">
+                                <div class="input-group">
+                                    <input type="text" id="input_search" name="input2-group1" placeholder="搜索标签" class="form-control">
+                                    <button class="input-group-addon" id="btn_tagsearch">
+                                        <i class="fa fa-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row" id="divSearchResult">
+                            <div style="padding-left:15px;display:inline-block;">搜索结果：</div>
+                            <div class="col-md-10">
+                                <div class="row" id="SearchTags">
+                                </div>
+                            </div>
+                        </div>
+                        <br />
+                        @*创建标签*@
+                        <form action="@(Url.Action("Add","Tag"))" id="form-createtag" method="post">
+                            @if (Context.HasCurrQyx(".qx-CreateTag"))
+                            {
+                                <div class="row qx qx-CreateTag">
+                                    <div class="col-md-6">
+                                        <input type="text" id="name" name="name" placeholder="请输入标签名" class="form-control" />
+                                        <input type="hidden" name="type" id="type" value="" />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <button type="button" id="btn-CreateTag" class="btn btn-primary">创建标签</button>
+                                    </div>
+                                </div>
+                            }                            
+                        </form>
+                        <br />
+                        @*标签列表*@
+                        <div class="row" id="taglist">
+                        </div>
+                        @*<br/>*@
+                        @if (Context.HasCurrQyx(".qx-delTag"))
+                        {
+                            <div id="div_doTag">
+                                <h6 class="text-danger col-12">对标签的任何改动都将会影响全局的标签（包括已发布的数据），请谨慎操作！</h6>
+                                <br />
+                                <div id="div_doTagDel" class="qx qx-delTag">
+									<span id="sp_TagDel">
+										<a href="javascript:;;" id="deleteTag" class="text-primary">删除标签</a>
+										&nbsp;&nbsp;&nbsp;&nbsp;
+										<a href="javascript:;;" id="deleteTag_cancel" class="text-primary" style="display:none;">返回</a>
+                                    </span>                                    
+                                    <span id="sp_editTag2cgy">
+										<a href="javascript:;;" id="btn_editTag2cgy" class="text-primary">删除分类</a>
+										&nbsp;&nbsp;&nbsp;&nbsp;
+										<a href="javascript:;;" id="btn_editTag2cgy_back" class="text-primary" style="display:none;">返回</a>
+                                    </span>
+                                </div>
+                                <div id="div_doTagBind1" class="qx qx-delTag" style="display:none;">
+									<span>
+										<a href="javascript:;;" id="bindTag" class="text-primary">完成</a>
+										&nbsp;&nbsp;&nbsp;&nbsp;
+										<a href="javascript:;;" id="bindTag_cancel" class="text-primary">返回</a>
+                                    </span>
+                                </div>
+                            </div>
+                        }
+                        </div>
+                    @*大学名录*@
+                    <div class="tab-pane fade " id="custom-nav-collage" role="tabpanel" aria-labelledby="custom-nav-collage-tab">
+                        <form id="frm_exlCollege">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <input type="file" name="collagefile" id="collagefile" />
+                                </div>
+                                <div class="col-md-3">
+                                    @if (Context.HasCurrQyx("#collageImport"))
+                                    {
+                                        <button class="btn btn-dark qx" id="collageImport">导入</button>
+                                    }
+                                </div>
+                                <div class="col-md-3">
+                                    @if (Context.HasCurrQyx(".qx-collegeTmpl"))
+                                    {
+                                        <a class="qx qx-collegeTmpl" href="@Url.Action("GetTemplate", "CollegeDirectory")">下载模板</a>
+                                    }
+                                </div>
+                            </div>
+                        </form>
+                        <p class="text-danger"><small>*请仔细检查学校名称，确保使用正确的学校全称。<br />若导入后，库中无该学校名称，则系统将自动新建学校</small></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<input type="hidden" id="hideTags" value="@ViewBag.TagsJson" />
+
+@section Scripts{
+    <script src="@(ViewBag.StaticFile)/moment.js/2.18.1/moment-with-locales.min.js"></script>
+    <script src="@(ViewBag.StaticFile)/bootstrap-datetimepicker/4.17.47/js/bootstrap-datetimepicker.min.js"></script>
+    <script src="@(ViewBag.StaticFile)/linq.js/2.2.0.2/jquery.linq.min.js"></script>
+    <script src="@(ViewBag.StaticFile)/linq.js/2.2.0.2/linq.min.js"></script>
+    <script src="~/js/jq.postJSON.js"></script>
+    <script type="text/javascript">
+        if (typeof (Array.prototype.indexOf) === 'undefined') {
+            Array.prototype.indexOf = function (val) {
+                for (var i = 0; i < this.length; i++) {
+                    if (this[i] === val) return i;
+                }
+                return -1;
+            };
+        }
+    </script>
+    <script type="text/javascript">
+        var isDelTag = false;
+        var app = {
+            state: {
+                deltaglist: [],
+                delCgy: [],
+                isBusyBindTag: undefined,
+                isEditCgy: undefined,
+                isEditBindTag: undefined,
+                subvChanges: [], //确保tagid不重复
+            },
+            // 二级分类切换事件 changeTabCgy2
+            huEvent: new HuLyegaJS.event(),
+            //get选中的一级分类id
+            getSelectedCgy1: function () {
+                return parseInt('@(ViewBag.TagType)', 10);
+            },
+            //get选中的二级分类id
+            getSelectedCgy2: function () {
+                var id = jQuery('#tag2-tab li.nav-item .active').attr('data-cgyid');
+                if (id == '') return null;
+                return parseInt(id, 10);
+            },
+            //获取相应的taglist
+            getTaglist: function (cgy1, cgy2) {
+                var a = Enumerable.From(JSON.parse(jQuery("#hideTags").val())).Where(function (_) { return _.Type == cgy1 }); //.SelectMany("$.Tags");
+                if (cgy2 == 0) return a.ToArray();
+                a = a.ToArray();
+                for (var i = 0, len = a.length; i < len; i++) {
+                    var tags = Enumerable.From(a[i].Tags).Where(function (_) {
+                        return !jQuery.isArray(cgy2) ? (_.Subdivision == cgy2)
+                            : cgy2.indexOf(_.Subdivision) > -1;
+                    });
+                    if (!tags.Any()) { //移除空项的父层
+                        a.splice(i, 1);
+                        --i, len--;
+                        continue;
+                    }
+                    a[i].Tags = tags.ToArray();
+                }
+                return a;
+            },
+            //搜索标签
+            getSearchTags: function (text) {
+                var ty1 = app.getSelectedCgy1(),
+                    ty2 = app.getSelectedCgy2();
+                var a = Enumerable.From(JSON.parse(jQuery("#hideTags").val()))
+                    .Where(function (_) { return _.Type == ty1 })
+                    .SelectMany("$.Tags");
+                if (ty2 !== 0) a = a.Where(function (_) { return _.Subdivision == ty2 });
+                return a.Where(function (x) { return x.Name.indexOf(text.toUpperCase()) != -1 || x.Name.indexOf(text.toLowerCase()) != -1 })
+                    .ToArray();
+            },
+            //标签绑定分类时, set选中的标签
+            setSelectedTag: function (tagUI, isSelected) {
+                var cgy2 = tagUI.attr('data-cgy2') || null;
+                if (isSelected === undefined) cgy2 = cgy2 == null ? app.getSelectedCgy2() : null;
+                else cgy2 = isSelected ? app.getSelectedCgy2() : null;
+                if (isSelected === undefined) {
+                    var tagId = tagUI.attr('data-id');
+                    var cgy1 = app.getSelectedCgy1();
+                    var item = FindOneInArray(app.state.subvChanges, function (x) {
+                        return x.tagId == tagId && x.type == cgy1;
+                    });
+                    if (item.idx != -1) app.state.subvChanges.splice(item.idx, 1);
+                    else app.state.subvChanges.push({ tagId: tagId, type: cgy1, Subdivision: cgy2 });
+                }
+                tagUI.attr('data-cgy2', cgy2 || '');
+                tagUI.each(function () {
+                    jQuery(this).find('span').eq(0).css('background-color', cgy2 ? '#4f94de' : '#e9ecef'); //蓝|灰
+                });
+            }
+        };
+
+        /**
+         *  fn fn(arr[i],i)
+         *  return { itm, idx }
+         */
+        function FindOneInArray(arr, fn) {
+            var i = 0, length = arr.length;
+            for (; i < length; i++) {
+                if (!!fn(arr[i], i)) {
+                    return { itm: arr[i], idx: i };
+                }
+            }
+            return { itm: undefined, idx: -1 };
+        }
+
+        jQuery(function () {
+            //添加新分类
+            (function (b) {
+                jQuery('#btn-CreateTag2Cgy').on('click', function () {
+                    var txt = jQuery('#newCgy2').val();
+                    if (!txt) return;
+                    var o = {
+                        Tag1Cgy: app.getSelectedCgy1(),
+                        Name: txt,
+                    };
+                    if (b) return;
+                    b = true;
+                    jQuery.postJSON('/tag/AddTag2Cgy', o).then(
+                        function (res) {
+                            b = false;
+                            if (res.isOk) {
+                                ShowAlert('添加新分类成功');
+                                window.location.replace(window.location.href);
+                            } else {
+                                ShowAlert('添加新分类失败! ' + res.msg, -1);
+                                console.log('添加新分类失败! ' + res.msg);
+                            }
+                        }, function () {
+                            b = false;
+                            ShowAlert('添加新分类失败!', -1);
+                        }
+                    );
+                });
+            })();
+            //edit删除分类
+            jQuery('#btn_editTag2cgy').on('click', function () {
+                //变成编辑状态
+                if (!app.state.isEditCgy) {
+                    app.state.isEditCgy = true;
+                    jQuery('#btn_editTag2cgy').text('完成'), jQuery('#btn_editTag2cgy_back').show();
+                    jQuery('#tag2-tab .delcgy2').show();
+                    //删标签和删分类 是 互斥操作
+                    jQuery('#sp_TagDel').hide();
+                }
+                //编辑完成保存时
+                else {
+                    if (!app.state.delCgy.length) {
+                        return jQuery('#btn_editTag2cgy_back').trigger('click');
+                    }
+                    var o = {
+                        Tag1Cgy: app.getSelectedCgy1(),
+                        Tag2CgyIds: app.state.delCgy,
+                    };
+                    jQuery.postJSON('/tag/deltag2Cgy', o).then(function (res) {
+                        if (res.isOk) {
+                            //jQuery('#btn_editTag2cgy_back').trigger('click');
+                            ShowAlert('删除分类成功');
+                            jQuery('#tag2-tab .tag2cgy_btn').removeClass('active')
+                                .filter('[data-cgyid=0]').addClass('active');
+                            window.location.replace('/home/data?tagtype=' + app.getSelectedCgy1() + '&cgy2=0');
+                        }
+                    });
+                }
+            });
+            jQuery('#btn_editTag2cgy_back').on('click', function () {
+                app.state.isEditCgy = false;
+                app.state.delCgy = [];
+                jQuery('#tag2-tab li.nav-item').show();
+                jQuery('#btn_editTag2cgy').text('删除分类'), jQuery('#btn_editTag2cgy_back').hide();
+                jQuery('#tag2-tab .delcgy2').hide();
+                jQuery('#tag2-tab .tag2cgy_btn').removeClass('active')
+                    .filter('[data-cgyid=0]').addClass('active');
+                //删标签和删分类 是 互斥操作
+                jQuery('#sp_TagDel').show();
+            });
+            jQuery('#tag2-tab a.delcgy2').on('click', function () {
+                var a = jQuery(this);
+                a.parents('li.nav-item').eq(0).hide();
+                app.state.delCgy.push(a.attr('data-cgyid'));
+            });
+            //分类item切换
+            jQuery('#tag2-tab .tag2cgy_btn').on("click", function () {
+                if (app.state.isEditCgy) {
+                    return;
+                }
+                var cgyid = jQuery(this).attr("data-cgyid") || null;
+                app.huEvent.emit('changeTabCgy2', cgyid);
+            });
+            app.huEvent.on('changeTabCgy2', function (_, cgyid) {
+                var str_cgyid = (cgyid !== null ? cgyid : '');
+                history.replaceState(null, '', '?tagtype=' + app.getSelectedCgy1() + '&cgy2=' + str_cgyid);
+                jQuery('#tag2-tab .tag2cgy_btn').removeClass('active')
+                    .filter(function () { return jQuery(this).attr('data-cgyid') == str_cgyid }).eq(0)
+                    .addClass('active');
+            });
+        });
+
+        jQuery(function () {
+            var tagType = '@ViewBag.TagType';
+
+            app.huEvent.on('changeTabCgy2', function (_, cgyid) {
+                ///
+                //只有'全部'分类选中才能添加标签
+                if (cgyid == 0) jQuery('#form-createtag').show();
+                else jQuery('#form-createtag').hide();
+
+                //退出编辑绑定
+                if (app.state.isEditBindTag) {
+                    jQuery('#bindTag_cancel').trigger('click');
+                }
+
+                //改变最下面删除/解绑项
+                if (cgyid === null) jQuery('#div_doTag').hide();
+                else {
+                    jQuery('#div_doTag').show();
+                    if (cgyid != 0) jQuery('#div_doTagBind').show(), jQuery('#div_doTagDel').hide();
+                    else jQuery('#div_doTagBind').hide(), jQuery('#div_doTagDel').show();
+                }
+
+                //清空搜索
+                jQuery('#input_search').val('');
+                document.querySelector('#SearchTags').innerHTML = '';
+
+                //改变taglist内容
+                jQuery('#taglist').html('');
+                ShowTagContent(app.getTaglist(app.getSelectedCgy1(), cgyid));
+            });
+
+            //删除标签
+            jQuery("#deleteTag").on("click", function () {
+                if (isDelTag == false) {
+                    isDelTag = true;
+                    jQuery("#taglist .deltag").css('display', 'block');
+                    jQuery(this).html("完成");
+                    jQuery('#deleteTag_cancel').show();
+                    //删标签和删分类 是 互斥操作
+                    jQuery('#sp_editTag2cgy').hide();
+                } else {
+                    var tmpTaglist = app.state.deltaglist;
+                    app.state.deltaglist = [];
+                    isDelTag = false;
+                    jQuery("#taglist .deltag").css('display', 'none');
+                    jQuery('#deleteTag_cancel').hide();
+                    jQuery(this).html("删除标签");
+                    //删标签和删分类 是 互斥操作
+                    jQuery('#sp_editTag2cgy').show();
+
+                    //post json 删除tag
+                    if (!tmpTaglist.length) return;
+                    var ttype = jQuery('#nav-tabContent a.nav-link.active').attr("data-type");
+                    jQuery.postJSON("@(Url.Action("Delete","Tag"))", { "ids": tmpTaglist }, function (res) {
+                        if (res.isOk) {
+                            ShowAlert('删除成功', 1000, function () {
+                                window.location.href = '/home/data?tagType=' + ttype;
+                            });
+                        }
+                    });
+                }
+            });
+            //取消删除标签并界面返回
+            jQuery('#deleteTag_cancel').hide().on('click', function () {
+                isDelTag = false;
+                jQuery(this).hide();
+                jQuery("#taglist .deltag").hide();
+                jQuery('#taglist .tags-item').show(), app.state.deltaglist = [];
+                jQuery('#deleteTag').html("删除标签");
+                //删标签和删分类 是 互斥操作
+                jQuery('#sp_editTag2cgy').show();
+            });
+            //删除标签
+            jQuery('body').delegate("#taglist .deltag", "click", function () {
+                var id = jQuery(this).attr("data-id");
+                jQuery(this).parent(".tags-item").hide();
+                app.state.deltaglist.push(id);
+            });
+
+            //创建标签
+            jQuery("#btn-CreateTag").on("click", function () {
+                var ttype = jQuery('#nav-tabContent a.nav-link.active').attr("data-type");
+                jQuery("#form-createtag #type").val(ttype);
+                var newTag = jQuery("#form-createtag #name").val();
+                if (newTag === '') return;
+                jQuery.post('/tag/add', { type: ttype, name: newTag }, function (res) {
+                    if (res.isOk) {
+                        ShowAlert(res.data.isNew ? '添加成功' : '请不要重复添加', 1000, function () {
+                            window.location.href = '/home/data?tagType=' + ttype;
+                        });
+                    }
+                });
+            });
+            //搜索标签
+            jQuery("#btn_tagsearch").on("click", function () {
+                var text = jQuery.trim(jQuery("#input_search").val());
+                if (text != null || text != "") {
+                    var jsonResult = app.getSearchTags(text);
+                    var html = "";
+                    jQuery.each(jsonResult, function (idx, obj) {
+                        html += '<div class="tags-item"><h5><span class="badge badge-light"><a href="#Code_' + obj.SpellCode + '">' + obj.Name + '</a></span></h5></div>';
+                    });
+                    jQuery('#divSearchResult').show();
+                    html = html || '<span style="color:red;">查无结果</span>';
+                    jQuery("#SearchTags").html(html);
+                }
+            });
+
+            //标签绑定分类
+            jQuery('#bindTag0').on('click', function () {
+                if (app.state.isBusyBindTag) return;
+                //进入编辑绑定
+                if (!app.state.isEditBindTag) {
+                    app.state.isEditBindTag = true;
+                    jQuery('#div_doTagBind1').show();              
+                    jQuery('#div_doTagBind').hide();  
+                    var tags = app.getTaglist(app.getSelectedCgy1(), [app.getSelectedCgy2(), null]);
+                    jQuery('#taglist').html(''), ShowTagContent(tags);
+                    //原分类中的标签上色
+                    app.setSelectedTag(
+                        jQuery('#taglist .tags-item').css('cursor', 'pointer')
+                            .filter('[data-cgy2=' + (app.getSelectedCgy2()) + ']'),
+                        true
+                    );
+                }
+            });
+            jQuery('#bindTag').on('click', function () {
+                if (app.state.isBusyBindTag) return;
+                //完成并退出编辑绑定
+                if (app.state.isEditBindTag) {
+                    app.state.isEditBindTag = false;
+                    if (!app.state.subvChanges.length) {
+                        return jQuery('#bindTag_cancel').trigger('click');
+                    }
+                    app.state.isBusyBindTag = true;
+                    jQuery.postJSON('/tag/uptagSubv', { changes: app.state.subvChanges }).then(function (res) {
+                        if (res.isOk) {
+                            ShowAlert('更新成功');
+                            window.location.replace(window.location.href);
+                        } else {
+                            app.state.isBusyBindTag = false;
+                            ShowAlert('更新失败:' + res.msg, -1);
+                        }
+                    });
+                }
+            });
+            //返回
+            jQuery('#bindTag_cancel').on('click', function () {
+                app.state.isEditBindTag = false;
+                app.state.subvChanges = [];
+                jQuery('#div_doTagBind1').hide();
+                jQuery('#div_doTagBind').show();
+                jQuery('#taglist').html(''), ShowTagContent(app.getTaglist(app.getSelectedCgy1(), app.getSelectedCgy2()));
+            });
+            //绑定分类时点击标签
+            jQuery('body').on('click', '#taglist .tags-item', function () {
+                if (!app.state.isEditBindTag) return;
+                var tag = jQuery(this);
+                app.setSelectedTag(tag);
+            });
+
+            //初始化页面
+            var _cgy2 = parseInt('@(ViewBag.cgy2?.ToString() ?? "")', 10);
+            _cgy2 = jQuery.isNumeric(_cgy2) ? _cgy2 : null;
+            app.huEvent.emit('changeTabCgy2', _cgy2);
+        });
+
+        // ajax上传excel
+        jQuery(function () {
+            jQuery('#collageImport').on('click', function () {
+                var fileUpload = jQuery("#collagefile").get(0);
+                var files = fileUpload.files;
+                if (files.length <= 0) {
+                    return false;
+                }
+                var data = new FormData();
+                for (var i = 0; i < files.length; i++) {
+                    data.append(files[i].name, files[i]);
+                }
+                Loading('正在导入中');
+                jQuery.ajax({
+                    type: "POST",
+                    url: "/CollegeDirectory/AddSchoolFromExcel",
+                    contentType: false,
+                    processData: false,
+                    data: data
+                }).then(function (res) {
+                    CloseLoading();
+                    if (!res.isOk) {
+                        ShowAlert('上传意外失败');
+                    } else {
+                        ShowAlert('导入成功', -1);
+                        jQuery('#collagefile').val('');
+                    }
+                });
+                return false;
+            });
+        });
+
+        //展示tag内容
+        function ShowTagContent(jsonResult) {
+            var html = "";
+            jQuery.each(jsonResult, function (idx, obj) {
+                //遍历json
+                html += '<div class="col-md-1"><strong><a name=Code_' + obj.SpellCode + '>' + obj.SpellCode + '</a></strong></div>';
+                html += ' <div class="col-md-11">';
+                jQuery.each(obj.Tags, function (index, object) {
+                    html += '<div class="tags-item" data-id="' + object.Id + '" data-cgy2="' + (object.Subdivision !== null ? object.Subdivision : '') + '" >' +
+						'	<h5><span class="badge badge-light">' + object.Name + '</span></h5>' +
+						'	<a href="javascript:;;" class="deltag fa fa-minus-circle deletebutten text-danger" data-id="' + object.Id + '" style="display:none"></a>' +
+						'</div>';
+                });
+                html += '</div>' +
+					'<div class="col-md-12 col-12"><hr style="width:100%;height:20px;"></div>';
+            });
+            jQuery("#taglist").html(html);
+        }
+    </script>
+}

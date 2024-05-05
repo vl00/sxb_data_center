@@ -1,0 +1,135 @@
+﻿@using iSchool.Organization.Domain;
+@using iSchool.Organization.Domain.Enum;
+@using iSchool.Infrastructure;
+@{
+    var evaluationReward = Model._EvaluationReward as EvaluationReward;
+    var ctnLen = iSchool.Organization.Appliaction.CommonHelper.HtmlHelper.NoHTML(((string)Model.Content) ?? "").Length;
+}
+
+<div class="modal-header" style="text-align:center">
+    <h5 class="modal-title" id="scrollmodalLabel">评测详情</h5>
+    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+
+
+<!-- 模态框主体 -->
+<div class="modal-body" id="TagPanel-Modal">
+
+    @if (Model.Title == "")
+    {
+        <div class="form-group row">
+            暂无详情
+        </div>
+    }
+    else
+    {
+        //图片
+        <div class="form-group row">
+            @if (!string.IsNullOrEmpty(Model.Pictures?.ToString()))
+            {
+                foreach (var item in (iSchool.Infrastructure.JsonSerializationHelper.JSONToObject<List<string>>(Model.Pictures)))
+                {
+                    <div class="col-md-2">
+                        <img src="@item" />
+                    </div>
+                }
+            }
+            @if (!string.IsNullOrEmpty(Model.Video?.ToString())) 
+            { 
+                <div class="col-md-4">
+                    <video class="vdo_vdo" style="object-fit:cover;" width="250" height="150" controls="" poster="@Model.VideoCover">
+                        <source src="@Model.Video" type="video/mp4">
+                    </video>
+                </div>
+            }
+        </div>
+        //文章标题
+        <div class="form-group row">
+            <div class="col-md-2">文章标题：</div>
+            <div class="col-md-10" style="margin-left:-6%;">
+                <label>@Model.Title</label>
+            </div>
+        </div>
+        //用户信息
+        <div class="form-group" style="font-size:8px;">
+            <div class="form-inline">
+                <label>种草ID:</label>
+                <label>@Model.Id</label>
+            </div>
+            <div class="form-inline">
+                <label>用户昵称：</label>
+                <label>@Model.NickName</label>
+
+                <label style="margin-left:5%;">用户Id：</label>
+                <label>@Model.UserId</label>
+
+                <label style="margin-left:5%;">用户手机号：</label>
+                <label>@Model.Mobile</label>
+            </div>
+            <div class="form-inline">
+                @if (Model.OrderPayTime != null)
+                {
+                    <label>订单支付时间：</label>
+                    <label>@(Model.OrderPayTime.ToString("yyyy-MM-dd HH:mm:ss"))</label>
+                    <label style="margin-left:5%;"></label>
+                }
+                <label>修改评测次数：</label>
+                <label>@Model.ModifyCount</label>
+                <label style="margin-left: 5%; color: #f00; font-weight: bold;">同一SPU种草奖励已发放次数：</label>
+                <label style="color: #f00; font-weight: bold;">@Model.SpuRecordCount</label>
+                <label style="margin-left: 5%; color: #f00; font-weight: bold;">种草奖励剩余次数：</label>
+                <label style="color: #f00; font-weight: bold;">@Model.TenYuanRemainChance</label>
+                <label style="margin-left:5%;"></label>
+                <label>正文：</label><label>@(ctnLen)字</label>
+            </div>
+        </div>
+        //正文内容
+        <div class="form-group row">
+            <div class="col-md-2">正文内容：</div>
+            <div class="col-md-10" style="margin-left:-6%;">
+                <TextArea rows="@Model.Row" cols="80">@Model.Content</TextArea>
+                @* @Html.TextArea("", ViewBag.Content, Math.Ceiling(ViewBag.Content.Length * 1.0 / 30.0), 4, new { @class = "form-control", @readonly = "readonly" })*@
+            </div>
+        </div>
+        //提示文本
+        @if (Model.IsSame_TitleOrContent)
+        {
+            <div class="form-group" style="font-size:10px;color:red;">
+                <div class="form-inline">
+                    <label>发现该文章标题或正文再系统种草库里存在一致的内容，请注意审核</label>
+                </div>
+
+            </div>
+        }
+
+    }
+    @*操作*@
+<div class="form-group row">
+    <div class="col-md-2"></div>
+    <div class="col-md-2">
+        <button type="button" id="close" class="btn btn-primary" style="background-color:blue;" data-dismiss="modal">关闭</button>
+    </div>
+    @if (Model.IsShowPassBtn)//审核通过、审核不通过按钮，共存显示
+    {
+        @if (Model.HasVideo == true || Model.IsPlainText == false)
+        {
+            <div class="col-md-3">
+                <button type="button" id="pass" data-id="@Model.Id" data-userId="@Model.UserId" class="btn btn-primary" style="background-color:blue;">审批通过发放奖励</button>
+            </div>
+        }
+    }
+
+    <div class="col-md-3">
+        <button type="button" id="unpass" data-userId="@Model.UserId" data-id="@Model.Id" class="btn btn-primary" style="background-color:blue;">审批不通过</button>
+    </div>
+    @*@if (Model.AuditStatus != EvltAuditStatusEnum.Ok.ToInt())//审批通过则不在显示审批不通过按钮
+        {
+
+        }*@
+
+    <div class="col-md-1"></div>
+</div>
+</div>
+

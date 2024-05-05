@@ -1,0 +1,188 @@
+{
+  "Tab": [
+    {
+      "Name": "内容数据",
+      "Index": 1
+    },
+    {
+      "Name": "院校总评",
+      "Index": 2
+    },
+    {
+      "Name": "学校视频",
+      "Index": 3
+    },
+    {
+      "Name": "师资力量及教学质量",
+      "Index": 4
+    },
+    {
+      "Name": "硬件设施及学生生活",
+      "Index": 5
+    }
+  ],
+  "Fields": [
+    {
+      "Name": "region",
+      "Text": "地区",
+      "TextFormat": "ClickOn",
+      "DBtable": "OnlineSchoolExtContent",
+      "DBfield": "province,city,area",
+      "TabIndex": 1,
+      "Sort": 1
+    },
+    {
+      "Name": "longitude",
+      "Text": "经度",
+      "TextFormat": "digital",
+      "DBtable": "OnlineSchoolExtContent",
+      "DBfield": "longitude",
+      "TabIndex": 1,
+      "Sort": 2
+    },
+    {
+      "Name": "latitude",
+      "Text": "纬度",
+      "TextFormat": "digital",
+      "DBtable": "OnlineSchoolExtContent",
+      "DBfield": "latitude",
+      "TabIndex": 1,
+      "Sort": 3
+    },
+    {
+      "Name": "address",
+      "Text": "地址",
+      "TextFormat": "Text",
+      "DBtable": "OnlineSchoolExtContent",
+      "DBfield": "address",
+      "TabIndex": 1,
+      "Sort": 4
+    },
+    {
+      "Name": "tel",
+      "Text": "电话",
+      "TextFormat": "digital",
+      "DBtable": "OnlineSchoolExtContent",
+      "DBfield": "tel",
+      "TabIndex": 1,
+      "Sort": 5
+    },
+    {
+      "Name": "lodging",
+      "Text": "走读/寄宿",
+      "TextFormat": "ClickOn",
+      "DBtable": "OnlineSchoolExtContent",
+      "DBfield": "lodging",
+      "TabIndex": 1,
+      "Sort": 6
+    },
+    {
+      "Name": "studentcount",
+      "Text": "学生人数",
+      "TextFormat": "digital",
+      "DBtable": "OnlineSchoolExtContent",
+      "DBfield": "studentcount",
+      "TabIndex": 1,
+      "Sort": 7
+    },
+    {
+      "Name": "teachercount",
+      "Text": "教师人数",
+      "TextFormat": "digital",
+      "DBtable": "OnlineSchoolExtContent",
+      "DBfield": "teachercount",
+      "TabIndex": 1,
+      "Sort": 8
+    },
+    {
+      "Name": "authentication",
+      "Text": "学校认证",
+      "TextFormat": "ClickOn",
+      "DBtable": "OnlineSchoolExtContent",
+      "DBfield": "authentication",
+      "TabIndex": 1,
+      "Sort": 9
+    },
+    {
+      "Name": "abroad",
+      "Text": "出国方向",
+      "TextFormat": "ClickOn",
+      "DBtable": "OnlineSchoolExtContent",
+      "DBfield": "abroad",
+      "TabIndex": 1,
+      "Sort": 10
+    },
+    {
+      "Name": "canteen",
+      "Text": "有没饭堂",
+      "TextFormat": "ClickOn",
+      "DBtable": "OnlineSchoolExtContent",
+      "DBfield": "canteen",
+      "TabIndex": 1,
+      "Sort": 11
+    },
+    {
+      "Name": "meal",
+      "Text": "伙食情况",
+      "TextFormat": "pictures,Text",
+      "DBtable": "OnlineSchoolExtContent",
+      "DBfield": "meal",
+      "TabIndex": 1,
+      "Sort": 12
+    },
+    {
+      "Name": "project",
+      "Text": "学校特色课程或项目",
+      "TextFormat": "pictures,Text",
+      "DBtable": "OnlineSchoolExtContent",
+      "DBfield": "project",
+      "TabIndex": 1,
+      "Sort": 13
+    },
+    {
+      "Name": "SeniorTea",
+      "Text": "高级教师数量",
+      "TextFormat": "digital",
+      "DBtable": "OnlineSchoolExtContent",
+      "DBfield": "SeniorTea",
+      "TabIndex": 2,
+      "Sort": 1
+    },
+    {
+      "Name": "characteristicTea",
+      "Text": "特级教师数量",
+      "TextFormat": "digital",
+      "DBtable": "OnlineSchoolExtContent",
+      "DBfield": "characteristicTea",
+      "TabIndex": 2,
+      "Sort": 2
+    },
+    {
+      "Name": "foreignTeaCount",
+      "Text": "外教人数",
+      "TextFormat": "digital",
+      "DBtable": "OnlineSchoolExtContent",
+      "DBfield": "foreignTeaCount",
+      "TabIndex": 2,
+      "Sort": 3
+    },
+    {
+      "Name": "creationdate",
+      "Text": "建校时间",
+      "TextFormat": "datetime",
+      "DBtable": "OnlineSchoolExtContent",
+      "DBfield": "creationdate",
+      "TabIndex": 2,
+      "Sort": 4
+    },
+    {
+      "Name": "acreage",
+      "Text": "建筑面积",
+      "TextFormat": "digital",
+      "DBtable": "OnlineSchoolExtContent",
+      "DBfield": "digital",
+      "TabIndex": 2,
+      "Sort": 5
+    }
+  ]
+}

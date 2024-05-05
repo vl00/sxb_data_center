@@ -1,0 +1,386 @@
+﻿@using iSchool;
+@using iSchool.Application.ViewModels;
+@using iSchool.Domain.Enum;
+@using iSchool.Domain.Modles;
+@using iSchool.Infrastructure;
+@model iSchool.Application.ViewModels.SchoolExtQualityDto
+@{
+    var ext = ViewBag.Ext as iSchool.Domain.SchoolExtension;
+    var menus = (ViewBag.Menus as List<ExtMenuItem>);
+    var schtype = new SchFType0(ext.SchFtype);
+    var schextImgs = Model.Imgs ?? Enumerable.Empty<UploadImgDto>();
+
+    ViewData["Title"] = "师资力量及教学质量";
+
+    var defaultLogo = "https://file.sxkid.com/images/school/default.png";
+    
+}
+
+@section css{
+    <link href="@(ViewBag.StaticFile)/cropper/4.0.0-beta/cropper.min.css" rel="stylesheet">
+    <link href="~/lib/cropper/main.css" rel="stylesheet">
+
+    <style>
+        #div_vdo {
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        .rich:empty:before {
+            content: attr(placeholder); /* element attribute*/
+            color: #d0c1c1;
+        }
+        /*焦点时内容为空*/
+        .rich:focus:before {
+            content: none;
+        }
+
+        .side-bar {
+            position: fixed;
+            bottom: 100px;
+            right: 25px;
+            font-size: 0;
+            line-height: 0;
+            z-index: 100;
+        }
+
+            .side-bar a {
+                width: 66px;
+                height: 66px;
+                display: inline-block;
+                margin-bottom: 2px;
+            }
+
+
+            .side-bar .icon-right {
+                background-position: 0 -62px;
+            }
+
+        #auditcard {
+            width: 500px;
+        }
+
+        .font-size{
+            font-size:12px;
+        }
+        .font-upload {
+            color: #00adff;
+        }
+    </style>
+}
+
+<div id="Step6" class="row">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-header">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h4><strong>总体</strong></h4>
+                    </div>
+                    <div class="col-md-6 text-right">
+                        <h4>@Math.Round(menus.Average(_ => _.Completion) * 100, 2, MidpointRounding.AwayFromZero)%</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                @{await Html.RenderPartialAsync("P_Menu_Step1");}
+                @for (var i = 0; i < menus.Count; i++)
+                {
+                    <div class="row form-group">
+                        <div class="col-md-6">
+                            <a href="/school/step@(i + 2)?sid=@ViewBag.sid&extid=@ViewBag.eid">@menus[i].Name</a>
+                        </div>
+                        <div class="col-md-6 text-right">@Math.Round(menus[i].Completion * 100, 2, MidpointRounding.AwayFromZero)%</div>
+                    </div>
+                }
+            </div>
+            @{await Html.RenderPartialAsync("P_Menu_Alg");}
+        </div>
+    </div>
+    <div class="col-md-9">
+        <div class="card">
+            <div class="card-header">
+                <h4>师资力量及教学质量</h4>
+                <div class="card-body">
+                    <h6 class="text-danger">
+                        *注意：标星号的字段将不列入完成度统计中
+                    </h6>
+                    @*校长风采*@
+                    <div class="form-group">
+                        <label class="form-control-label">校长风采</label><br />
+                        <input type="hidden" ac="1" />
+                        @*校长风采--图片*@
+                        <div class="row" ui-batch-uploadImg="@(SchoolImageEnum.Principal.ToInt())"
+                             data-title="@(EnumUtil.GetDesc(SchoolImageEnum.Principal))图片上传">
+                            <pre data-data style="display:none;">    
+@((schextImgs.FirstOrDefault(_ => _.Type == (byte)SchoolImageEnum.Principal)?.Items ?? Enumerable.Empty<UploadImgItemDto>()).ToJsonString(true))                        
+                            </pre>
+                        </div>
+
+                        @*校长风采--视频*@
+                        <div id="div_vdo" ui-batch-uploadVideo="@((int)VideoType.Principal)"
+                             data-title="@(EnumUtil.GetDesc(VideoType.Principal))">
+                            <pre data-data style="display:none;">@(((object)ViewBag.VideosInfo).ToJsonString(true))</pre>
+                        </div>
+                    </div>
+                    @*教师风采*@
+                    <div class="form-group">
+                        <label class="form-control-label">教师风采<i class="fa fa-star"></i></label>
+                        <div class="row" ui-batch-uploadImg="@(SchoolImageEnum.Teacher.ToInt())"
+                             data-title="@(EnumUtil.GetDesc(SchoolImageEnum.Teacher))图片上传">
+                            <pre data-data style="display:none;">      
+@((schextImgs.FirstOrDefault(_ => _.Type == (byte)SchoolImageEnum.Teacher)?.Items ?? Enumerable.Empty<UploadImgItemDto>()).ToJsonString(true))                         
+                            </pre>
+                        </div>
+                        <input type="hidden" ac="1" />
+                    </div>                    
+                    @*学校荣誉*@
+                    <div class="form-group">
+                        <label class="form-control-label">学校荣誉<i class="fa fa-star"></i></label>
+                        @if (SchUtils.Canshow2("学校荣誉", schtype))
+                        {                            
+                            <div class="row" ui-batch-uploadImg="@(SchoolImageEnum.SchoolHonor.ToInt())"
+                                 data-title="@(EnumUtil.GetDesc(SchoolImageEnum.SchoolHonor))图片上传">
+                                <pre data-data style="display:none;">    
+@((schextImgs.FirstOrDefault(_ => _.Type == (byte)SchoolImageEnum.SchoolHonor)?.Items ?? Enumerable.Empty<UploadImgItemDto>()).ToJsonString(true))                            
+                                </pre>
+                            </div>
+                            <input type="hidden" ac="1" />                                              
+                        }
+                        else
+                        {
+                            <span style="color:red;display:block;">该字段与所选学校类型无关</span>
+                        }
+                    </div>
+                    @*学生荣誉*@
+                    <div class="form-group">
+                        <label class="form-control-label">学生荣誉<i class="fa fa-star"></i></label>
+                        @if (SchUtils.Canshow2("学生荣誉", schtype))
+                        {
+                            <div class="row" ui-batch-uploadImg="@(SchoolImageEnum.StudentHonor.ToInt())"
+                                 data-title="@(EnumUtil.GetDesc(SchoolImageEnum.StudentHonor))图片上传">
+                                <pre data-data style="display:none;">    
+@((schextImgs.FirstOrDefault(_ => _.Type == (byte)SchoolImageEnum.StudentHonor)?.Items ?? Enumerable.Empty<UploadImgItemDto>()).ToJsonString(true))    
+                                </pre>
+                            </div>
+                            <input type="hidden" ac="1" />        
+                        }
+                        else
+                        {
+                            <span style="color:red;display:block;">该字段与所选学校类型无关</span>
+                        }
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="card-footer text-center">
+                <button type="button" class="save btn btn-outline-secondary" data-page="prev">上一页</button>
+                <button type="button" class="save btn btn-outline-secondary" data-page="last">下一页</button>
+            </div>
+        </div>
+    </div>
+    @*右下角审核意见*@
+    <div class="side-bar qx qx-doaudit" style="width:66px;">
+        <a href="javascript:void(0);" class="icon-right">
+            <img src="~/images/right.png" alt="" />
+        </a>
+        <div class="card" id="auditcard" style="display:none">
+            <div class="card-body">
+                <h5><strong>审核意见</strong></h5>
+                @Html.TextArea("textarea-CurrAuditMessage", ViewBag.CurrAuditMessage, 4, 4, new { @class = "form-control", @readonly = "readonly" })
+            </div>
+            <div class="card-footer">
+                <button class="btn btn-primary" id="hidebtn">隐藏</button>
+            </div>
+        </div>
+    </div>
+    <input type="hidden" name="Sid" value="@ViewBag.sid" />
+    <input type="hidden" name="Eid" value="@ViewBag.eid" />
+    <input type="hidden" id="isonlyjump" value="true" />
+
+    <!--  截图上传 模态框 -->
+    <div id="avatar-view" style="display:none">
+        <img class="logo" title="" data-original-title="上传学校" src="@(defaultLogo)" alt="Avatar">
+        <input id="logo" name="Schoollogo" value="@(defaultLogo)" type="hidden" />
+    </div>
+    @await Html.PartialAsync("avatar-content", new { })
+</div>
+
+@section Scripts{
+    <script src="~/js/chosen.ajaxaddition.jquery.js"></script>
+    <script src="~/js/schoolDataEnter.js?@(DateTime.Now.Ticks)"></script>
+    @*截图工具*@
+    <script src="@(ViewBag.StaticFile)/cropper/4.0.0-beta/cropper.min.js"></script>
+    <script src="~/lib/cropper/cropper.cut.js"></script>
+    @* <script src="https://cdn.bootcdn.net/ajax/libs/jquery-cropper/1.0.1/jquery-cropper.min.js"></script>*@
+    <script src="~/js/CropAvatarImgWin.js"></script>
+    <script src="~/js/batchUploadImg.js?@(DateTime.Now.Ticks)"></script>
+    <script src="~/js/batchUploadVideo.js"></script>
+    <script type="text/javascript">
+        if (typeof String.prototype.trim === 'undefined') {
+            String.prototype.trim = function () {
+                return this.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, '');
+            };
+        }
+    </script>
+    <script type="text/javascript">
+        var videoOption = {
+            videoPlaceholder: '只允许上传Mp4格式的视频!视频大小不能超过40M',
+            maxItemCount: -1,
+            uploadVideoUrl: '/school/upload?type=@((int)UploadType.Video)&id=@(ViewBag.eid)',
+            cover: jQuery.extend({}, jQuery.CropAvatarImgWin.getDefaultOption(), {
+                imgWidth: 686,
+                imgHeight: 386,
+                url: '/school/upload?type=@((int)UploadType.Gallery)&id=@(ViewBag.eid)',
+                placeholder: '最多可输入14个字符。',
+                maxImgDescLength: 14,
+            }),
+        };
+        var imgOption = {
+            imgWidth: 218,
+            imgHeight: 218,
+            url: '/school/upload?type=@((int)UploadType.Gallery)&id=@(ViewBag.eid)',
+            maxItemCount: -1,
+            placeholder: '请输入图片信息，最多可输入14个字符。',
+            maxImgDescLength: 14,
+        };
+
+        var _isonlyjump = false;
+        var ui_batch_uploadImg = []; //[(type,uiobj)]
+        var ui_batch_uploadVideo = []; //[(type,uiobj)]
+
+        jQuery(function () {
+            //init提示框
+            jQuery('[data-toggle="tooltip"]').tooltip();
+
+            // init图片上传ui组件
+            jQuery.each(jQuery('[ui-batch-uploadImg]'), function (_, x) {
+                x = jQuery(x);
+                ui_batch_uploadImg.push({
+                    type: x.attr('ui-batch-uploadImg'),
+                    obj: jQuery.batchUploadImg(jQuery.extend({}, imgOption, {
+                        el: x,
+                        onItemAdded: function (item, uiItem) {
+                            _isonlyjump = undefined;
+                        },
+                        onItemDel: function (item, uiItem) {
+                            _isonlyjump = undefined;
+                        },
+                    })),
+                });
+            });
+            // init视频上传ui组件
+            jQuery.each(jQuery('[ui-batch-uploadVideo]'), function (_, x) {
+                x = jQuery(x);
+                ui_batch_uploadVideo.push({
+                    type: x.attr('ui-batch-uploadVideo'),
+                    obj: jQuery.batchUploadVideo(jQuery.extend({}, videoOption, {
+                        el: x,
+                        onItemAdded: function (item, uiItem) {
+                            _isonlyjump = undefined;
+                        },
+                        onItemDel: function (item, uiItem) {
+                            _isonlyjump = undefined;
+                        },
+                        onItemChanged: function (item, uiItem) {
+                            _isonlyjump = undefined;
+                        },
+                    })),
+                });
+            });
+
+            //展开右下角审核意见
+            jQuery(".icon-right").on("click", function () {
+                jQuery(this).css("display", "none");
+                jQuery(".side-bar").css("width", "500px");
+                jQuery("#auditcard").css("display", "block");
+            });
+            //收回右下角审核意见
+            jQuery("#hidebtn").on("click", function () {
+                jQuery(".icon-right").css("display", "block");
+                jQuery(".side-bar").css("width", "66px");
+                jQuery("#auditcard").css("display", "none");
+                return false;
+            });
+
+            //提交
+            (function (b) {
+                jQuery('.save').on('click', function () {
+                    var o = {}, err;
+
+                    o.op = jQuery(this).attr('data-page');
+                    if (_isonlyjump == true) {
+                        if (o.op == "last") {//下一页
+                            window.location.replace('/school/step7?sid=' + jQuery("input[name=Sid]").val() + '&extid=' + jQuery("input[name=Eid]").val());
+                        }
+                        else {//上一页
+                            window.location.replace('/school/step5?sid=' + jQuery("input[name=Sid]").val() + '&extid=' + jQuery("input[name=Eid]").val());
+                        }
+                        _isonlyjump = true;
+                        return;
+                    }
+
+                    jQuery('#Step6 input[name]').each(function () {
+                        var it = jQuery(this), n = it.attr('name');
+                        o[n] = it.val();
+                    });
+
+                    o.imgs = jQuery.map(ui_batch_uploadImg, function (x) {
+                        var items = x.obj.getData();
+                        for (var i = 0, len = items.length; i < len; i++) {
+                            if (!jQuery.trim(items[i].desc)) err = '请输入图片信息';
+                        }
+                        return { type: x.type, items: items };
+                    });
+                    if (err) {
+                        return ShowAlert(err, -1);
+                    }
+
+                    o.Types = [],o.Videos = [], o.Covers = [], o.VideoDescs = [];
+                    jQuery.each(ui_batch_uploadVideo, function (_, x) {
+                        var items = x.obj.getData();
+                        for (var i = 0, len = items.length; i < len; i++) {
+                            if (!jQuery.trim(items[i].videoDesc)) err = '请输入视频封面信息';
+                            o.Types.push(x.type);
+                            o.Videos.push(items[i].videoUrl);
+                            o.Covers.push(items[i].cover);
+                            o.VideoDescs.push(items[i].videoDesc);
+                        }
+                    });                    
+
+                    //完成率
+                    var c = 0.0, ac = jQuery('[ac]').length;
+                    jQuery.each(o.imgs, function (_, x) {
+                        x.items && x.items.length && c++;
+                    });
+                    o.Completion = ac == 0 ? 0 : c / ac;
+                    
+                    if (err) {
+                        return ShowAlert(err, -1);
+                    }
+                    if (b) return;
+                    b = true, Loading('保存中...'); debugger;
+                    jQuery.post('/school/step6', o, function (res) {
+                        b = false, CloseLoading();
+                        if (res.state == 200) {
+                            ShowAlert('保存成功', 1000, function () {
+                                window.onbeforeunload = undefined;
+                                window.location.href = res.result;
+                            });
+                        } else {
+                            b = false, CloseLoading();
+                            ShowAlert('保存意外失败');
+                        }
+                    });
+
+                });
+            })();
+        });
+
+        function tryv(func, defv) {
+            try { return func(); }
+            catch { return defv; }
+        }
+    </script>
+}

@@ -1,0 +1,15 @@
+﻿@using Microsoft.Extensions.Configuration;
+@using Microsoft.Extensions.DependencyInjection;
+@{
+    ViewData["Title"] = "销售数据统计";
+
+    var config = this.Context.RequestServices.GetService<IConfiguration>();
+    var marketBaseUrl = config["BaseUrls:market"];
+}
+
+@{
+    <div style="height:100em;">
+        <iframe src="@(marketBaseUrl + "/#/orgStatistics")" frameborder="0" style="padding:0;margin:0;width:100%;height:100%;">
+        </iframe>
+    </div>
+}

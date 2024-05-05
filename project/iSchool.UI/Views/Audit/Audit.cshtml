@@ -1,0 +1,483 @@
+﻿@using iSchool;
+@using iSchool.Domain.Enum;
+@using iSchool.Infrastructure;
+@model iSchool.Application.Service.Audit.AnAuditQueryResult
+@{
+    // /school/preview.cshtml
+    ViewData["Title"] = "审核";
+    var sid = Model.SchoolId;
+
+    var isRead = (bool)ViewBag.isRead;
+    var allCmper = Model.Exts.Length <= 0 ? 0 : Math.Round((Model.Exts.Sum(_ => _.Completion * 100) / Model.Exts.Length), 2, MidpointRounding.AwayFromZero);
+
+    var austatus = Model.CurrAuditStatus == iSchool.Domain.Enum.SchoolAuditStatus.InAudit && Model.CurrAuditorId == Context.GetUserId()
+        ? iSchool.Domain.Enum.SchoolAuditStatus.UnAudit : Model.CurrAuditStatus;
+
+    var edusystype_SelListItems = EnumUtil.GetDescs<EduSysType>().Select(x => new SelectListItem { Text = x.Desc, Value = ((int)x.Value).ToString() })
+        .Prepend(new SelectListItem { Text = "请选择", Value = "" });
+
+    string fmtWebSite(string str)
+    {
+        if (string.IsNullOrEmpty(str)) return str;
+        if (str.StartsWith("http://", StringComparison.OrdinalIgnoreCase)) return str;
+        if (str.StartsWith("https://", StringComparison.OrdinalIgnoreCase)) return str;
+        return "http://" + str;
+    }
+}
+@section css
+{
+    <link href="@(ViewBag.StaticFile)/bootstrap-tagsinput/0.8.0/bootstrap-tagsinput.css" rel="stylesheet">
+    <style type="text/css">
+        .side-bar a, .chat-tips i {
+            background: url(right_bg.png) no-repeat;
+        }
+
+        .side-bar2 {
+            position: fixed;
+            bottom: 100px;
+            right: 25px;
+            font-size: 0;
+            line-height: 0;
+            z-index: 100;
+        }
+
+        .side-bar {
+            position: fixed;
+            bottom: 100px;
+            right: 25px;
+            font-size: 0;
+            line-height: 0;
+            z-index: 100;
+        }
+
+            .side-bar a {
+                width: 66px;
+                height: 66px;
+                display: inline-block;
+                margin-bottom: 2px;
+            }
+
+
+            .side-bar .icon-right {
+                background-position: 0 -62px;
+            }
+
+        #auditcard {
+            width: 500px;
+        }
+
+        .content {
+            padding-bottom: 200px;
+        }
+        /*腾讯地图*/
+        .map {
+            width: 100%;
+            height: 200px;
+        }
+        /*openday 下划线*/
+        #custom-nav-openday .openday .col-md-6, .RecData .col-md-6 {
+            border-bottom: solid 1px #dcdcdc;
+        }
+        /*tags样式*/
+        .label-info {
+            display: inline-block;
+            padding: 2px 4px;
+            font-size: 11.844px;
+            font-weight: bold;
+            line-height: 14px;
+            text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+            white-space: nowrap;
+            vertical-align: baseline;
+            background-color: #3a87ad;
+            margin-right: 2px;
+            color: white;
+        }
+
+        .bootstrap-tagsinput {
+            background-color: #fff;
+            border: 1px solid #ccc;
+            box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+            /*display: inline-block;*/
+            /*padding: 4px 6px;*/
+            padding: .375rem .75rem;
+            color: #555;
+            vertical-align: middle;
+            border-radius: 4px;
+            max-width: 100%;
+            line-height: 22px;
+            cursor: text;
+            width: 100%;
+        }
+
+        .sext {
+            margin-bottom: 5px;
+        }
+
+        .tbheader {
+            background-color: #bbb5b5;
+        }
+
+        .ext-header {
+            padding-left: 2px;
+            padding-right: 2px;
+        }
+
+        div.readonly {
+            background-color: #e9ecef;
+            opacity: 1;
+            display: block;
+            width: 100%;
+            min-height: calc(1.5em + .75rem + 2px);
+            padding: .375rem .75rem;
+            font-weight: 400;
+            line-height: 1.5;
+            color: #495057;
+            background-clip: padding-box;
+            border: 1px solid #ced4da;
+            border-radius: .25rem;
+        }
+    </style>
+}
+
+@*返回顶部*@
+<div class="side-bar2" style="width:66px;bottom:20px;">
+    <a href="javascript:void(0);">
+        <img src="~/images/gototop.png" alt="" />
+    </a>
+</div>
+
+@if (!isRead && Context.HasCurrQyx(".qx-doaudit"))
+{
+    @*置底按钮*@
+    <div class="card qx qx-doaudit" style="width:60%;position:fixed; bottom:0;z-index:999;">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8"></div>
+                <div class="col-md-4 text-right">
+                    <button type="button" ajax="ok" class="btn btn-primary btn-sm">发布</button>
+                    &nbsp;&nbsp;
+                    <button type="button" ajax="fail" class="btn btn-danger btn-sm">不通过</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @*右下角审核意见*@
+    <div class="side-bar qx qx-doaudit" style="width:66px;">
+        <a href="javascript:void(0);" class="icon-right">
+            <img src="~/images/right.png" alt="" />
+        </a>
+        <div class="card" id="auditcard" style="display:none">
+            <div class="card-body">
+                <h5><strong>审核意见</strong></h5>
+                <textarea id="auditcontent" rows="3" class="form-control"></textarea>
+                <h6 class="text-danger">
+                    *审核意见最多1000字
+                </h6>
+                <h6 class="text-danger">
+                    *当审核意见有内容时，无法做发布操作
+                </h6>
+                <h6 class="text-danger">
+                    *点击底栏“不通过”按钮，系统将自动上传审核意见
+                </h6>
+            </div>
+            <div class="card-footer">
+                <button class="btn btn-primary" id="hidebtn">隐藏</button>
+            </div>
+        </div>
+    </div>
+}
+
+@*审核表单*@
+<input id="data_schoolId" type="hidden" value="@Model.SchoolId" />
+<div class="card">
+    <div class="card-header">审核</div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="control-label mb-1">学校LOGO</label>
+                    <div>
+                        <img src="@Model.Logo" style="width:100px;height:100px;" />
+                        @*<button class="btn btn-secondary btn-sm">上传新LOGO</button>*@
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="control-label mb-1">学校名称</label>
+                    <input type="text" readonly="readonly" id="name" class="form-control" value="@Model.SchoolName" />
+                </div>
+                <div class="form-group">
+                    <label class="control-label mb-1">学校英文名称</label>
+                    <input type="text" readonly="readonly" id="ename" class="form-control" value="@Model.SchoolName_e" />
+                </div>
+                <div class="form-group">
+                    <label class="control-label mb-1">学校官网</label>
+                    <input type="text" readonly="readonly" id="url" class="form-control" value="@fmtWebSite(Model.WebSite)" />
+                </div>
+                <div class="form-group">
+                    <label class="control-label mb-1">学校学制</label>
+                    <select asp-for="EduSysType" asp-items="edusystype_SelListItems" class="form-control" disabled></select>
+                </div>
+                <div class="form-group">
+                    <label class="control-label mb-1">查看学部/分校</label>
+                    <div class="text-left">
+                        <span style="position:relative;">
+                            @foreach (var ext in Model.Exts)
+                            {
+                                @*(ViewBag.eid == null ? "" : "disabled")*@
+                                <button class="btn btn-secondary sext" data-extid="@ext.ExtId">@ext.ExtName @Math.Round(ext.Completion * 100, 2, MidpointRounding.AwayFromZero)%</button>
+                            }
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <br />
+                <div class="text-center" style="vertical-align:middle"><h2>完成度：@(allCmper)%</h2></div>
+                <br />
+                <div class="form-group">
+                    <label class="control-label mb-1">学校简介</label>
+                    @*<textarea name="textarea-input" id="textarea-input" rows="4" placeholder="" class="form-control"></textarea>*@
+                    @Html.TextArea("textarea-input", Model.Info, 4, 4, new { @class = "form-control", @readonly = "readonly" })
+                </div>
+                <div class="form-group">
+                    <label class="control-label mb-1">学校标签</label><br />
+                    <input id="tags" type="text" readonly="readonly" class="form-control" value="@string.Join(",", Model.Tags)">
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-4">
+                        <label class="control-label mb-1">当前审核状态：</label>
+                    </div>
+                    <div class="col-md-4">
+                        <strong>@EnumUtil.GetDesc(austatus)</strong>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="control-label mb-1">审核意见：</label>
+                    @*<div class="col-md-9" style="max-width">@(Model.CurrAuditMessage)</div>*@
+                    @Html.TextArea("textarea-CurrAuditMessage", Model.CurrAuditMessage, 4, 4, new { @class = "form-control", @readonly = "readonly" })
+                </div>
+                <div class="form-group">
+                    <a href="javascript:void(0);" id="history" class="text-primary" data-id="@Model.SchoolId">审核历史 >></a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<pre style="display:none;">PageQuery=@Context.Request.Cookies["PageQuery"]</pre>
+<pre style="display:none;">PageQuery=@Context.Items["PageQuery"]</pre>
+<input type="hidden" id="acmdid" value="@Model.Id" />
+<div ext="1" id="extContent_ext"></div>
+<div ext="1" id="extContent_content"></div>
+<div ext="2" id="extContent_recruit"></div>
+<div ext="2" id="extContent_course"></div>
+<div ext="2" id="extContent_charge"></div>
+<div ext="3" id="extContent_quality"></div>
+<div ext="3" id="extContent_life"></div>
+<div ext="4" id="extContent_alg1"></div>
+<div ext="5" id="extContent_alg2"></div>
+<div ext="6" id="extContent_alg3"></div>
+<div id="end_ext" style="display:none;text-align:center;background-color:#e9ecef;">版块已全部加载完了</div>
+
+@section Scripts{
+    <script type="text/javascript" src="https://map.qq.com/api/js?v=2.exp&key=Z66BZ-BLM3S-BCBOC-66J6X-ZGLRK-SWFVP&libraries=convertor"></script>
+    <script src="@(ViewBag.StaticFile)/bootstrap-tagsinput/0.8.0/bootstrap-tagsinput.min.js"></script>
+    <script src="~/js/jq.postJSON.js"></script>
+    <script src="~/js/microTemplate.js"></script>
+    <script src="~/js/schutils.js?t=@DateTime.Now.Ticks"></script>
+    <script type="text/javascript">
+        //只读输入框
+        var ReadOnlyInput = (function (b0) {
+            return function () {
+                jQuery(":input").attr("readonly", "readonly");
+                var tagsinput = jQuery("#tags").prev();
+                tagsinput.removeClass('bootstrap-tagsinput');
+                tagsinput.find("input").remove();
+                tagsinput.css("padding-bottom", "10px");
+                var rangeinput = jQuery("#range").prev();
+                rangeinput.removeClass('bootstrap-tagsinput');
+                rangeinput.find("input").remove();
+                rangeinput.css("padding-bottom", "10px");
+                jQuery("select").attr("disabled", true);
+                jQuery("#auditcontent").removeAttr("readonly");
+
+                if (b0) {
+                    b0 = undefined;
+                    jQuery('body').delegate('div[contenteditable=true]', 'click', function (e) { return e.preventDefault(), false });
+                    jQuery('body').delegate('div[contenteditable=true]', 'cut', function (e) { return e.preventDefault(), false });
+                    jQuery('body').delegate('div[contenteditable=true]', 'copy', function (e) { return e.preventDefault(), false });
+                    jQuery('body').delegate('div[contenteditable=true]', 'paste', function (e) { return e.preventDefault(), false });
+                    jQuery('body').delegate('div[contenteditable=true]', 'keydown', function (e) { return e.preventDefault(), false });
+                }
+            };
+        })(1);
+
+        //根据学校类型hide显示项
+        function hide_with_dataExt() {
+            try { hide_with_dataExt_core(); }
+            catch (ex) { }
+        }
+
+        jQuery(function () {
+            //审批历史
+            jQuery("#history").on("click", function () {
+                var id = jQuery(this).attr("data-id");
+                var o = { SchoolId: id, PageIndex: 1, PageSize: 10 };
+
+                jQuery('#gameContainer').html('获取数据中...');
+                jQuery('#gameModal').on('shown.bs.modal', function () {
+                    on_load();
+                }).modal('show');
+
+                function on_load() {
+                    jQuery.get("/audit/AuditHistorys", o, function (data) {
+                        jQuery('#gameContainer').html(data);
+                        //jQuery('#gameModal').attr('aria-hidden') == 'true' && jQuery('#gameModal').modal('show');
+                        jQuery('#gameContainer').find('a[data-dt-idx]').on('click', function () {
+                            var a = jQuery(this), pi = parseInt(a.attr('data-dt-idx'), 10);
+                            if (a.parent('li').hasClass('active')) return;
+                            if (a.parent('li').hasClass('disabled')) return;
+                            o.PageIndex = pi;
+                            on_load();
+                        });
+                    });
+                }
+
+                on_load();
+            });
+
+            //展开右下角审核意见
+            jQuery(".icon-right").on("click", function () {
+                jQuery(this).css("display", "none");
+                jQuery(".side-bar").css("width", "500px");
+                jQuery("#auditcard").css("display", "block");
+            });
+            //收回右下角审核意见
+            jQuery("#hidebtn").on("click", function () {
+                jQuery(".icon-right").css("display", "block");
+                jQuery(".side-bar").css("width", "66px");
+                jQuery("#auditcard").css("display", "none");
+            });
+            //当审核意见有内容时，无法做发布操作
+            jQuery('#auditcontent').on('keyup', function () {
+                var txt = jQuery(this).val();
+                if (txt || txt.length <= 0) jQuery('#btn_ok').removeAttr('disabled');
+                else jQuery('#btn_ok').attr('disabled', 'disabled');
+            });
+
+            //返回顶部
+            jQuery('div.side-bar2 a').on('click', function () {
+                jQuery('html,body').animate({ scrollTop: 0 }, 300); //? 0
+            });
+
+            //提交发布/不通过
+            (function (xdo) {
+                jQuery('[ajax]').on('click', function () {
+                    if (xdo) return;
+                    var isToOk = jQuery(this).attr('ajax') == 'ok';
+
+                    var txt = jQuery('#auditcontent').val();
+                    if (isToOk) {
+                        if (txt && txt.length > 0) {
+                            jQuery(".icon-right:visible").click();
+                            return ShowAlert('审核意见有内容时，无法做发布操作 ！');
+                        }
+                    } else {
+                        if (!txt || txt.length < 1) {
+                            jQuery(".icon-right:visible").click();
+                            return ShowAlert('请填写审核意见！');
+                        }
+                    }
+
+                    if (txt && txt.length > 1000) {
+                        return ShowAlert('审核意见超过了1000字', -1);
+                    }
+
+                    xdo = true, Loading('提交中...');
+                    var o = {};
+                    o.id = jQuery('#acmdid').val();
+                    o.msg = txt;
+                    o.fail = !isToOk;
+                    jQuery.postJSON('/audit/DoAudit', o).then(function (res) {
+                        CloseLoading();
+                        if (res.isOk) {
+                            ShowAlert('审核成功！');
+                            window.location.replace('/audit/index');
+                        } else {
+                            xdo = undefined, console.log(res);
+                            ShowAlert(res.msg || '意外失败');
+                        }
+                    }, function (res) {
+                        xdo = undefined, CloseLoading();
+                    });
+                });
+            })();
+
+            //展示校分部的详情(查看某个学部)
+            (function (f1, extId, index, loadFlag) {
+                jQuery(".sext").on("click", function () {
+                    var _extId = jQuery(this).attr("data-extid");
+                    if (_extId == extId) return false;
+                    extId = _extId;
+
+                    index = 1, jQuery('div[ext]').html('').attr('eid', extId), jQuery('#end_ext').hide();
+                    getData();
+                    f1 && on_scroll(getData), f1 = undefined;
+                    history.replaceState(null, '', '#extId=' + extId);
+                });
+                function getData() {
+                    if (loadFlag) return;
+                    loadFlag = true;
+
+                    var divs = jQuery('div[ext=' + index + ']'), m = new Array(divs.length);
+                    if (!m.length) {
+                        jQuery('#end_ext').show();
+                        return ok();
+                    }
+                    divs.html('加载中...').each(function (idx) {
+                        var div = jQuery(this), id = div.attr('id');
+                        jQuery.get('/audit/GetSchoolExtInfo', { extId: extId, type: id.replace(/^extContent_/, '') }, function (data) {
+                            if (div.attr('eid') != extId) {
+                                return;
+                            }
+                            m[idx] = { id, data };
+                            if (idx == 0) {
+                                for (var i = 0; i < m.length; i++) {
+                                    m[i] && jQuery('#' + m[i].id).html(m[i].data);
+                                }
+                                ok();
+                                index++;
+                            } else if (m[0]) {
+                                jQuery('#' + id).html(data);
+                            }
+                        });
+                    });
+                }
+                function ok() {
+                    loadFlag = false;
+                }
+                function on_scroll(cb) {
+                    window.addEventListener('scroll', function () {
+                        var a = document.documentElement.scrollTop || document.body.scrollTop;//滚动条y轴上的距离
+                        var b = document.documentElement.clientHeight || document.body.clientHeight;//可视区域的高度
+                        var c = document.documentElement.scrollHeight || document.body.scrollHeight;//可视化的高度与溢出的距离（总高度）
+                        if (a + b >= c - 100) {
+                            cb && cb();
+                        }
+                    }, true);
+                }
+            })(1);
+
+            //tags input
+            jQuery("#tags").tagsinput({
+                tagClass: "label-info", //设置样式
+                trimValue: true,//去空格
+                confirmKeys: [13, 32, 44, 59]
+            });
+
+            //只读所有input
+            ReadOnlyInput();
+        });
+    </script>
+}
+

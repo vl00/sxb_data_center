@@ -1,0 +1,101 @@
+﻿@using iSchool.Domain.Enum;
+@using iSchool.Infrastructure;
+@using iSchool.Application.ViewModels;
+@using iSchool.Domain.Modles;
+@{
+    var _model = Model as iSchool.Application.Service.Audit.SchoolExtQyResult_Life;
+    _model.Data = _model.Data ?? new iSchool.Domain.SchoolExtLife();
+
+    IEnumerable<UploadImgDto> schextImgs = Model.SchoolImages ?? Enumerable.Empty<UploadImgDto>();
+
+}
+
+<div id="step7-life" class="card">
+    <div class="card-header">
+        <div class="col-6">硬件设施及学生生活</div>
+        <div class="col-4">&nbsp;&nbsp;</div>
+        <div class="col-2">@(Math.Round((_model.Data?.Completion ?? 0f) * 100, 2, MidpointRounding.AwayFromZero))%</div>
+    </div>
+    <div class="card-body">
+        <h6 class="text-danger">
+            *注意：标星号的字段将不列入完成度统计中
+        </h6>
+        @*硬件设施*@
+    <div class="form-group">
+        <label class="form-control-label">硬件设施</label>
+        <div class="row" ui-batch-uploadImg="@(SchoolImageEnum.Hardware.ToInt())"  data-title="硬件设施图片上传">
+            <pre data-data style="display:none;">
+@((schextImgs.FirstOrDefault(_ => _.Type == (byte)SchoolImageEnum.Hardware)?.Items ?? Enumerable.Empty<UploadImgItemDto>()).ToJsonString(true))
+             </pre>
+        </div>
+    </div>
+        @*学生生活*@
+    <div class="form-group">
+        <label class="form-control-label">学生生活</label>
+        <br />
+        @*社团活动*@
+        <div class="form-group">
+            <span class="badge">社团活动<i class="fa fa-star"></i></span>
+            <div class="row" ui-batch-uploadImg="@(SchoolImageEnum.CommunityActivities.ToInt())" data-title="社团活动图片上传">
+                <pre data-data style="display:none;">
+@((schextImgs.FirstOrDefault(_ => _.Type == (byte)SchoolImageEnum.CommunityActivities)?.Items ?? Enumerable.Empty<UploadImgItemDto>()).ToJsonString(true))
+                </pre>
+            </div>
+        </div>
+        <br />
+        @*各年级课程表*@
+        <div class="form-group">
+            <span class="badge">各年级课程表 </span>
+            <div class="row" ui-batch-uploadImg="@(SchoolImageEnum.GradeSchedule.ToInt())" data-title="各年级课程表图片上传">
+                <pre data-data style="display:none;">
+@((schextImgs.FirstOrDefault(_ => _.Type == (byte)SchoolImageEnum.GradeSchedule)?.Items ?? Enumerable.Empty<UploadImgItemDto>()).ToJsonString(true))
+                </pre>
+            </div>
+        </div>
+        <br />
+        @*作息时间表*@
+        <div class="form-group">
+            <span class="badge">作息时间表<i class="fa fa-star"></i></span>
+            <div class="row" ui-batch-uploadImg="@(SchoolImageEnum.Schedule.ToInt())" data-title="作息时间表图片上传" >
+                <pre data-data style="display:none;">
+ @((schextImgs.FirstOrDefault(_ => _.Type == (byte)SchoolImageEnum.Schedule)?.Items ?? Enumerable.Empty<UploadImgItemDto>()).ToJsonString(true))
+                </pre>
+            </div>
+        </div>
+        <br />
+        @*校车路线*@
+        <div class="form-group">
+            <span class="badge">校车路线 </span>
+            <div class="row" ui-batch-uploadImg="@(SchoolImageEnum.Diagram.ToInt())" data-title="校车路线图片上传">
+                <pre data-data style="display:none;">
+@((schextImgs.FirstOrDefault(_ => _.Type == (byte)SchoolImageEnum.Diagram)?.Items ?? Enumerable.Empty<UploadImgItemDto>()).ToJsonString(true))
+                </pre>
+            </div>
+        </div>
+    </div>
+    </div>
+</div>
+<script type="text/javascript">
+    jQuery(function () {
+        //只读所有输入框
+        ReadOnlyInput();
+        //根据学校类型hide显示项
+        hide_with_dataExt();
+
+        // init图片上传ui组件
+        jQuery.each(jQuery('#step7-life [ui-batch-uploadImg]'), function (_, x) {
+            x = jQuery(x);
+            jQuery.batchUploadImg(jQuery.extend({}, imgOption, {
+                el: x,
+            }));
+        });
+        // init视频上传ui组件
+        jQuery.each(jQuery('#step7-life [ui-batch-uploadVideo]'), function (_, x) {
+            x = jQuery(x);
+            jQuery.batchUploadVideo(jQuery.extend({}, videoOption, {
+                el: x,
+            }));
+        });
+
+    });
+</script>

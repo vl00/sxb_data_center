@@ -1,0 +1,293 @@
+﻿@using iSchool.Domain.Enum;
+@using iSchool.Infrastructure;
+@using Newtonsoft.Json.Linq;
+@using static iSchool.Infrastructure.ObjectHelper;
+@{ 
+    var _model = Model as iSchool.Application.Service.Audit.SchoolExtQyResult_Alg2;
+    _model.Data = _model.Data ?? new iSchool.Application.Service.Alg2QyRstDto();
+}
+
+<style>
+    .div-part {
+        margin: 0.5em 0;
+    }
+    .cr-group label {
+        margin: 0 0.5em;
+    }
+</style>
+
+<div id="ext_Alg1" class="card">
+    <div class="card-header">
+        <div class="col-6">算法指标-经济</div>
+        <div class="col-4">&nbsp;&nbsp;</div>
+        <div class="col-2"></div>
+    </div>
+    <div class="card-body">
+        <div class="custom-tab">
+            <nav>
+                <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                    <a class="nav-item nav-link active show" id="tab_yj" data-toggle="tab" href="#custom-nav-yj" role="tab" aria-controls="custom-nav-yj" aria-selected="true">学校硬件</a>
+                    <a class="nav-item nav-link " id="tab_ss" data-toggle="tab" href="#custom-nav-ss" role="tab" aria-controls="custom-nav-ss" aria-selected="false">学校设施</a>   
+                </div>
+            </nav>
+            <div class="tab-content pl-3 pt-2" id="nav-tabContent">
+                @* 学校硬件 *@
+                <div class="tab-pane fade active show" id="custom-nav-yj" role="tabpanel" aria-labelledby="tab_yj">
+                    <div id="div_yj">
+                        <div class="form-group">
+                            <label class="form-control-label">占地面积</label>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <input type="text" readonly="readonly" class="form-control" value="@(_model.Data.Acreage)" />
+                                </div>
+                                <div class="col-md-3">
+                                    <select class="form-control" disabled>
+                                        @foreach (var (em, desc) in EnumUtil.GetDescs<AcreageUnit>())
+                                        {
+                                            if (em.GetName() == _model.Data.AcreageUnit)
+                                            {
+                                                <option>@(desc)</option>
+                                            }
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-control-label">投入金额</label>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <input type="text" readonly="readonly" class="form-control" value="@(_model.Data.Inputamount)"  />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-control-label">金额增幅</label>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <input type="text" readonly="readonly" class="form-control" value="@(_model.Data.MoneyDiff)" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @* 学校设施 *@
+                <div class="tab-pane fade" id="custom-nav-ss" role="tabpanel" aria-labelledby="tab_ss">
+                    <div id="div_ss">
+                        <div class="form-group">
+                            <strong class="form-control-label">校车</strong>
+                            <div class="row">
+                                <div class="col-md-4 form-inline">
+                                    <input type="text" readonly="readonly" class="form-control" value="@(_model.Data.SchbusCount)"  />
+                                    <label class="pr-1 form-control-label">辆</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <strong class="form-control-label">泳池</strong>
+                            <div class="row">
+                                <div class="col-12 cr-group" >
+                                    <label>
+                                        <input type="radio" @(_model.Data.HasSwimpool == true ? "checked=checked" : "") disabled />
+                                        <a>有</a>
+                                    </label>
+                                    <label>
+                                        <input type="radio" @(_model.Data.HasSwimpool == false ? "checked=checked" : "") disabled  />
+                                        <a>无</a>
+                                    </label>
+                                </div>
+                                @if (_model.Data.HasSwimpool == true)
+                                {
+                                    <text>
+                                <div class="col-md-4 div-part cr-group" cr1-group-ty=":radio" >
+                                    @foreach (var (em, desc) in EnumUtil.GetDescs<SwimpoolWhere>())
+                                    {
+                                    <label>
+                                        <input type="radio" @(_model.Data.SwimpoolWhere == ((byte)em) ? "checked=checked" : "") disabled />
+                                        <a>@desc</a>
+                                    </label>
+                                    }
+                                </div>
+                                <div class="col-md-4 div-part cr-group">
+                                    @foreach (var (em, desc) in EnumUtil.GetDescs<SwimpoolTemperature>())
+                                    {
+                                    <label>
+                                        <input type="radio" @(_model.Data.SwimpoolTemperature == ((byte)em) ? "checked=checked" : "") disabled />
+                                        <a>@desc</a>
+                                    </label>
+                                    }
+                                </div>
+                                <div class="col-md-4"></div>
+                                    </text>
+                                }
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <strong class="form-control-label">宿舍</strong>
+                            <div class="row">                                
+                                <div class="col-12 cr-group" cr1-group-ty=":radio" >
+                                    <label>
+                                        <input type="radio" @(_model.Data.HasLodging == true ? "checked=checked" : "") disabled />
+                                        <a>有</a>
+                                    </label>
+                                    <label>
+                                        <input type="radio" @(_model.Data.HasLodging == false ? "checked=checked" : "")  disabled />
+                                        <a>无</a>
+                                    </label>
+                                </div>
+                                @if (_model.Data.HasLodging == true)
+                                {
+                                <div class="col-12 cr-group div-part">
+                                    @foreach (var (em, desc) in EnumUtil.GetDescs<LodgingFacilities>())
+                                    {
+                                    <label>
+                                        <input type="checkbox" @(_model.Data.LodgingFacilities.Any(_ => _.Value == (int)em) ? "checked=checked" : "") disabled />
+                                        <a>@desc</a>
+                                    </label>
+                                    }
+                                </div>
+                                <div class="form-inline col-md-3 div-part" align="center">
+                                    <label class="pr-1 form-control-label">人均面积</label>
+                                </div>
+                                <div class="form-inline col-md-6 div-part">          
+                                    <input type="text" readonly="readonly" class="form-control" value="@(_model.Data.LodgingAreaperp)" >
+                                    <label class="pr-1 form-control-label">平方米</label>
+                                </div>
+                                <div class="col-md-3"></div>
+                                <div class="form-inline col-md-3 div-part " align="center">
+                                    <label class="pr-1 form-control-label">住宿人数</label>
+                                </div>
+                                <div class="form-inline col-md-6 div-part ">          
+                                    <input type="text" readonly="readonly" class="form-control" value="@(_model.Data.LodgingPersionNum)" >
+                                    <label class="pr-1 form-control-label">人</label>
+                                </div>
+                                }
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <strong class="form-control-label">图书馆</strong>
+                            <div class="row">
+                                <div class="form-inline col-md-3 div-part" align="center">
+                                    <label class="pr-1 form-control-label">藏书量</label>
+                                </div>
+                                <div class="form-inline col-md-6 div-part">          
+                                    <input type="text" readonly="readonly" class="form-control" value="@(_model.Data.LibyBookNum)" >
+                                    <label class="pr-1 form-control-label">册</label>
+                                </div>
+                                <div class="col-md-3"></div>
+                                <div class="form-inline col-md-3 div-part" align="center">
+                                    <label class="pr-1 form-control-label">人均面积</label>
+                                </div>
+                                <div class="form-inline col-md-6 div-part">          
+                                    <input type="text" readonly="readonly" class="form-control" value="@(_model.Data.LibyAreaperp)">
+                                    <label class="pr-1 form-control-label">平方米</label>
+                                </div>
+                                <div class="col-md-3"></div>
+                                <div class="form-inline col-md-3 div-part" align="center">
+                                    <label class="pr-1 form-control-label">人均藏书比例</label>
+                                </div>
+                                <div class="form-inline col-md-6 div-part">          
+                                    <input type="text" readonly="readonly" class="form-control" value="@(_model.Data.LibyBookper)" >
+                                    <label class="pr-1 form-control-label">%</label>
+                                </div>
+                                <div class="col-md-3"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <strong class="form-control-label">操场跑道</strong>
+                            <div class="row">
+                                <div class="col-12 cr-group" >
+                                    <label>
+                                        <input type="radio" @(_model.Data.HasPgd == true ? "checked=checked" : "") disabled />
+                                        <a>有</a>
+                                    </label>
+                                    <label>
+                                        <input type="radio" @(_model.Data.HasPgd == false ? "checked=checked" : "")  disabled />
+                                        <a>无</a>
+                                    </label>
+                                </div>
+                                @if (_model.Data.HasPgd == true)
+                                {
+                                <div class="col-12 cr-group div-part">
+                                    @foreach (var (em, desc) in EnumUtil.GetDescs<PgdLength>())
+                                    {
+                                    <label>
+                                        <input type="radio" @(_model.Data.PgdLength == (int)em ? "checked=checked" : "") disabled />
+                                        <a>@desc</a>
+                                    </label>
+                                    }
+                                </div>
+                                }
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <strong class="form-control-label">饭堂</strong>
+                            <div class="row">
+                                <div class="col-12 cr-group" >
+                                    <label>
+                                        <input type="radio" @(_model.Data.HasCanteen == true ? "checked=checked" : "") disabled />
+                                        <a>有</a>
+                                    </label>
+                                    <label>
+                                        <input type="radio" @(_model.Data.HasCanteen == false ? "checked=checked" : "")  disabled />
+                                        <a>无</a>
+                                    </label>
+                                </div>
+                                @if (_model.Data.HasCanteen == true)
+                                {
+                                <div class="form-inline col-md-3 div-part " align="center">
+                                    <label class="pr-1 form-control-label">餐数</label>
+                                </div>
+                                <div class="form-inline col-md-9 div-part ">          
+                                    <input type="text" readonly="readonly" class="form-control" value="@(_model.Data.CanteenNum)" >
+                                    <label class="pr-1 form-control-label">餐</label>
+                                </div>
+                                <div class="form-inline col-md-3 div-part " align="center">
+                                    <label class="pr-1 form-control-label">人均面积</label>
+                                </div>
+                                <div class="form-inline col-md-9 div-part ">          
+                                    <input type="text" readonly="readonly" class="form-control" value="@(_model.Data.CanteenAreaperp)" >
+                                    <label class="pr-1 form-control-label">平方米</label>
+                                </div>
+                                <div class="col-md-12 div-part ">
+                                    <label class="pr-1 form-control-label">饭堂卫生评级</label>
+                                    <div class="div-part readonly" readonly="true">@Html.Raw(_model.Data.CanteenHealthRate)</div>                                        
+                                </div>
+                                }
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <strong class="form-control-label">附加项</strong>
+                            <div class="row">
+                                <div class="form-inline col-md-3 div-part" align="center">
+                                    <label class="pr-1 form-control-label">卫生室</label>
+                                </div>
+                                <div class="form-inline col-md-9 div-part">          
+                                    <input type="text" readonly="readonly" class="form-control" value="@(_model.Data.HealthRoom)" >
+                                    <label class="pr-1 form-control-label">个</label>
+                                </div>
+                                <div class="form-inline col-md-3 div-part" align="center">
+                                    <label class="pr-1 form-control-label">steam科室</label>
+                                </div>
+                                <div class="form-inline col-md-9 div-part">          
+                                    <input type="text" readonly="readonly" class="form-control" value="@(_model.Data.SteamRoom)" >
+                                    <label class="pr-1 form-control-label">个</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    jQuery(function () {
+        //只读所有输入框
+        ReadOnlyInput();
+        //根据学校类型hide显示项
+        hide_with_dataExt();
+    });
+</script>
+

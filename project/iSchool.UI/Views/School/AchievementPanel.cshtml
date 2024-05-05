@@ -1,0 +1,218 @@
+﻿@using iSchool.Infrastructure;
+@model List<iSchool.Application.ViewModels.KeyValueDto<string>>
+@*<link href="@(ViewBag.StaticFile)/select2/4.0.6-rc.1/css/select2.min.css" rel="stylesheet">
+    <link href="@(ViewBag.StaticFile)/select2-bootstrap-css/1.4.6/select2-bootstrap.min.css" rel="stylesheet">*@
+<div class="modal-header">
+    <h5 class="modal-title" id="scrollmodalLabel">@(ViewBag.Year)年录入成绩</h5>
+    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+<div class="modal-body">
+    <pre id="json_achp" style="display:none;">@(Model.ToJsonString(true))</pre>   
+    <form id="ach-form">
+        <div class="card">
+            <div class="card-body">
+                <div class="form-group row">
+                    <div class="col-md-6 bg-dark text-white  form-control-label">学校名称</div>
+                    <div class="col-md-6 bg-dark text-white  form-control-label">录取人数</div>
+
+                </div>
+                <div id="ach-panel-content">
+                    @for (int i = 0; i < Model.Count; i++)
+                    {
+                        <div class="form-group row">
+                            <div class="col-md-6">                               
+                                <select data-placeholder="选择一个学校" class="standardSelect" tabindex="1" name="Id" style="width:200px" data-placement="bottom" required>
+                                    <option value="@(Model[i].Key)">@(Model[i].Value)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <input type="number" name="Count" value="@(Model[i].Message)" class="form-control" data-placement="bottom" required digits min="0" />
+                            </div>
+                            <div class="col-md-2">
+                                <a class="fa fa-minus-circle deleteachbutten  text-danger" href="javascript:void(0)"></a>
+                            </div>
+                        </div>
+                    }
+
+                </div>
+               
+                <div class="row">
+                    <div class="col-md-6"></div>
+                    <div class="col-md-6">
+                        <a href="javascript:void(0)" id="addschoolach" class="text-primary">添加成绩</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <input type="hidden" name="ExtId" value="@ViewBag.ExtId" />
+        <input type="hidden" name="Year" value="@ViewBag.Year" />
+        <input type="hidden" name="Grade" value="@ViewBag.Grade" />
+        <input type="hidden" name="Type" value="@ViewBag.Type" />
+        <div class="modal-footer">
+            <button type="button" id="cancel" class="btn btn-secondary" data-dismiss="modal">取消</button>
+            <button type="submit" id="SaveAchListForm" class="btn btn-primary">保存</button>
+        </div>
+    </form>
+</div>
+<div id="collegeSelect" style="display:none">   
+    <select data-placeholder="选择一个学校"  class="standardSelect" placement='bottom' required name="Id" tabindex="1" style="width:200px"></select>
+</div>
+@*<script src="@(ViewBag.StaticFile)/select2/4.0.6-rc.1/js/select2.min.js"></script>
+    <script src="@(ViewBag.StaticFile)/select2/4.0.6-rc.1/js/i18n/zh-CN.js"></script>*@
+<script type="text/javascript">
+    jQuery(function () {
+        
+        //初始化select2
+        InitAchSelect2("@Html.Raw(ViewBag.Grade == (byte)iSchool.Domain.Enum.SchoolGrade.SeniorMiddleSchool)",@Html.Raw((byte)ViewBag.Grade + 1));
+       
+        //删除按钮
+        jQuery("body").delegate(".deleteachbutten", "click", function () {
+            jQuery(this).parent().parent().remove();
+        });
+        //提交审核
+        jQuery("#ach-form").validate({
+            submitHandler: function (form) {
+                //计算完成率
+                var group = jQuery("#ach-panel-content .form-group");
+                var completion = 0;
+                if (group.length != 0) {
+                    jQuery.each(group, function (index, item) {
+                        var id = jQuery(this).find("select").val();
+                        var count = jQuery(this).find("input").val();
+                        if (jQuery.trim(id) && jQuery.trim(count)) {
+                            completion = 1;
+                            return false;
+                        }
+                    });
+                }
+                
+                var Id = [];
+                var prohibit = false;
+                jQuery.each(jQuery("#ach-form select[name=Id]"), function (index, id) {                   
+                    var idval = jQuery(id).val();
+                    if (idval == null) {
+                        ShowAlert("学校名称不允许为空，请重复录入");
+                        prohibit = true;
+                        return;
+                    }
+                    var i = jQuery.inArray(idval, Id);                    
+                    //界面学校重复
+                    if (i >= 0) {
+                        ShowAlert("该学校已存在，请勿重复录入");
+                        prohibit = true;
+                        return;
+                    }                       
+                    else {
+                        Id.push(idval);
+                    }
+                });                
+                var Count = [];
+                jQuery.each(jQuery("#ach-form input[name=Count]"), function (index, count) { 
+                    if (jQuery(count).val() == "") {
+                        ShowAlert("录取人数不允许为空，请重复录入");
+                        prohibit = true;
+                        return;
+                    }
+                     Count.push(jQuery(count).val());
+                });
+                var ExtId = jQuery("#ach-form input[name=ExtId]").val();
+                var year = jQuery("#ach-form input[name=Year]").val();
+                if (prohibit) return;
+                var data = { "Id": Id, "Count": Count, "ExtId": ExtId, "year": year, "Completion": completion};
+                //保存成绩
+                jQuery.post("@(Url.Action("SaveAchievementList"))", data, function (data) {
+                    
+                    if (data.state = 200) {
+                        ShowAlert("保存成绩列表成功！");
+
+                        jQuery("#achcontent-form input[name='achcompletion']").val(completion);
+                        //遍历所有的input，将内容显示在页面中
+                        if (window.achFn && achFn['after_save']) {
+                            var ds = jQuery.map(jQuery('#ach-panel-content .form-group'), function (g) {
+                                g = jQuery(g);
+                                return { k: g.find('span[title]').text(), v: g.find('[name=Count]').val() };
+                            });
+                            achFn['after_save'](ds);
+                        }
+                        jQuery("#ach-form #cancel").click();
+                    } else {
+                        ShowAlert(data.message);
+                    }
+
+                });
+              
+            }
+        });   
+
+        jQuery("#addschoolach").on("click", function () {
+            
+            var select = jQuery("#collegeSelect").html();
+            var html = "<div class='form-group row'><div class='col-md-6' >" + select + "</div ><div class='col-md-4'><input type='number' name='Count'  required digits min='0' class='form-control' placement='bottom' /></div> <div class='col-md-2'><a class='fa fa-minus-circle deleteachbutten  text-danger' href='javascript:void(0)'></a></div></div >";
+            jQuery("#ach-panel-content").append(html);    
+            InitAchSelect2("@Html.Raw(ViewBag.Grade == (byte)iSchool.Domain.Enum.SchoolGrade.SeniorMiddleSchool)",@Html.Raw((byte)ViewBag.Grade + 1));
+            jQuery("#gameModal").scrollTop(9999);           
+           
+        });
+    });
+    
+    function InitAchSelect2(isCollage, grade) {
+        
+        jQuery("#ach-form .standardSelect" ).select2({
+                    ajax: {
+                        url: "@Url.Action("SearchSachSchool")",
+                        dataType: 'json',
+                        type: 'get',
+                        data: function (params) {
+                            return {
+                            "top": 10,
+                            "isCollage": isCollage,
+                            "grade":grade,
+                            "data[q]": params.term
+                            };
+                        },
+                        processResults: function (data) {
+                            //data返回数据
+                            var options = new Array();
+                            jQuery(data.results).each(function (i, o) {
+                                options.push({
+                                    //获取select2个必要的字段，id与text
+                                    id: o.id,         //取出items中Code赋值给id
+                                    text: o.text    //取出items中CodeName赋值给text
+                                });
+                            });
+                            return {
+                                results: options        //返回数据
+                            };
+                        },
+                        cache: true
+                    },
+                    placeholder: "输入学校名字搜索...",
+                    allowClear: false,    //选中之后，可手动点击删除
+                    escapeMarkup: function (markup) { return markup; }, // 字符转义处理自定义格式化防止xss注入
+                    formatResult: function formatRepo(repo) { return repo.text; }, // 函数用来渲染结果
+                    formatSelection: function formatRepoSelection(repo) 
+                    { return repo.text; } // 函数用于呈现当前的选择
+        });
+        jQuery("#ach-panel-content select[name=Id]").on("select2:select", function (obj) {
+            
+            var onselectobj = jQuery(this);
+            onselectobj.parent("div").children(".tip").remove();
+            var count=0
+            jQuery.each(jQuery("#ach-form select[name=Id]"), function (index, id) {
+                if (onselectobj.val()== jQuery(id).val()) {
+                    ++count;                    
+                }
+                
+            });
+            debugger;
+            if (count >= 2) {
+                onselectobj.parent("div").append("<span class='tip' style='color: crimson'>该学校已存在</span>");
+                onselectobj.focus();
+            }
+           
+        });
+    }
+   
+</script>

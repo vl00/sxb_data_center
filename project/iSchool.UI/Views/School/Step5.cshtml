@@ -1,0 +1,807 @@
+﻿@using iSchool;
+@using iSchool.Domain.Enum;
+@using iSchool.Domain.Modles;
+@using iSchool.Infrastructure;
+@using iSchool.Infrastructure.Common;
+@model iSchool.Application.ViewModels.SchoolExtChargeDto
+@{
+    var listNewYear = TimeHelp.GetNewYearist();
+    var currentYear = DateTime.Now.Year;
+    var ext = ViewBag.Ext as iSchool.Domain.SchoolExtension;
+    var menus = (ViewBag.Menus as List<ExtMenuItem>);
+    var schtype = new SchFType0(ext.SchFtype);
+    var listApplicationFee = Model.YearTagList.FirstOrDefault(x => x.Field == SchoolExtFiledYearTag.Applicationfee.GetName());/*.OrderByDescending(x => x.Year).ToList();*/
+    var listSchoolTuition = Model.YearTagList.FirstOrDefault(x => x.Field == SchoolExtFiledYearTag.Tuition.GetName());/*.OrderByDescending(x => x.Year).ToList();*/
+    var listOtherFee = Model.YearTagList.FirstOrDefault(x => x.Field == SchoolExtFiledYearTag.Otherfee.GetName());
+    ViewData["Title"] = "收费标准";
+    var payFeeDefaultYear = DateTime.Now.Year - 1;
+}
+@*自定义控件需要引入addTagHelper*@
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, iSchool.UI
+@section css{
+    <style type="text/css">
+        .side-bar {
+            position: fixed;
+            bottom: 100px;
+            right: 25px;
+            font-size: 0;
+            line-height: 0;
+            z-index: 100;
+        }
+
+            .side-bar a {
+                width: 66px;
+                height: 66px;
+                display: inline-block;
+                margin-bottom: 2px;
+            }
+
+
+            .side-bar .icon-right {
+                background-position: 0 -62px;
+            }
+
+        #auditcard {
+            width: 500px;
+        }
+        /*年份标签按钮默认样式*/
+        .btnCommon {
+            color: #000;
+            /*background-color: #FFF0F5;*/
+            border-color: #F5F5F5;
+            border-width: 2px;
+            margin: 5px;
+        }
+        /*选中样式*/
+        .btn-red {
+            color: #000;
+            background-color: #FFF0F5;
+            border-color: #F5F5F5;
+            border-width: 2px;
+            margin: 5px;
+        }
+        /*删除样式*/
+        .btn-grey {
+            color: #000;
+            background-color: #DCDCDC;
+            border-color: #F5F5F5;
+            border-width: 2px;
+            margin: 5px;
+        }
+
+        .div-addyear {
+            border: 2px solid #F5F5F5;
+        }
+    </style>
+}
+@{await Html.RenderPartialAsync("/Views/YearTagFieldExtendView/YearTagSetp5Ext.cshtml");}
+<form id="step5-form" action="@Url.Action("Step5")" method="post">
+    <div class="row">
+        <div class="col-md-3">
+            @*card*@
+            <div class="card">
+                @*header*@
+                <div class="card-header">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h4><strong>总体</strong></h4>
+                        </div>
+                        <div class="col-md-6 text-right">
+                            <h4>@Math.Round(menus.Average(_ => _.Completion) * 100, 2, MidpointRounding.AwayFromZero)%</h4>
+                        </div>
+                    </div>
+                </div>
+                @*card-body*@
+                <div class="card-body">
+                    @{await Html.RenderPartialAsync("P_Menu_Step1");}
+                    @for (var i = 0; i < menus.Count; i++)
+                    {
+                        <div class="row form-group">
+                            <div class="col-md-6">
+                                <a href="/school/step@(i + 2)?sid=@ViewBag.sid&extid=@ViewBag.eid">@menus[i].Name</a>
+                            </div>
+                            <div class="col-md-6 text-right">@Math.Round(menus[i].Completion * 100, 2, MidpointRounding.AwayFromZero)%</div>
+                        </div>
+                    }
+                    @*<div class="row form-group">
+                            <div class="col-md-6">学校概况</div>
+                            <div class="col-md-6 text-right">@Math.Round(menus.FirstOrDefault(_ => _.Name == "学校概况")?.Completion * 100 ?? 0, 2, MidpointRounding.AwayFromZero)%</div>
+                        </div>
+                        <div class="row form-group">
+                            <div class="col-md-8">招生简章</div>
+                            <div class="col-md-4 text-right">@Math.Round(menus.FirstOrDefault(_ => _.Name == "招生简章")?.Completion * 100 ?? 0, 2, MidpointRounding.AwayFromZero)%</div>
+                        </div>
+                        <div class="row form-group">
+                            <div class="col-md-8">课程体系</div>
+                            <div class="col-md-4 text-right">@Math.Round(menus.FirstOrDefault(_ => _.Name == "课程体系")?.Completion * 100 ?? 0, 2, MidpointRounding.AwayFromZero)%</div>
+                        </div>
+                        <div class="row form-group">
+                            <div class="col-md-8">收费标准</div>
+                            <div class="col-md-4 text-right">@Math.Round(menus.FirstOrDefault(_ => _.Name == "收费标准")?.Completion * 100 ?? 0, 2, MidpointRounding.AwayFromZero)%</div>
+                        </div>
+                        <div class="row form-group">
+                            <div class="col-md-8">师资力量及教学质量</div>
+                            <div class="col-md-4 text-right">@Math.Round(menus.FirstOrDefault(_ => _.Name == "师资力量及教学质量")?.Completion * 100 ?? 0, 2, MidpointRounding.AwayFromZero)%</div>
+                        </div>
+                        <div class="row form-group">
+                            <div class="col-md-8">硬件设施及学生生活</div>
+                            <div class="col-md-4 text-right">@Math.Round(menus.FirstOrDefault(_ => _.Name == "硬件设施及学生生活")?.Completion * 100 ?? 0, 2, MidpointRounding.AwayFromZero)%</div>
+                        </div>*@
+                </div>
+                @{await Html.RenderPartialAsync("P_Menu_Alg");}
+            </div>
+        </div>
+        @*收费标准*@
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header">
+                    <h4>
+                        收费标准
+                    </h4>
+                </div>
+                <div class="card-body">
+                    @*申请费用*@
+                    <div class="form-group">
+                        <label class="control-label mb-1">申请费用</label>
+                        @if (SchUtils.Canshow2("申请费用", schtype))
+                        {
+                            @if (listApplicationFee != null)
+                            {
+                                <div yearfield="Applicationfee" class="row" style="margin-left:2px;">
+                                    @*展示年份标签*@
+                                    <CustomYearsBtnShow field=@listApplicationFee.Field latest-year=@listApplicationFee.Year.ToString() years=@listApplicationFee.Years></CustomYearsBtnShow>
+                                </div>
+                                <input type="hidden" id="jsonhid_Year_@listApplicationFee.Field" class="c_ignore hid_json_value" value='[]' />
+                                <div class="row app_fee_container notnull" id="show_input_item_@listApplicationFee.Field" hidden="hidden" data-primarykey="@listApplicationFee.Id" style="margin-bottom:20px;margin-left:5px">
+                                    <div class="form-inline col-md-auto">
+                                        <div class="form-inline" style="align-items:baseline;margin-right:0px">
+                                            <CustomYears name=@listApplicationFee.Field data=@listApplicationFee.Years fields=@listApplicationFee.Field set-value=@listApplicationFee.Year></CustomYears>
+                                        </div>
+                                        <input type="number" class="form-control" checkednull="" name="Year_Applicationfee" value="@listApplicationFee.Content" data-update="Y" onkeyup="(this.v=function(){this.value=this.value.replace(/[^0-9-]+/,'');}).call(this)" onblur="this.v();" />
+                                        <label class="pr-1  form-control-label">元</label>
+                                    </div>
+                                    <div class="col-md-5 form-inline">
+                                        <a href="javascript:void(0);" data-input="@(listApplicationFee.Field+ "|Year_Applicationfee")" onclick="DelAndClear(this)" class="fa fa-minus-circle deletebutten text-danger" style="display: block;"></a><span id="span_@(listApplicationFee.Field)" hidden="hidden">已编辑</span>
+                                    </div>
+                                    <div class="col-md-8"></div>
+                                </div>
+                                <hr />
+                            }
+                           
+                            <script type="text/html" id="application_fee_addbtn_year">
+                                <customnewotheryears data=@(listApplicationFee==null?listNewYear:listApplicationFee.NewOtherYears) set-value=@currentYear></customnewotheryears>
+                            </script>
+                            <div ac="1" class="row" id="application_fee_addbtn">
+                                <div class="col-md-6 form-inline">
+                                    <button type="button" onclick="AddApplicactionFee('application_fee_addbtn')" class="btn btn-info">添加年份</button>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <span style="color:red;display:block;">该字段与所选学校类型无关</span>
+                        }
+                    </div>
+
+                    @*学费*@
+                    <div class="form-group">
+                        <label class="form-control-label">学费</label>
+                        @if (SchUtils.Canshow2("e5.tuition", schtype))
+                        {
+                            @if (listSchoolTuition != null)
+                            {
+                                <div yearfield="Tuition">
+                                    @*年份展示标签*@
+                                    <CustomYearsBtnShow field=@listSchoolTuition.Field latest-year=@listSchoolTuition.Year.ToString() years=@listSchoolTuition.Years></CustomYearsBtnShow>
+                                </div>
+                                <input type="hidden" id="jsonhid_Year_@listSchoolTuition.Field" class="c_ignore hid_json_value" value='[]' />
+                                <div class="row school_tuistion_container notnull" id="show_input_item_@listSchoolTuition.Field" hidden="hidden" data-primarykey="@listSchoolTuition.Id" style="margin-bottom:20px;margin-left:5px">
+                                    <div class="form-inline col-md-auto">
+                                        <div class="form-inline" style="align-items:baseline;margin-right:0px">
+                                            <CustomYears name=@listSchoolTuition.Field data=@listSchoolTuition.Years fields=@listSchoolTuition.Field set-value=@listSchoolTuition.Year></CustomYears>                                            
+                                        </div>
+                                        <input type="number" class="form-control" checkednull="" name="Year_Tuition" value="@listSchoolTuition.Content" data-update="Y" onkeyup="(this.v=function(){this.value=this.value.replace(/[^0-9-]+/,'');}).call(this)" onblur="this.v();" />
+                                        <label class="pr-1  form-control-label">元</label>
+                                    </div>
+                                    <div class="col-md-5 form-inline">
+                                        <a href="javascript:void(0);" data-input="@(listSchoolTuition.Field+ "|Year_Tuition")" onclick="DelAndClear(this)" class="fa fa-minus-circle deletebutten text-danger" style="display: block;"></a><span id="span_@(listSchoolTuition.Field)" hidden="hidden">已编辑</span>
+                                    </div>
+                                    <div class="col-md-8"></div>
+                                </div>
+                                <hr />
+                            }
+                           
+                            <script type="text/html" id="school_tuition_addbtn_year">
+                                <customnewotheryears data=@(listSchoolTuition==null?listNewYear:listSchoolTuition.NewOtherYears) set-value=@currentYear></customnewotheryears>
+                            </script>
+                            <div ac="1" class="row" id="school_tuition_addbtn">
+                                <div class="col-md-6 form-inline">
+                                    <button type="button" onclick="AddSchoolTuition('school_tuition_addbtn')" class="btn btn-info">添加年份</button>
+                                </div>
+                            </div>
+
+                        }
+                        else
+                        {
+                            <span style="color:red;display:block;">该字段与所选学校类型无关</span>
+                        }
+                    </div>
+
+                    @*其它费用*@
+                    <div class="form-group">
+                        <label class="form-control-label">其它费用</label>
+                        @if (SchUtils.Canshow2("e5.Otherfee", schtype))
+                        {
+                            @if (listOtherFee != null)
+                            {
+                                <div yearfield="Otherfee" id="Otherfeebtn" >
+                                    @*年份展示标签*@
+                                    <CustomYearsBtnShow field=@listOtherFee.Field latest-year=@listOtherFee.Year.ToString() years=@listOtherFee.Years page-cache-input-id=@("dbdataofyearfield")></CustomYearsBtnShow>
+                                </div>
+                                <input type="hidden" id="jsonhid_Year_@listOtherFee.Field" class="c_ignore hid_json_value" value='[]' />
+                                <div class="row other_fee_container notnull" id="show_input_item_@listOtherFee.Field" hidden="hidden" data-primarykey="@listOtherFee.Id" style="margin-bottom:20px;margin-left:5px">
+                                    <div class="form-inline" style="align-items:baseline;margin-right:0px">
+                                        <CustomYears name=@listOtherFee.Field data=@listOtherFee.Years fields=@listOtherFee.Field set-value=@listOtherFee.Year></CustomYears>
+                                    </div>
+                                    <div id="@(listOtherFee.Field + "_Content")">
+                                        @*动态加载输入项*@
+                                    </div>
+                                </div>
+                                <hr />
+                            }                           
+                            <script type="text/html" id="otherfee_year_addbtn_year">
+                                <customnewotheryears data=@(listOtherFee==null?listNewYear:listOtherFee.NewOtherYears) set-value=@currentYear></customnewotheryears>
+                            </script>
+                            <div ac="1" class="row" id="otherfee_year_addbtn">
+                                <div class="col-md-6 form-inline">
+                                    <button type="button" onclick="AddOtherfee('otherfee_year_addbtn')" class="btn btn-info">添加年份</button>
+                                </div>
+                            </div>
+                         
+                        }
+                        else
+                        {
+                            <span style="color:red;display:block;">该字段与所选学校类型无关</span>
+                        }
+                    </div>
+                </div>
+                <div class="card-footer text-center">
+                    <button type="button" class="save btn btn-outline-secondary" data-page="prev">上一页</button>
+                    <button type="button" class="save btn btn-outline-secondary" data-page="last">下一页</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @*右下角审核意见*@
+    <div class="side-bar qx qx-doaudit" style="width:66px;">
+        <a href="javascript:void(0);" class="icon-right">
+            <img src="~/images/right.png" alt="" />
+        </a>
+        <div class="card" id="auditcard" style="display:none">
+            <div class="card-body">
+                <h5><strong>审核意见</strong></h5>
+                @Html.TextArea("textarea-CurrAuditMessage", ViewBag.CurrAuditMessage, 4, 4, new { @class = "form-control", @readonly = "readonly" })
+            </div>
+            <div class="card-footer">
+                <button class="btn btn-primary" id="hidebtn">隐藏</button>
+            </div>
+        </div>
+    </div>
+
+    <input type="hidden" name="Sid" value="@ViewBag.sid" />
+    <input type="hidden" name="Eid" value="@ViewBag.eid" />
+</form>
+@*<script id="otherfee-hide" type="text/template">
+        <%
+        for (var i = 0, len = data.length; i < len; i++) {
+        var item = data[i];
+        var t = '' + (+new Date()) + i;
+        var okey = 'Otherfee.Key_' + t;
+        var oval = 'Otherfee.Value_' + t;
+        %>
+        <div class="row form-group" otherfee-item="1" style="margin-left:10px">
+            <div class="form-inline" style="align-items:baseline;margin-right:15px">
+                <select class="form-control yeartag" Otherfee-d-type="Year" data-setdisabled="<%=(item && !!(item.value||item.diabled))%>" data-selval="<%=((item && item.year)?item.year:@(payFeeDefaultYear))%>"> </select>
+            </div>
+            <div class="col-md-4">
+                <input type="text" placeholder="输入费用项" class="form-control" name="<%=okey%>" Otherfee-d-type="Key" valid-key="true" value="<%=(item && item.key)%>">
+                <span data-valmsg-for="<%=okey%>" class="text-danger"></span>
+            </div>
+            <div class="col-md-4 form-inline">
+                <input type="text" placeholder="请输入" class="form-control" name="<%=oval%>" Otherfee-d-type="Value" number="true" value="<%=(item && item.value)%>">
+                <label class="pr-1  form-control-label">元</label>
+                <span data-valmsg-for="<%=oval%>" class="text-danger"></span>
+            </div>
+            <div class=" form-inline">
+                <a href="javascript:void(0);" class="fa fa-minus-circle deletebutten text-danger" style="display: block;"></a>
+            </div>
+        </div>
+        <% } %>
+    </script>*@
+
+@*yearfield--cache db data*@
+<input hidden="hidden" id="dbdataofyearfield" value="[]" /> 
+<input hidden="hidden" id="isonlyjump" value="true" />
+@section Scripts{
+    <script src="~/js/yeartagselect.js"></script>
+    <script src="~/js/microTemplate.js"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/js/schoolDataEnter.js?@(DateTime.Now.Ticks)"></script>
+    <script src="~/yearfield/yearfieldCommon.js"></script>    
+    <script src="~/CommonHelp.js"></script>
+    <script type="text/javascript">
+        if (typeof String.prototype.trim === 'undefined') {
+            String.prototype.trim = function () {
+                return this.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, '');
+            };
+        }
+    </script>
+    <script type="text/javascript">
+
+        jQuery(function () {
+           
+            jQuery.validator.addMethod("number", function (value, element) {
+                return value == '' || (jQuery.isNumeric(value) && parseFloat(value, 10) >= 0);
+                //return (jQuery.isNumeric(value) && parseFloat(value, 10) >= 0);
+            });
+            jQuery.validator.addMethod("valid-key", function (value, element) {
+                if (jQuery('[name="' + element.name.replace(/Key_/, 'Value_') + '"]').val().trim().length > 0)
+                    return value.trim().length > 0;
+                return true;
+            });
+            jQuery.extend(jQuery.validator.messages, {
+                number: '请输入有效的数字',
+                'valid-key': '请输入费用项目名称',
+            });
+            jQuery('#step5-form').validate({
+                errorPlacement: function (error, element) {
+                    error.appendTo(element.parent().find('span[data-valmsg-for]'));
+                }
+            });
+
+            //展开右下角审核意见
+            jQuery(".icon-right").on("click", function () {
+                jQuery(this).css("display", "none");
+                jQuery(".side-bar").css("width", "500px");
+                jQuery("#auditcard").css("display", "block");
+            });
+            //收回右下角审核意见
+            jQuery("#hidebtn").on("click", function () {
+                jQuery(".icon-right").css("display", "block");
+                jQuery(".side-bar").css("width", "66px");
+                jQuery("#auditcard").css("display", "none");
+                return false;
+            });
+
+            //save
+            (function (busy) {
+                jQuery('.save').on('click', function () {
+                    if (!jQuery('#step5-form').valid()) return;
+
+                    //检查输入框是否，为空则提示并阻止保存
+                    if (CheckIsNull("step5-form")) return;
+                    var o = { Otherfee: [] };
+                    jQuery('#step5-form [name]').each(function () {
+                        var it = jQuery(this), n = it.attr('name');
+                        if (it.attr('Otherfee-d-type')) return;
+                        o[n] = it.val();
+                    });
+                    jQuery('div[otherfee-item]').each(function () {
+                        var div = jQuery(this), x = {};
+                        div.find('[Otherfee-d-type]').each(function () {
+                            x[jQuery(this).attr('Otherfee-d-type')] = jQuery(this).val();
+                        });
+                        if (!x.Key) return;
+                        o.Otherfee.push(x);
+                    });
+                    o.op = jQuery(this).attr('data-page');
+                    o.ac = jQuery('#step5-form [ac]').length;
+                    onSchoolTuitionSave();//学费
+                    onApplicationFeeSave();//申请费用
+                    onOtherfeeSave();//其它费用
+
+                    jQuery("#Otherfeebtn button").each(function () {   //招生日期特殊处理                     
+                        if (jQuery(this).attr('more-input-state')) {
+                            jQuery("#isonlyjump").val('false');
+                        }
+                    });
+                    if (jQuery("#isonlyjump").val() == "true" && listfieldyeartags.length <= 0) {
+
+                        if (o.op == "last") {//下一页
+                            window.location.replace('/school/step6?sid=' + jQuery("input[name=Sid]").val() + '&extid=' + jQuery("input[name=Eid]").val());
+                        }
+                        else {//上一页
+                            window.location.replace('/school/step4?sid=' + jQuery("input[name=Sid]").val() + '&extid=' + jQuery("input[name=Eid]").val());
+                        }
+                        jQuery("#isonlyjump").val('true');
+                        return;
+                    }
+
+                    if (listfieldyeartags.length > 0) {
+                        for (var i = 0; i < listfieldyeartags.length; i++) {
+
+                            var target = listfieldyeartags[i];
+                            //删除操作不判断
+                            if (target.isvalid) { }
+                            else {
+                                for (var j = 0; j < listfieldyeartags.length; j++) {
+                                    //删除操作不判断
+                                    var ntarget = listfieldyeartags[j];
+                                    if (undefined != target.isvalid) { }
+                                    else {
+                                        if (target.year == ntarget.year && target.field == ntarget.field && i != j) {
+                                            ShowAlert("不能添加相同年份的数据,错误位置:" + getfieldname(target.field));
+                                            listfieldyeartags = [];
+                                            return false;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    //获取年份字段更改记录
+                    o.yearslist = YearsField.getYearslistChanges(o.yearslist, listfieldyeartags, jQuery('.hid_json_value'));
+                    //用于计算完成率
+                    jQuery('[yearfield=Applicationfee] button.btnyearclick:not(.btn-grey)').length && o.yearslist.splice(0, 0, { field: 'Applicationfee', act: -1 });
+                    jQuery('[yearfield=Tuition] button.btnyearclick:not(.btn-grey)').length && o.yearslist.splice(0, 0, { field: 'Tuition', act: -1 });
+                    jQuery('[yearfield=Otherfee] button.btnyearclick:not(.btn-grey)').length && o.yearslist.splice(0, 0, { field: 'Otherfee', act: -1 });
+                   
+                    if (busy) return;
+                    busy = true; Loading("正在保存！"); debugger;
+                    jQuery.post('/school/step5', o, function (res) {
+                        busy = false, CloseLoading();
+                        if (res.state == 200) { //ok
+                            ShowAlert('保存成功', 1000, function () {
+                                window.onbeforeunload = undefined;
+                                window.location.href = res.result;
+                            });
+                            //window.location.href = res.result;
+                        } else {
+                            CloseLoading();
+                            ShowAlert('提交意外失败');
+                        }
+                    });
+                });
+            })();
+        });
+
+        function tryv(func, defv) {
+            try { return func(); }
+            catch (ex) { return defv; }
+        }
+
+          //---------以下都是年份标签字段改版使用的----------------
+        //0：删除；1：已编辑；2：初始值(没变更)；3：新增
+        var act_delete = 0, act_update = 1, act_select = 2, act_add = 3;
+        var pagecacheinputId = "dbdataofyearfield", eid = "@ViewBag.eid";
+
+
+        //【编辑内容】 当内容框被编辑时，更新隐藏json值、btn的状态
+        jQuery("input,textarea").filter('[data-update]').on("change", function () {
+
+            //先获取隐藏json
+            var currentInput = jQuery(this);
+            var currentValue = currentInput.val();
+
+            //全部年份字段都不允许保存空值
+            if (currentValue == null || currentValue == "" || currentValue == undefined) {
+                return;
+            }
+            if (currentInput.attr("type") == "number") {
+
+                if (!ISPositiveInteger(currentValue)) {
+                    ShowAlert("数字框的值为正数", -1);
+                    currentInput.focus();
+                    return;
+                }
+            }
+            var isNew = true;
+            var dbField = currentInput.attr("name").split('_')[1];
+            var field = dbField;
+            if (field == "MaxAge") { field = "Age" }
+            var year = jQuery("select[name='" + field + "']").val();
+            var key = field + "_" + year;
+            //更新按钮状态 已编辑1
+            jQuery("#" + key + "").attr('data-input', act_update)
+
+            var hidJson = jQuery("#jsonhid_Year_" + field + "").val();
+            var json = JSON.parse(hidJson);
+            jQuery.each(json, function (index, data) {
+                if (data.key == key) {
+                    isNew = false;
+                    //更新json值
+                    jQuery.each(data.value, function (i, value) {
+
+                        if (value.field == dbField) {
+                            this.content = currentValue;
+                            this.act = act_update;
+                        }
+                    });
+                }
+            });
+            //给json追加一条记录
+            if (isNew) {
+                var arrValue = [jQuery("input[name='Year_Age']").val(), jQuery("input[name='Year_MaxAge']").val(), currentValue];
+                AppentItemToJson(dbField, key, year, act_update, arrValue, json)
+            }
+
+            //更新隐藏json控件的value
+            FormatJsonString(field, json);
+
+            jQuery("#isonlyjump").val('false');
+        });
+
+        //【展示内容】  点击年份标签按钮时，
+        jQuery(".btnyearclick").on("click", function () {
+
+            var yearBtn = jQuery(this);
+            var feild = yearBtn.attr("id").split("_")[0];
+
+            //首先设置样式
+            //1、统一处理非选中年份按钮样式
+            var btns = getFieldButtons(yearBtn);
+            jQuery.each(btns, function (index, item) {
+                var dinput = jQuery(item).attr('data-input');
+                if (dinput != act_delete.toString()) {
+                    jQuery(item).attr('class', 'btnyearclick btn btnCommon');
+                    jQuery(item).removeAttr('disabled');
+                }
+            });
+            //2、设置选中年份按钮样式
+            //不允许点击，防止多次重复请求
+            yearBtn.attr('class', 'btnyearclick btn btn-red');
+            yearBtn.attr('disabled', 'disabled');
+            //隐藏已编辑标签
+            jQuery("#span_" + feild + "").attr("hidden", "hidden");
+
+            //最后加载数据：data-input=2_,动态去请求数据库；data-input=1_，直接读取页面隐藏的json
+            var act = yearBtn.attr('data-input');
+            var field_year = yearBtn.attr('data-extid');
+
+            if (act == act_select.toString()) {
+                LoadDBData(field_year);
+            }
+            else if (act == act_update.toString()) {
+                //显示已编辑 1：已编辑
+                jQuery("#span_" + feild + "").removeAttr("hidden");
+                LoadHidData(field_year);
+            }
+
+            //显示输入项
+            jQuery("#show_input_item_" + feild).removeAttr("hidden");
+            
+        });
+
+        //【删除内容】 当展示的删除被点击时，则清空展示标签的所有值，并把相应的按钮变为灰色，不可用
+        function DelAndClear(obj) {
+            var r = confirm("你确定要删除该项吗?")
+            if (r) {
+
+                var strName = jQuery(obj).attr("data-input");
+                var arrName = strName.split("|");
+                var field = arrName[0];
+                var year = jQuery("[name='" + field + "']").val();
+                var currentBtnId = field + "_" + year;
+
+                //1、更新隐藏json的对应值
+                var hidJson = jQuery("#jsonhid_Year_" + field).val();
+                var json = JSON.parse(hidJson);
+                var arrValue = [jQuery("[name='" + arrName[1] + "']").val(), jQuery("[name='" + arrName[2] + "']").val(), jQuery("[name='" + arrName[1] + "']").val()]
+                var isNew = true;
+                jQuery.each(json, function (index, data) {
+                    if (data.key == currentBtnId) {
+                        isNew = false;
+                        jQuery.each(data.value, function (i, item) {
+                            item.act = act_delete;
+                       });
+                   }
+                });
+                //追加一条删除记录
+                if (isNew) {
+                    AppentItemToJson(field, currentBtnId, year, act_delete, arrValue, json);
+                }
+
+                //2.1、年份按钮变更：样式变为灰色 不可编辑 状态为0
+                jQuery("#" + currentBtnId).attr("disabled", "disabled").attr("class", "btnyearclick btn btn-grey").attr("data-input", act_delete);
+                //2.2、隐藏已编辑按钮
+                jQuery("#span_" + field).attr("hidden", "hidden");
+                //2.3、隐藏输入项
+                jQuery("#show_input_item_" + field).attr("hidden", "hidden");
+
+                //3、清空值
+                jQuery.each(arrName, function (index, name) {
+                    jQuery("[name='" + name + "']").val('');
+                });
+                //3.1、清空点选标签
+                if (field == "Target" || field == "Subjects") {
+                    jQuery("#" + arrName[1]).html("");
+                }
+
+                //更新隐藏json控件的value
+                FormatJsonString(field, json);
+
+                jQuery("#isonlyjump").val('false');
+            }
+        }
+
+        //格式化字符串，并更新隐藏Json文本框的value
+        function FormatJsonString(field, json) {
+            jQuery("#jsonhid_Year_" + field + "").val(JSON.stringify(json));
+        }
+
+        //更新点选标签已选标签展示
+        function UpdateTagShow(jsonData,tageShowIdPostfix, tagType) {
+            var html = "";
+            jQuery.each(jsonData, function (index) {
+                html += '<div class="col-md-auto"><section class="card  float-left " ><div class="card-body text-secondary" data-tagid="' + jsonData[index].Value + '">' + jsonData[index].Key + '</div></section ></div >';
+            });
+            var input = tageShowIdPostfix;// 展示标签div的后缀并且是隐藏input的id  Target_1000,Target,Subjects,Subjects_1000
+            var tagType = tagType;//标签类型
+            //如果是招生对象
+            var temp = input.split("_");
+            if (temp[1]) {
+                jQuery("#tag-list-" + tagType + "-" + temp[1]).html(html);
+            }
+            else
+                jQuery("#tag-list-" + tagType).html(html);
+
+            jQuery("#" + input).val(JSON.stringify(jsonData));
+           
+        }
+
+        //展示点选标签内容
+        function ShowYareTagContent(obj) {
+            var yearBtn = jQuery(obj);
+
+            //首先设置样式
+            var btns = yearBtn.parent().children('button');
+            jQuery.each(btns, function (index, item) {
+                var dinput = jQuery(item).attr('data-input');
+                if (dinput != act_delete.toString()) {
+                    jQuery(item).attr('class', 'btn btnCommon');
+                }
+            });
+            yearBtn.attr('class', 'btn btn-red');
+
+            //然后根据按钮状态，显示已编辑 1：已编辑
+
+            //最后加载数据：data-input=2_,动态去请求数据库；data-input=1_，直接读取页面隐藏的json
+            var strArr = yearBtn.attr('data-input');
+            var field_year = yearBtn.attr('data-extid');
+            if (strArr == act_select.toString()) {
+                LoadDBData(field_year);
+            }
+            else if (strArr == act_update.toString()) {
+                jQuery("#isonlyjump").val('false');
+                LoadHidData(field_year);
+            }
+
+        }
+
+        //加载数据库对应年份数据
+        function LoadDBData(field_year)
+        {            
+            var strArr = field_year.split('_');
+            var currentSelect = jQuery("select[name='" + strArr[0] + "']");
+            currentSelect.val(strArr[1]);
+            var fieldNames = currentSelect.attr("data-input");
+            var list = fieldNames.split('|');           
+            var year = strArr[1];           
+
+            //get pagecache
+            var cachedata = QueryPageCacheByBtnId(field_year, pagecacheinputId);
+            //get api-data
+            if (cachedata == null) {
+                var json = { "fieldName": fieldNames, "eid": eid, "year": year };
+                jQuery.get("@Url.Action("GetSchoolYearFieldContentByCondition", "School")", json, function (data) {
+                    //show
+                    var arrValue = ShowContent(field_year, null, data);
+                    //dbdata to page-cache
+                    DbDataToPageCache(pagecacheinputId, list[0], year, arrValue);
+                });
+            }
+            else {
+                //show
+                ShowContent(field_year, cachedata, null);
+            }
+        }
+
+        //show-- dbdata or cachedata --content
+        function ShowContent(field_year, cachedata, dbdata) {
+            
+            var strArr = field_year.split('_');
+            var currentSelect = jQuery("select[name='" + strArr[0] + "']");
+            currentSelect.val(strArr[1]);
+            var fieldNames = currentSelect.attr("data-input");
+            var list = fieldNames.split('|');
+            var tageShowIdPostfix = currentSelect.attr("tage_show_id_postfix");
+            var tagType = currentSelect.attr("data-tag");
+            var isDataTag = (tagType == undefined || tagType == "") ? false : true;//是否是点选标签
+            var preid = currentSelect.attr("preid");//ue编辑器相关变量pre-id
+
+            var arrValue = ["", "", null];
+
+            //展示值 文本框类
+            var list = fieldNames.split('|');
+            for (var i = 0; i < list.length; i++) {
+                var dataValue = cachedata == null ? dbdata.result[list[i]] : cachedata[i].content;
+                try { arrValue[2] = JSON.parse(dataValue); }
+                catch{ arrValue[2] = dataValue; }
+
+                //点选标签
+                if (isDataTag) {
+                    if (dataValue == undefined) {
+                        UpdateTagShow(null, tageShowIdPostfix, tagType);
+                    }
+                    else {
+                        UpdateTagShow(arrValue[2], tageShowIdPostfix, tagType);
+                    }
+                }
+                //ue编辑器
+                else if (preid) {
+                    //方案一：只是替换值方案
+                    var ueValue = jQuery("#" + preid).innerHTML = dataValue;
+                    ue.setContent(ueValue == undefined ? "" : ueValue);
+                }
+                //其他
+                else {
+                    var _name = list[i];
+                    //数据库只要一个字段，界面展示两个字段
+                    OneFieldShowMore(field_year, _name, dataValue, true);
+                    jQuery("[name='Year_" + list[i] + "']").val(dataValue);
+                }
+
+            }
+
+            return arrValue;
+        }
+
+        //加载隐藏Json对应年份数据
+        function LoadHidData(field_year)
+        {
+            
+            var strArr = field_year.split('_');
+            var currentSelect = jQuery("select[name='" + strArr[0] + "']");
+            currentSelect.val(strArr[1]);
+            var fieldName = currentSelect.attr("data-input");
+            var tageShowIdPostfix = currentSelect.attr("tage_show_id_postfix");
+            var tagType = currentSelect.attr("data-tag");
+            var isDataTag = (tagType == undefined || tagType=="" ) ? false : true;//是否是点选标签  
+            var preid = currentSelect.attr("preid");//ue编辑器相关变量pre-id            
+
+            var jsonHid = jQuery("#jsonhid_Year_" + strArr[0] + "").val()
+            var json = JSON.parse(jsonHid);
+
+            jQuery.each(json, function (index,data) {
+                if (data.key == field_year) {
+                    //展示值
+                    var list = fieldName.split('|');
+                    for (var i = 0; i < list.length; i++) {
+                        var dataValue = data.value[i];
+
+                        //点选标签类
+                        if (isDataTag) {
+                            var content = dataValue == [] ? [] : dataValue.content;
+                            UpdateTagShow(content, tageShowIdPostfix, tagType);
+                        }
+                        //富文本类TODO
+                        else if (preid) {
+                            var ueValue = jQuery("#" + preid).innerHTML = dataValue.content;
+                            ue.setContent(ueValue == undefined ? "" : ueValue);
+                        }
+                        //文本框类
+                        else {
+                            var _name = list[i];
+                            OneFieldShowMore(field_year, _name, dataValue.content);
+                            jQuery("[name='Year_" + list[i] + "']").val(dataValue.content);
+                        }
+                    }
+                }
+                });
+        }
+        //---------以上都是年份标签字段改版使用的----------------
+    </script>
+}

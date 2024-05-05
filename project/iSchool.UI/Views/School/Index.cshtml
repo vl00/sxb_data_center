@@ -1,0 +1,442 @@
+﻿@using iSchool.Application.ViewModels
+@using X.PagedList.Mvc.Core;
+@using X.PagedList;
+@using X.PagedList.Mvc.Common;
+@using iSchool.Application.Service
+@using iSchool.Infrastructure;
+@using iSchool.Domain.Enum;
+@using static iSchool.Infrastructure.ObjectHelper;
+@model IPagedList<SearchSchoolItem>
+@{
+    ViewData["Title"] = "数据录入";
+    if (Context.HasCurrQyx(".qx-luru"))
+    {
+        ViewBag.RightBtn = $"<a a-href='{Url.Action("Main", "School")}' class='a-href'><i class='fa fa-plus-circle'></i>新建学校</a>";
+    }
+    var UserName = (Dictionary<Guid, string>)ViewBag.UserNames;
+
+}
+@section css{
+<link href="@(ViewBag.StaticFile)/bootstrap-datetimepicker/4.17.47/css/bootstrap-datetimepicker.min.css" rel="stylesheet">
+
+<style>
+    .dataTables_paginate .pagination li.active span {
+        background: #272c33;
+        border-color: #272c33;
+        color: #fff;
+    }
+
+    .typeahead {
+        z-index: 8000;
+    }
+
+    .inline-form-control {
+        display: inline-block;
+        width: 100%;
+        height: calc(1.5em + .75rem + 2px);
+        padding: .375rem .75rem;
+        font-size: 1rem;
+        font-weight: 400;
+        line-height: 1.5;
+        color: #495057;
+        background-color: #fff;
+        background-clip: padding-box;
+        border: 1px solid #ced4da;
+        border-radius: .25rem;
+        transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+    }
+
+    .a-href {
+        cursor: pointer;
+    }
+</style>
+}
+
+<form action="@(Url.Action("Index"))" method="get">
+    @*搜索*@
+    <div class="card">
+        <div class="card-body">
+            <div class="row form-group">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <input type="text" placeholder="" id="generateToken" name="generateToken" class="form-control" data-provide="typeahead" autocomplete="off" disabled value="@(ViewBag.UploadDataToken??"")" />
+                        <div class="input-group-btn">
+                            <button class="btn btn-secondary" type="button" onclick="javascript:window.location.href='/School/?generateToken=1';">生成上传数据Token</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2"></div>
+                <div class="col-md-6 ">
+                    <div class="input-group">
+                        <input type="text" id="search" name="search" placeholder="请输入学校ID或学校名称" class="form-control" data-provide="typeahead" autocomplete="off">
+                        <div class="input-group-btn">
+                            <button class="btn btn-secondary" type="submit">检索</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @*条件搜索*@
+    <div class="card">
+        <div class="card-body">
+            <div class="row form-group">
+                <div class="col-md-4 ">
+                    <label class=" form-control-label">招生年级</label>
+                    <select name="grade" id="grade" asp-items="@ViewBag.GradeSelect" class="form-control">
+                        <option value="0">所有</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-control-label">地区</label>
+                    <div class="form-inline">
+                        <select name="province" id="province" asp-items="@ViewBag.ProvinceSelect" class="form-control">
+                            <option value="0">所有</option>
+                        </select>
+                        <select name="city" id="city" class="form-control">
+                            <option value="0">所有</option>
+                            @if (ViewBag.CitySelect != null)
+                            {
+                                foreach (var item in (IEnumerable<SelectListItem>)ViewBag.CitySelect)
+                                {
+                                    <option value="@(item.Value)">@item.Text</option>
+
+                                }
+                            }
+                        </select>
+                        <select name="area" id="area" class="form-control">
+                            <option value="0">所有</option>
+                            @if (ViewBag.AreaSelect != null)
+                            {
+                                foreach (var item in (IEnumerable<SelectListItem>)ViewBag.AreaSelect)
+                                {
+                                    <option value="@(item.Value)">@item.Text</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-2"></div>
+
+                <div class="col-md-4">
+                    <label class=" form-control-label">学校类型</label>
+                    <select name="type" id="type" asp-items="@ViewBag.SchoolTypeSelect" class="form-control">
+                        <option value="0">所有</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class=" form-control-label">审核状态</label>
+                    <select name="status" id="status" class="form-control" asp-items="@ViewBag.AuditStatus">
+                        <option value="0">所有</option>
+                    </select>
+                </div>
+                <div class="col-md-5">
+                    <label class=" form-control-label">提交时间</label>
+                    <div class="row">
+                        <div class="col-md-5">
+                            <input type="text" value="" id="starttime" name="starttime" placeholder="请选择时间" class="form-control datetimepicker4">
+                        </div>
+                        <label class="form-control-label">-</label>
+                        <div class="col-md-5">
+                            <input type="text" value="" id="endtime" name="endtime" placeholder="请选择时间" class="form-control datetimepicker4">
+                        </div>
+                        <div class="col-md-1"></div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class=" form-control-label">编辑ID</label>
+                    <select name="editors" id="editors" class="form-control">
+                        <option value="">所有</option>
+                        @foreach (var item in (IEnumerable<iSchool.Domain.Total_User>)ViewBag.Editors)
+                        {
+                            <option value="@(item.Id)">@item.Account</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-4"></div>
+                <div class="col-md-4 text-right" style="padding-top:33px">
+                    <button class="btn btn-danger btn-sm" onclick="reset()" type="reset">取消筛选</button>
+                    &nbsp;&nbsp;
+                    <button class="btn btn-primary btn-sm" type="submit">筛选</button>
+                </div>
+                <div class="col-md-1 ">
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+<div class="card">
+    <div class="card-header">学校列表</div>
+    <div class="card-body">
+        <div class="row">
+            @*编辑人员列表*@
+            <div class="col-sm-12">
+                <table id="bootstrap-data-table-export" class="table table-striped table-bordered dataTable no-footer" role="grid" aria-describedby="bootstrap-data-table-export_info">
+                    <thead>
+                        <tr role="row">
+                            <th class="sorting_asc" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-sort="ascending" aria-label="Name: activate to sort column descending" style="width: 100px;">
+                                学校ID
+                            </th>
+                            <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Position: activate to sort column ascending" style="width: 100px;">
+                                学校名称
+                            </th>
+                            <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Office: activate to sort column ascending" style="width: 100px;">
+                                编辑昵称
+                            </th>
+                            <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" style="width: 100px;">
+                                审核昵称
+                            </th>
+                            <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" style="width: 100px;">
+                                审核状态
+                            </th>
+                            <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" style="width: 100px;">
+                                完成度
+                            </th>
+                            <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" style="width: 100px;">
+                                提交时间
+                            </th>
+                            <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" style="width: 100px;">
+                                更新时间
+                            </th>
+                            <th class="sorting" tabindex="0" aria-controls="bootstrap-data-table-export" rowspan="1" colspan="1" aria-label="Salary: activate to sort column ascending" style="width: 100px;">
+                                操作
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr role="row" class="odd">
+                                <td>@item.Sid</td>
+                                <td>@item.Name</td>
+                                <td>@Tryv(() => UserName[item.Creator] ?? "")</td>
+                                <td>@(item.AuditUserId != null && item.AuditUserId != Guid.Empty ? (UserName[item.AuditUserId.Value] ?? "") : "")</td>
+                                <td>@(item.Status == null ? "" : EnumUtil.GetDesc((SchoolAuditStatus)item.Status))</td>
+                                <td>@(Math.Round(item.Completion * 100, 2))%</td>
+                                <td>@item.CreateTime</td>
+                                <td>@item.ModifyDateTime</td>
+                                <td>
+                                    <a href="@Url.Action("Preview",new {sid=item.Sid })" data-id="" class="text-info">预览  </a>
+                                    @if (Context.HasCurrQyx(".qx-luru"))
+                                    {
+                                        @*编辑界面：1.！isAll 只能编辑自己或者初始化的学校*@
+                                        @if (!ViewBag.IsAll && ((item.Creator == ViewBag.UserId && new byte?[] { (byte)SchoolStatus.Edit, (byte)SchoolStatus.Failed }.Contains(item.SchoolStatus)) || (byte)SchoolStatus.Initial == item.SchoolStatus))
+                                        {
+                                            @:|<a href="@Url.Action("Main", new { sid = item.Sid })" data-id="" class="text-info">编辑</a>
+                                        }
+                                        else if (ViewBag.IsAll && new byte?[] { (byte)SchoolStatus.Edit, (byte)SchoolStatus.Failed, (byte)SchoolStatus.Initial }.Contains(item.SchoolStatus))
+                                        {
+                                            @:|<a href="@Url.Action("Main", new { sid = item.Sid })" data-id="" class="text-info">编辑</a>
+                                        }
+
+                                        @if (!ViewBag.IsAll && item.Creator == ViewBag.UserId && new byte?[] { (byte)SchoolStatus.Edit, (byte)SchoolStatus.Failed }.Contains(item.SchoolStatus))
+                                        {
+                                            @:  |<a href="javascript:void(0)" data-id="@item.Sid" class="text-info" onclick="Del(this)">删除</a>
+                                        }
+                                        else if (ViewBag.IsAll && new byte?[] { (byte)SchoolStatus.Edit, (byte)SchoolStatus.Failed }.Contains(item.SchoolStatus))
+                                        {
+                                            @:  |<a href="javascript:void(0)" data-id="@item.Sid" class="text-info" onclick="Del(this)">删除</a>
+                                        }
+                                    }
+                                </td>
+                            </tr>
+
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+        <div class="row">
+            <div class="col-sm-12 col-md-2">
+                <div class="dataTables_info" id="bootstrap-data-table-export_info" role="status" aria-live="polite">
+                    总共@(Model.PageCount)页
+                </div>
+            </div>
+            <div class="col-sm-12 col-md-6">
+                <div class="dataTables_paginate paging_simple_numbers" id="bootstrap-data-table-export_paginate">
+                    @Html.PagedListPager(Model, page => Url.Action("Index", new
+                    {
+                    page = page,
+                    Grade = ((SearchSchoolListQuery)ViewBag.query).Grade,
+                    StartTime = ((SearchSchoolListQuery)ViewBag.query).StartTime,
+                    EndTime = ((SearchSchoolListQuery)ViewBag.query).EndTime,
+                    Type = ((SearchSchoolListQuery)ViewBag.query).Type,
+                    Status = ((SearchSchoolListQuery)ViewBag.query).Status,
+                    Province = ((SearchSchoolListQuery)ViewBag.query).Province,
+                    City = ((SearchSchoolListQuery)ViewBag.query).City,
+                    Area = ((SearchSchoolListQuery)ViewBag.query).Area,
+                    search = ViewBag.search,
+                    Editors = ((SearchSchoolListQuery)ViewBag.query).Editors,
+                    }),
+                    new X.PagedList.Mvc.Common.PagedListRenderOptionsBase
+                    {
+                    ContainerDivClasses = new[] { "" },
+                    LiElementClasses = new[] { "page-item", "paginate_button" },
+                    PageClasses = new[] { "page-link" },
+                    MaximumPageNumbersToDisplay = 5,
+                    })
+
+                </div>
+            </div>
+            <div class="col-sm-12 col-md-4">
+                <div style="margin:0 1em;">
+                    @Html.PagedListGoToPageForm(Model, Url.Action("Index", new
+                    {
+                    Grade = ((SearchSchoolListQuery)ViewBag.query).Grade,
+                    StartTime = ((SearchSchoolListQuery)ViewBag.query).StartTime,
+                    EndTime = ((SearchSchoolListQuery)ViewBag.query).EndTime,
+                    Type = ((SearchSchoolListQuery)ViewBag.query).Type,
+                    Status = ((SearchSchoolListQuery)ViewBag.query).Status,
+                    Province = ((SearchSchoolListQuery)ViewBag.query).Province,
+                    City = ((SearchSchoolListQuery)ViewBag.query).City,
+                    Area = ((SearchSchoolListQuery)ViewBag.query).Area,
+                    search = ViewBag.search,
+                    Editors = ((SearchSchoolListQuery)ViewBag.query).Editors,
+                    }), new GoToFormRenderOptions
+                    {
+                    InputFieldName = "page",
+                    InputFieldType = "number",
+                    InputFieldClass = "inline-form-control",
+                    InputWidth = 70,
+                    LabelFormat = " 转到",
+                    SubmitButtonFormat = "确定",
+                    SubmitButtonClass = "btn btn-primary btn-sm btn-pager-skip",
+                    SubmitButtonWidth = 50,
+                    })
+                </div>
+            </div>
+        </div>
+    </div>
+    <input type="hidden" id="hide_query" value="@ViewBag.queryJson" />
+    <input type="hidden" id="hide_search" value="@ViewBag.search" />
+</div>
+
+@section Scripts{
+<script src="@(ViewBag.StaticFile)/moment.js/2.18.1/moment-with-locales.min.js"></script>
+<script src="@(ViewBag.StaticFile)/bootstrap-datetimepicker/4.17.47/js/bootstrap-datetimepicker.min.js"></script>
+<script src="@(ViewBag.StaticFile)/bootstrap-3-typeahead/4.0.2/bootstrap3-typeahead.min.js"></script>
+
+<script type="text/javascript">
+    jQuery(function () {
+        jQuery('a[a-href]').on('click', function () {
+            window.location.href = jQuery(this).attr('a-href');
+        });
+
+        jQuery('.datetimepicker4').datetimepicker({
+            format: 'YYYY-MM-DD',
+            locale: moment.locale('zh-cn')
+        });
+        //城市联动
+        jQuery("#province").on("change", function () {
+            var value = jQuery(this).val();
+            var $select = jQuery("#city");
+            SetCityData(value, $select);
+            $select.change();
+        });
+        jQuery("#city").on("change", function () {
+            var value = jQuery(this).val();
+            var $select = jQuery("#area");
+            SetCityData(value, $select);
+        });
+        function SetCityData(cityId, $select) {
+            $select.html('<option value="0">所有</option>');
+            if (cityId == 0) {
+                return;
+            }
+            jQuery.getJSON("@Url.Action("ChangeCityData")", { parentId: cityId }, function (data) {
+                jQuery.each(data, function (index, item) {
+                    $select.append('<option value="' + item.value + '">' + item.text + '</option>')
+                });
+                $select.val("0");
+            });
+        }
+
+        //自动补全 | 智能匹配?
+        jQuery("#search").typeahead({
+            items: 10,
+            source: function (query, process) {
+                jQuery.ajax({
+                    url: '@Url.Action("SearchSchool")',
+                    type: 'get',
+                    data: {
+                        "top": 10,
+                        "grade": 0,
+                        "isCollage": false,
+                        "ContainExt": false,
+                        "IsOnline": false,
+                        "data[q]": query
+                    },
+                    dataType: 'json',
+                    success: function (result) {
+                        return process(jQuery.map(result.results, function (item) { return item.text }));
+                    },
+                });
+            }
+        });
+
+        //初始化
+        init();
+
+        // page skip
+        jQuery('.btn-pager-skip').on('click', function () {
+            var form = jQuery(this).parents('form').eq(0), u = form.attr('action');
+            window.location.href = u + '&page=' + form.find('[name=page]').val();
+            return false;
+        });
+    });
+
+    function reset() {
+        //地区
+        jQuery("#province").val("0");
+        jQuery("#province").change();
+        //学校类型
+        jQuery("#type").val("0");
+        //年级
+        jQuery("#grade").val("0");
+        //审核状态
+        jQuery("#status").val("0");
+        //开始/结束 时间
+        jQuery("#starttime").val("");
+        jQuery("#endtime").val("");
+
+        jQuery("#editors").val("");
+
+        jQuery('#search').val('');
+    }
+    function Del(select) {
+        var $this = jQuery(select);
+        var id = $this.attr("data-id");
+
+        showConfirm('确定要下线此学校？', function () {
+            jQuery.post("@Url.Action("DeleteSchool")", { "Sid": id }, function (data) {
+                if (data.state == 200) {
+                    ShowAlert('操作成功', 1000, function () {
+                        window.location.reload();
+                    });
+                } else {
+                    ShowAlert(data.message);
+                }
+            });
+        });
+    }
+
+    function init() {
+        var queryjson = JSON.parse(jQuery("#hide_query").val());
+        var search = jQuery("#hide_search").val();
+        jQuery("#grade").val("" + queryjson.Grade);
+        jQuery("#province").val("" + queryjson.Province);
+        jQuery("#city").val("" + queryjson.City);
+        jQuery("#area").val("" + queryjson.Area);
+        jQuery("#type").val("" + queryjson.Type);
+        jQuery("#status").val("" + queryjson.Status);
+        jQuery("#starttime").val("@(((SearchSchoolListQuery)ViewBag.query).StartTime!=null? ((SearchSchoolListQuery)ViewBag.query).StartTime.Value.ToString("yyyy-MM-dd"):"")");
+        jQuery("#endtime").val("@(((SearchSchoolListQuery)ViewBag.query).EndTime!=null? ((SearchSchoolListQuery)ViewBag.query).EndTime.Value.ToString("yyyy-MM-dd"):"")");
+
+        jQuery("#search").val(search);
+
+        jQuery('#editors').val('' + (queryjson.Editors || ''));
+    }
+
+</script>
+}

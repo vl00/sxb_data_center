@@ -1,0 +1,55 @@
+﻿@using iSchool;
+@using iSchool.Domain.Enum;
+@using iSchool.Domain.Modles;
+@using iSchool.Infrastructure;
+@{
+    //!! 根据学校名全匹配查找学校. (应对模仿查询查不出的情况)
+
+    ViewData["Title"] = "";
+
+    var schools = (ViewBag.Schs as iSchool.Application.Service.SchoolFindByNameQryResult)?.Ls;
+}
+
+@section css{
+    <style>
+        .div-row {
+            margin:0.5em 0;
+        }
+    </style>
+}
+
+@{
+    <div class="card">
+        <div class="card-body">
+            <div class="input-group">
+                <input type="text" id="search" name="search" placeholder="请输入学校名称" class="form-control" value="@(ViewBag.Sch_name)" />
+                <div class="input-group-btn">
+                    <button class="btn btn-secondary" type="submit">检索</button>
+                </div>
+            </div>
+            <br/>
+            <div>
+                @if (schools != null)
+                {
+                    @foreach (var school in schools)
+                    {
+                        <span>
+                            <a href="/School?search=@(school.Id)" style="color: #007bff;">@(school.Name) (id=@(school.Id))</a> 状态：@(EnumUtil.GetDesc((SchoolStatus)school.Status))
+                        </span>
+                        <br/>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts{ 
+    <script>        
+        (function ($) {
+            $('.btn').on('click', function() {
+                window.location.href = '/school/findbyname?name=' + $('#search').val();
+            });    
+        })(jQuery);
+    </script>
+}

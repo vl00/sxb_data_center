@@ -1,0 +1,99 @@
+﻿using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using AutoMapper;
+using iSchool.Application.ViewModels;
+using iSchool.Domain;
+using iSchool.Domain.Enum;
+using iSchool.Domain.Modles;
+using iSchool.Domain.Repository.Interfaces;
+using iSchool.Infrastructure;
+using MediatR;
+
+namespace iSchool.Application.Service
+{
+    public class AddSchoolExtQualityCommandHandler : IRequestHandler<AddSchoolExtQualityCommand, HttpResponse<object>>
+    {
+        private readonly IMapper _mapper;
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly IRepository<School> _schoolRepository;
+        private readonly IRepository<SchoolExtension> _schoolextensionRepository;
+        private readonly IRepository<SchoolExtQuality> _schoolExtQualityRepository;
+        private readonly IMediator _mediator;
+
+
+        public AddSchoolExtQualityCommandHandler(IMapper mapper, IUnitOfWork unitOfWork,
+            IRepository<School> schoolRepository,
+            IRepository<SchoolExtQuality> schoolExtQualityRepository,
+            IRepository<SchoolExtension> schoolextensionRepository, IMediator mediator)
+        {
+            _mapper = mapper;
+            _unitOfWork = unitOfWork;
+            _schoolRepository = schoolRepository;
+            _schoolextensionRepository = schoolextensionRepository;
+            _schoolExtQualityRepository = schoolExtQualityRepository;
+            _mediator = mediator;
+        }
+
+        public async Task<HttpResponse<object>> Handle(AddSchoolExtQualityCommand request, CancellationToken cancellationToken)
+        {
+            await Task.CompletedTask;
+
+            var sg = _schoolRepository.GetIsValid(p => p.Id == request.Dto.Sid);
+            if (sg == null)
+                return new HttpResponse<object> { State = 400, Message = "学校不存在" };
+
+            var ext = _schoolextensionRepository.GetIsValid(p => p.Id == request.Dto.Eid && p.Sid == request.Dto.Sid);
+            if (ext == null)
+                return new HttpResponse<object> { State = 400, Message = "学部不存在" };
+
+            var quality = _schoolExtQualityRepository.GetIsValid(_ => _.Eid == request.Dto.Eid);
+            if (quality == null)
+            {
+                quality = _mapper.Map<SchoolExtQuality>(request.Dto);
+                quality.CreateTime = DateTime.Now;
+                quality.Creator = request.CurrentUserId;
+            }
+            else
+            {
+                _mapper.Map(request.Dto, quality);
+            }
+            quality.IsValid = true;
+            quality.ModifyDateTime = DateTime.Now;
+            quality.Modifier = request.CurrentUserId;
+
+            if (quality.Id == Guid.Empty)
+            {
+                quality.Id = Guid.NewGuid();
+                _schoolExtQualityRepository.Insert(quality);
+            }
+            else _schoolExtQualityRepository.Update(quality);
+
+            //视频            
+            {
+                await _mediator.Send(new AddSchoolVideoCommand()
+                {
+                    Videos = request.Dto.Videos,
+                    Covers = request.Dto.Covers,
+                    Eid = request.Dto.Eid,
+                    OperatorId = request.CurrentUserId,
+                    VideoDescs = request.Dto.VideoDescs,
+                    Types =request.Dto.Types,
+                     CurrentVideoTypes=request.Dto.CurrentVideoTypes
+                });
+            }
+
+            // 处理图片的数据
+            await _mediator.Send(new UploadImgsCommand
+            {
+                Eid = request.Dto.Eid,
+                UserId = request.CurrentUserId,
+                Imgs = request.Dto.Imgs,
+            });
+
+            await _mediator.Publish(new SchoolUpdatedEvent { Sid = request.Dto.Sid, Eid = request.Dto.Eid });
+            return new HttpResponse<object> { State = 200 };
+        }
+    }
+}

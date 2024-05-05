@@ -1,0 +1,435 @@
+﻿@using iSchool.Organization.Appliaction.ViewModels;
+@using iSchool.Infrastructure.Dapper;
+@using iSchool.Infrastructure;
+@using iSchool.Organization.Domain.Enum;
+@model iSchool.Organization.Appliaction.OrgService_bg.ResponseModels.MeterialDetailDto
+@{
+    ViewData["Title"] = "社群播报素材";
+
+    var isAdd = ViewBag.id is null;
+    Model.Pictures ??= new string[0];
+    Model.Thumbnails ??= new string[0];
+}
+
+@section css{
+    <link href="~/css/jsselect/select.css" rel="stylesheet" />
+    <style>
+        .ifa {
+            font-size: 25px;
+        }
+
+        .a-href {
+            cursor: pointer;
+        }
+
+        .rich:empty:before {
+            content: attr(placeholder); /* element attribute*/
+            color: #d0c1c1;
+        }
+
+        .rich:focus:before {
+            content: none; /*焦点时内容为空*/
+        }
+
+        .hiden {
+            display: none;
+        }
+
+        /* override css mySelect */
+        .select-picker-search {
+            width: 100%;
+        }
+        .select-picker-search-checked {
+            width: 100%;
+        }
+        .select-picker-options-wrp {
+            width: 100%;
+        }
+
+        #div_banners {
+            width: 90%;
+            margin: 0 auto;
+            text-align: center;
+        }
+        #div_videos {
+            width: 90%;
+            margin: 2em 0 4em 0;
+        }
+    </style>
+}
+
+@{
+    <div class="card">
+        <div class="card-header">
+            <div class="form-inline">
+                <div class="text-left col-md-6 ">@(isAdd ? "新增素材" : "编辑素材")</div>
+                <div class="text-right col-md-6">
+                    <a href="@Url.Action("Index")" data-id="" class="text-info">返回列表</a>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row form-group">
+                <div class="form-inline col-12">
+                    <label class="control-label mb-1"><span class="spanremark">*</span>素材标题：</label>
+                    <input class="form-control" type="text" prop="Title" value="@Model.Title" style="width:70%;" />
+                </div>
+            </div>
+            <div class="row form-group">
+                <div class="col-md-1">
+                    <label class="control-label mb-1">素材内容：</label>
+                </div>
+                <div class="col-md-10">
+                    <div id="div_content">
+                        <div class="border uecontent rich" ue-name="Content" placeholder="" style="min-height:50px">
+                            <script id="editor1" type="text/plain" style="width:100%;height:200px;"></script>
+                        </div>
+                        <pre style="display:none;">@Html.Raw(Model.Content)</pre>
+                    </div>
+                </div>
+            </div>
+            @* 商品关联 *@
+            <div class="row form-group">
+                <div class="col-md-1">
+                    <label class="control-label mb-1">商品关联：</label>
+                </div>
+                <div class="col-md-10">
+                    <div id="div_find_course" style="margin:1px;"></div>
+                    <input type="hidden" prop="CourseId" value="@Model.CourseId" />
+                    @Html.HiddenFor(_ => _.CourseTitle, new { prop = "CourseTitle" })
+                </div>
+            </div>
+            <div class="form-group">
+                <div id="div_videos"></div>
+                @Html.Hidden("init_videos", (new { videoUrl = Model.Video, cover = Model.VideoCover }).ToJsonString(), new { })
+            </div>
+            <div class="form-group">
+                <div id="div_banners" class="row" data-imgwidth="100" data-imgheight="100"></div>
+                @Html.Hidden("init_banners", (Enumerable.Range(0, Model.Pictures.Length).Select(i => new { url = Model.Pictures[i], url_s = Model.Thumbnails[i] }).ToJsonString()), new { })
+            </div>
+
+            <div class="row form-group">
+                <div class="col-md-1" style="margin:0 auto;">
+                    <a id="btn_save" class="btn btn-primary btn-sm" style="color: #fff;width:100%" href="javascript:;">确定保存</a>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts{
+    <script type="text/javascript" charset="utf-8" src="~/ueditor/ueditor.config.nostyle4cccv1.js"></script>
+    <script type="text/javascript" charset="utf-8" src="~/ueditor/editor_api.js"></script>
+    <script src="~/js/jqselect/mySelect.v2.js"></script>
+    <script src="~/js/batchUploadImg.v2.js?@(DateTime.Now.Ticks)"></script>
+    <script src="~/js/batchUploadVideo.v2.js?@(DateTime.Now.Ticks)"></script>
+    <script src="~/js/jq.postJSON.js"></script>
+    <script>
+        var isadd = JSON.parse('@(isAdd.ToString().ToLower())');
+        var c_findCourse, c_banners, c_videos;        
+        var b_save;
+
+        (function (fn) {
+            jQuery(function () { fn(jQuery) });
+        })(function ($) {
+            var ue = new huUE({
+                ele: '#div_content',
+                editorName: 'editor1',
+                serverArgs: {
+                    contentID: '@(ViewBag.id)',
+                    contentType: 'school_v3',
+                }
+            });
+
+            init_c_findCourse($);
+            if (!isadd) {
+                init_div_banners($, JSON.parse($('[name=init_banners]').val() || []));
+            }
+            if (!isadd) {
+                var o = JSON.parse($('[name=init_videos]').val() || {});
+                init_div_videos($, o.videoUrl, o.cover);
+            }
+
+            // save
+            $('#btn_save').on('click', function () {
+                var o = { id: '@(Model.Id)' };
+
+                // find and set value to o
+                if (o) {
+                    $('[prop]').each(function () {
+                        var c = $(this);
+                        o[c.attr('prop')] = c.val();
+                    });
+                    //
+                    var course = c_findCourse.getSelectedItems()[0] || {};
+                    o.CourseId = course.value;
+                    //
+                    o.Content = ue.getHtml();
+                    //
+                    o.Pictures = [];
+                    o.Thumbnails = [];
+                    var banners = c_banners ? c_banners.getData() : [];
+                    for (var i = 0, len = banners.length; i < len; i++) {
+                        o.Pictures[i] = banners[i].url;
+                        o.Thumbnails[i] = banners[i].url_s;
+                    }
+                    //
+                    var vdata = c_videos && c_videos.getData()[0] || {};
+                    o.Video = vdata.videoUrl;
+                    o.VideoCover = vdata.cover;
+                }
+                // check
+                if (o) {
+                    if ($.trim(o.Title) == '') {
+                        return ShowAlert('请输入标题', -1);
+                    }
+                    if ($.trim(o.CourseId) == '') {
+                        return ShowAlert('请选择商品', -1);
+                    }
+                    if (!o.Pictures.length && $.trim(o.Video) == '') {
+                        return ShowAlert('没素材', -1);
+                    }
+                    if (o.Pictures.length > 10) {
+                        return ShowAlert('图片最多10张', -1);
+                    }
+                }
+
+                if (b_save) return;
+                b_save = true; debugger; Loading('正在保存中');
+                $.postJSON('@Url.Action("Save")', o).then(function (res) {
+                    CloseLoading();
+                    if (!res.succeed) {
+                        b_save = false;
+                        return ShowAlert('操作失败：' + res.msg, -1);
+                    }
+                    ShowAlert('操作成功', 1000, function () {
+                        window.location.replace('@Url.Action("Detail")' + '?id=' + res.data);
+                    });
+                }).catch(function () {
+                    b_save = false; CloseLoading();
+                    ShowAlert('网络异常', -1);
+                });
+            });
+        });
+
+        function init_c_findCourse($) {
+            c_findCourse = $('#div_find_course').mySelect({
+                msg: '请输入',
+                separator: ';',
+                searchable: true,
+                onSearch: function (txt, ok) {
+                    console.log('search ing ' + txt);
+                    dosearch(txt, ok);
+                }
+            });
+            if (!isadd) {
+                c_findCourse.reset([{ text: $('[prop=CourseTitle]').val(), value: $('[prop=CourseId]').val() }]).hideList();
+                c_findCourse.ele.find('.select-picker-options-list-item').eq(0).click();
+            }
+            //
+            function dosearch(txt, cb) {
+                $.post('@Url.Action("FindCourses")', { txt }, function (res) {
+                    if (!res.succeed) {
+                        return ShowAlert(res.msg, -1);
+                    }
+                    cb($.map(res.data.courses, function (x) {
+                        return { 'text': x.item2, 'value': x.item1 };
+                    }));
+                });
+            }
+            //
+            // 选中
+            c_findCourse.ele.on('click', '.select-picker-options-list-item', function () {
+                var courseId = c_findCourse.getSelectedValues()[0];
+                console.log('select courseid= ' + courseId);
+
+                $.get('@Url.Action("GetCourseMedias")', { courseId: courseId }).then(function (res) {
+                    if (!res.succeed) {
+                        return ShowAlert(res.msg, -1);
+                    }
+                    init_div_banners($, $.map(res.data.banners || [], function (url) {
+                        return { url: url, url_s: url };
+                    }));
+                    init_div_videos($, res.data.videoUrl, res.data.videoCoverUrl);
+                });
+            });
+        }
+
+        function init_div_banners($, banners) {
+            $('#div_banners').html('');
+            c_banners = undefined;
+            c_banners = $.batchUploadImg2({
+                el: '#div_banners',
+                maxItemCount: -1,
+                fd_imgsrc: 'url',
+                fd_imgsrc_s: 'url_s',
+                data: banners,
+                canAdd: true,
+                canDel: true,
+                onImgUpload: function (files, cb) {
+                    var formData = new FormData();
+                    for (var i = 0; i < files.length; i++) {
+                        formData.append('files_' + i, files[i]);
+                    }
+                    Loading("正在上传图片！");
+                    $.ajax({
+                        url: "@ViewBag.OrgImgUploadUrl",
+                        type: "post",
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        cache: false
+                    }).done(function (res) {
+                        CloseLoading();
+                        if (res.status == 200) {
+                            ShowAlert('上传成功', 1000, function () {
+                                cb({ url: res.data.src, url_s: res.data.src_s, id: res.data.id });
+                            });
+                        } else {
+                            ShowAlert("上传失败:" + res.msg, -1);
+                        }
+                    }).fail(function (res) {
+                        ShowAlert("网络异常:" + res.msg, -1);
+                        CloseLoading();
+                    });
+                }
+            });
+            c_banners.setMaxItemCount(9);
+        }
+
+        function init_div_videos($, videoUrl, videoCoverUrl) {
+            $('#div_videos').html('');
+            c_videos = undefined;
+            var idata = videoUrl ? [{ videoUrl, cover: videoCoverUrl }] : [];
+            c_videos = $.batchUploadVideo2({
+                el: '#div_videos',
+                maxItemCount: -1,
+                data: idata,
+                canAdd: true,
+                canDel: true,
+                canDownload: true,
+                onItemAdded: function (item, uiItem) {
+                    var a = $('#div_videos').find('a.fa').eq(0);
+                    if (a.parents('div[item-id]').eq(0).attr('item-id') != uiItem.attr('item-id'))
+                        a.click();
+                },
+                onVideoUpload: function (files, cb) {
+                    var formData = new FormData();
+                    var file = files[0];
+                    formData.append('fileName', file.name); //文件名
+                    formData.append('ext', (file.name.indexOf('.') > -1 ? file.name.substring(file.name.indexOf('.') + 1) : '')); //扩展名
+                    formData.append('files_0', files[0]);
+                    Loading("正在上传视频！");
+                    $.ajax({
+                        url: "@ViewBag.OnVideoUploadUrl",
+                        type: "post",
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        cache: false
+                    }).done(function (res) {
+                        CloseLoading();
+                        if (res.status == 200) {
+                            ShowAlert('上传成功', 1000, function () {
+                                cb({ videoUrl: res.data.src, cover: res.data.coverUrl_s, id: res.data.id });
+                            });
+                        } else {
+                            ShowAlert("上传失败:" + res.msg, -1);
+                        }
+                    }).fail(function (res) {
+                        ShowAlert("网络异常:" + res.msg, -1);
+                        CloseLoading();
+                    });
+                }
+            });
+            c_videos.setMaxItemCount(2);
+        }
+
+        // ue编辑器
+        var huUE = (function (window, $, rmStyle0) {
+            function getv_ue(ue, ele) {
+                var c_name = $(ue.container).parents('div.uecontent').get(0).getAttribute('ue-name');
+                return ele.attr('ue-name') == c_name ? ue.getContent() : $("<textarea/>").html(ele.html()).text();
+            }
+            return function (option) {
+                var ele = $(option.ele);
+                var rmStyle = option.rmStyle || rmStyle0;
+                //
+                var ue = UE.getEditor(option.editorName, {
+                    configPath: 'ueditor/config.json',
+                    initialContent: "",
+                    theme: 'tt',
+                    elementPathEnabled: !1,
+                    imageScaleEnabled: !1,
+                    imagePopup: !1,
+                    tableDragable: !1,
+                    wordCount: !1,
+                    toolbars: [["source", "h2", "bold", "underline", "italic", "strikethrough", "forecolor", "blockquote", "horizontal", "justifyleft", "justifycenter", "justifyright", "link", "unlink", "|", "insertimage", "|", "selectall", "removeformat", "undo", "redo"]],
+                    removeFormatTags: "b,big,code,del,dfn,em,font,i,ins,kbd,q,samp,small,span,strike,strong,sub,sup,tt,u,var,blockquote,h1,h2,h3,h4,h5,h6",
+                    autotypeset:
+                    {
+                        mergeEmptyline: !0,
+                        removeClass: !1,
+                        removeEmptyline: !0,
+                        pasteFilter: !0,
+                        clearFontSize: !0,
+                        clearFontFamily: !0
+                    },
+                });
+                ue.ready(function () {
+                    $(this.container).click(function (e) {
+                        e.stopPropagation();
+                    });
+                    ue.execCommand('serverparam', 'contentID', option.serverArgs.contentID);
+                    ue.execCommand('serverparam', 'contentType', option.serverArgs.contentType);
+                    ue.execCommand('cleardoc');
+                    ue.execCommand("insertHtml", '');
+                });
+                ele.find('.uecontent').on('click', function () {
+                    // 解决多个ueditor切换后工具栏和输入框分离
+                    ele.find('.edui-editor-toolbarbox').attr('style', '');
+                    // change content
+                    e.stopPropagation();
+                    var jQuerytarget = $(this);
+                    var content = jQuerytarget.html();
+                    var currentParnet = ue.container.parentNode.parentNode;
+                    var currentContent = ue.getContent();
+                    jQuerytarget.html('');
+                    jQuerytarget.append(ue.container.parentNode);
+                    ue.reset();
+                    setTimeout(function () { ue.setContent(content); }, 200);
+                    $(currentParnet).html(currentContent);
+                    return false;
+                });
+                (function (b) {
+                    ue.ready(function () {
+                        if (b) return;
+                        b = true, bind_toolbar_event();
+                    });
+                    function bind_toolbar_event() {
+                        // ue 清除格式事件
+                        ele.find('.edui-editor').on('click', '.edui-for-removeformat', function () {
+                            ue.setContent(rmStyle(ue.getContent()));
+                            console.log('ueeditor rm style');
+                        });
+                    }
+                })();
+                // init html value
+                (function (pre, b) {
+                    var v = pre.html() || '';
+                    pre.remove();
+                    v && ue.ready(function () {
+                        if (b) return;
+                        b = true; setTimeout(function () { ue.setContent(v); }, 200);
+                    });
+                })(ele.show().find('pre'));
+                //
+                // obj
+                return {
+                    getHtml: function (ele) { return ele ? getv_ue(ue, $(ele)) : ue.getContent(); },
+                };
+            };
+        })(window, jQuery, rmStyle);
+
+    </script>
+}

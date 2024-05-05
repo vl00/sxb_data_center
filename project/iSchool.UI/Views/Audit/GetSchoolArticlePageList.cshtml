@@ -1,0 +1,12 @@
+﻿@model iSchool.Infrastructure.Dapper.PagedList<iSchool.Application.Service.Audit.SearchSchoolArticleResult>
+@{ 
+
+}
+
+@foreach (var item in Model.CurrentPageItems)
+{
+    <a href="@item.Url" target="_blank">@item.Title</a><br/>
+}
+<div class="dataTables_paginate paging_simple_numbers" style="margin-top: 5px;">
+    @{ await Html.RenderPartialAsync("Pager0", Model); }
+</div>

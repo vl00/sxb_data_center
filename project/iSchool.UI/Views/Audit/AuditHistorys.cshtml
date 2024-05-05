@@ -1,0 +1,44 @@
+﻿@using iSchool.Application.Service.Audit
+@using iSchool.Infrastructure
+@using iSchool.Infrastructure.Dapper
+@using iSchool.Domain.Enum
+@model PagedList<HistoryQueryResult>
+@{
+    var pages = Model.CurrentPageItems;
+}
+<div class="modal-header">
+    <h5 class="modal-title" id="scrollmodalLabel">@ViewBag.ModalName</h5>
+    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+
+<!-- 模态框主体 -->
+<div class="modal-body">
+    @if (pages.Count() <= 0 && Model.CurrentPageIndex == 1)
+    {
+        <div>未有历史记录</div>
+    }
+    else
+    {
+        <div style="height:400px;overflow:auto;margin-bottom:15px;">
+            @foreach (var pg in pages)
+            {
+                <div class="card">
+                    <div class="card-header">
+                        <a style="color:blue">@($"{EnumUtil.GetDesc((SchoolAuditStatus)pg.Status)}")</a> &nbsp;&nbsp;  审核人：@pg.Modifier  &nbsp;&nbsp;  时间：@pg.ModifyTime.ToString("yyyy-MM-dd HH:mm")
+                    </div>
+                    <div class="card-body"><pre>@(pg.AuditMessage)</pre></div> @* Html.Encode *@
+                </div>
+            }
+        </div>
+        <div class="col-md-12">
+            <div class="dataTables_paginate paging_simple_numbers" id="bootstrap-data-table-export_paginate">
+                @{ await Html.RenderPartialAsync("Pager0", Model); }
+            </div>
+        </div>
+    }
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+    </div>
+</div>

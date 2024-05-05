@@ -1,0 +1,186 @@
+﻿@using System.Linq;
+@using iSchool;
+@using iSchool.Organization.Appliaction.ViewModels;
+@using iSchool.Infrastructure.Dapper;
+@using iSchool.Organization.Appliaction.Service.Organization;
+@using iSchool.Infrastructure;
+@using iSchool.Organization.Domain;
+@using iSchool.Organization.Domain.Enum;
+@using iSchool.Organization.Appliaction.OrgService_bg.Activitys;
+@using static iSchool.Infrastructure.ObjectHelper;
+@model AuditLsPagerQueryResult
+@{
+    var pgItems = Model.PageInfo.CurrentPageItems.AsArray();
+}
+
+<div class="row div-table">
+    <div class="col-sm-12">
+        <table class="table table-striped table-bordered dataTable no-footer" role="grid" aria-describedby="bootstrap-data-table-export_info">
+            <thead>
+                <tr role="row" style="text-align:center;">
+                    <th @*style="width:10px;height:30px;"*@>
+                        序号
+                    </th>
+                    <th @*style="width:70px;max-width:70px;"*@>
+                        评测名称
+                    </th>
+                    <th @*style="width:80px;max-width:80px;"*@>
+                        发表时间
+                    </th>
+                    <th @*style="width:40px;max-width:40px;"*@>
+                        类型
+                    </th>
+                    <th @*style="width:30px;max-width:30px;"*@>
+                        单篇奖金
+                    </th>
+                    <th @*style="width:30px;max-width:30px;"*@>
+                        额外奖金
+                    </th>
+                    <th @*style="width:40px;max-width:40px;"*@>
+                        用户ID
+                    </th>
+                    <th @*style="width:40px;max-width:40px;"*@>
+                        用户名
+                    </th>
+                    <th @*style="width:50px;max-width:50px;"*@>
+                        手机号
+                    </th>
+                    <th @*style="width:40px;max-width:40px;padding:0;"*@>
+                        该手机号绑定账号数量
+                    </th>
+                    <th @*style="width:30px;max-width:30px;padding:0;"*@>
+                        领取红包数量
+                    </th>
+                    <th @*style="width:80px;max-width:80px;"*@>
+                        审核时间
+                    </th>
+                    <th @*style="width:80px;max-width:80px;"*@>
+                        修改时间
+                    </th>
+                    <th @*style="width:60px;max-width:60px;"*@>
+                        关联活动
+                    </th>
+                    <th @*style="width:60px;max-width:60px;"*@>
+                        关联专题
+                    </th>
+                    <th @*style="width:40px;max-width:40px;"*@>
+                        内容预览
+                    </th>
+                    <th @*style="width:40px;max-width:40px;"*@>
+                        内容状态
+                    </th>
+                    <th @*style="width:60px;max-width:60px;"*@>
+                        操作
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (var i = 0; i < pgItems.Length; i++)
+                {
+                    var item = pgItems[i];
+                    //
+                    <text>
+                        <tr role="row" class="odd">
+                            @* 序号 *@
+                            <td>@(i + (Model.PageInfo.CurrentPageIndex - 1) * Model.PageInfo.PageSize + 1)</td>
+                            @* 评测名称 *@
+                            <td class="a-default" title="@(item.Title)">
+                                @(item.Title?.Length > 10 ? item.Title[..10] + "..." : item.Title)
+                            </td>
+                            @* 发表时间 *@
+                            <td class="a-default" title="@(item.CreateTime.ToString("yyyy-MM-dd HH:mm:ss"))">
+                                @(item.CreateTime.ToString("yyyy-MM-dd HH:mm:ss"))
+                            </td>
+                            @* 类型 *@
+                            <td class="a-default" title="@(EnumUtil.GetDesc((ActiEvltSubmitType)item.SubmitType))">
+                                @(EnumUtil.GetDesc((ActiEvltSubmitType)item.SubmitType))
+                            </td>
+                            @* 单篇奖金 *@
+                            <td class="a-default" title="@(item.PriceForOneEvaluation ?? 0)">
+                                @(item.PriceForOneEvaluation == null ? "-" : $"{item.PriceForOneEvaluation}")
+                            </td>
+                            @* 额外奖金 *@
+                            <td class="a-default">
+                                <pre class="hidden">@(item.PriceForExtraBonus.ToJsonString(true))</pre>
+                                @(item.PriceForExtraBonus == null ? "-" : $"{item.PriceForExtraBonus.Value.Item2.Sum()}")
+                            </td>
+                            @* 用户ID *@
+                            <td class="a-default" title="@(item.UserId)">
+                                @($"{item.UserId}"[..5] + "...")
+                            </td>
+                            @* 用户名 *@
+                            <td class="a-default" title="@(item.UserName)" style="width:40px;max-width:40px;">
+                                @(item.UserName?.Length > 10 ? item.UserName[..10] + "..." : item.UserName)
+                            </td>
+                            @* 手机号 *@
+                            <td class="a-default" title="@(item.Mobile)">
+                                @(item.Mobile)
+                            </td>
+                            @* 该手机号绑定账号数量 *@
+                            <td class="a-default" title="@(item.UmacCount)">
+                                @(item.UmacCount)
+                            </td>
+                            @* 领取红包数量 *@
+                            <td class="a-default" title="@(item.UGetRedpCount)">@(item.UGetRedpCount)</td>
+                            @* 审核时间 *@
+                            <td class="a-default" title="@(item.AuditTime?.ToString("yyyy-MM-dd HH:mm:ss"))">
+                                @(item.AuditTime?.ToString("yyyy-MM-dd HH:mm:ss"))
+                            </td>
+                            @* 修改时间 *@
+                            <td class="a-default" title="@(item.Mtime?.ToString("yyyy-MM-dd HH:mm:ss"))">
+                                @(item.Mtime?.ToString("yyyy-MM-dd HH:mm:ss"))
+                            </td>
+                            @* 关联活动 *@
+                            <td class="a-default" title="@(item.ActiTitle)">
+                                @(item.ActiTitle?.Length > 10 ? item.ActiTitle[..10] + "..." : item.ActiTitle)
+                            </td>
+                            @* 关联专题 *@
+                            <td class="a-default" title="@(item.SpclTitle)">
+                                @(item.SpclTitle?.Length > 10 ? item.SpclTitle[..10] + "..." : item.SpclTitle)
+                            </td>
+                            @* 内容预览 *@
+                            <td>
+                                <a class="a-href text-info" onclick="$mdu.fire('load-evaluation', this)">
+                                    <pre class="hidden">@(new { id = item.EvaluationId, item.Title, authorId = item.UserId }.ToJsonString(true))</pre>
+                                    查看
+                                </a>
+                            </td>
+                            @* 内容状态 *@
+                            <td class="a-default" title="@(EnumUtil.GetDesc((ActiEvltAuditStatus)item.AebStatus))">
+                                @(EnumUtil.GetDesc((ActiEvltAuditStatus)item.AebStatus))
+                            </td>
+                            @* 操作 *@
+                            <td>
+                                <pre class="hidden">(aebid='@(item.Id)', activityid='@(item.ActivityId)', evltid='@(item.EvaluationId)')</pre>
+                                @if (this.Context.HasCtrlActQyx("Activity", "Audit")
+                                  && ((ActiEvltAuditStatus)item.AebStatus).In(ActiEvltAuditStatus.Audit, ActiEvltAuditStatus.AuditButMoblieExcp))
+                                {
+                                    <a class="a-href text-info" title="aebid=@(item.Id), evltid=@(item.EvaluationId)"
+                                       onclick="$mdu.fire('doaudit', '@(item.Id)', '@(item.EvaluationId)', true)">审核通过</a><br />
+                                    <a class="a-href text-info" title="aebid=@(item.Id), evltid=@(item.EvaluationId)"
+                                       onclick="$mdu.fire('doaudit', '@(item.Id)', '@(item.EvaluationId)', false)">审核不通过</a><br />
+                                }
+                                @if (this.Context.HasCtrlActQyx("Evaluation", "index"))
+                                {
+                                    <a class="a-href text-info" onclick="$mdu.fire('evlt-offline', '@(item.EvaluationId)')">下架</a>
+                                }
+                            </td>
+                        </tr>
+                    </text>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+<div class="row tb-pager">
+    <div class="col-sm-12 col-md-3">
+        <div class="dataTables_info" id="bootstrap-data-table-export_info" role="status" aria-live="polite">
+            总共 @(Model.PageInfo.TotalItemCount) 条
+        </div>
+    </div>
+    <div class="col-sm-12 col-md-9">
+        <div class="dataTables_paginate paging_simple_numbers" id="bootstrap-data-table-export_paginate">
+            @{ await Html.RenderPartialAsync("Pager1", Model.PageInfo); }
+        </div>
+    </div>
+</div>

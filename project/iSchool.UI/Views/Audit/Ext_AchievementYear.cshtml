@@ -1,0 +1,48 @@
+﻿@using iSchool.Infrastructure;
+@using iSchool.Domain.Enum;
+@model iSchool.Application.Service.Audit.SchoolAchievementYearQueryResult[]
+
+
+@foreach (var item in Model)
+{
+    <a href="javascript:void(0);" extid="@item.Eid" year="@item.Year">@(item.Year)年</a><br />
+}
+<br/>
+<div id="div_sgYearAchievement" style="display:none;">
+    <span style="display:inline;text-decoration:underline;"></span>
+    <div></div>
+    <div id="div_part_YearAchievementDestination" class="form-group" style="display:none;">
+        <label class="form-control-label mb-1">毕业去向</label>
+        <div ctx="1"></div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    jQuery(function () {
+        
+        jQuery('#div_sgAchievement a[extid]').on('click', function () {
+            var a = jQuery(this), eid = a.attr('extid'), year = a.attr('year');
+
+            var o = { eid, year };
+            jQuery('#div_sgYearAchievement').hide();
+            jQuery('#div_sgYearAchievement div').eq(0).html('加载中...');
+            jQuery.postJSON('/audit/GetSchoolAchievementInfo', o, function (str) {
+                jQuery('#div_sgYearAchievement').show();
+                jQuery('#div_sgYearAchievement span').eq(0).show().html(year + '年  ');
+                jQuery('#div_sgYearAchievement div').eq(0).html(str);
+            }).ignoreGlobal();
+        });
+    });
+
+    function load_page_year_Achievement(eid, year) {
+        var o = {};
+        o.pageIndex = 1;
+        o.pageSize = 10;
+        o.eid = eid;
+        o.year = year;
+        jQuery.postJSON('/audit/PageYearAchievementDestination', o, function (str) {
+            jQuery('#div_part_YearAchievementDestination').show();
+            jQuery('#div_part_YearAchievementDestination div[ctx]').html(str);
+        }).ignoreGlobal();
+    }
+</script>
